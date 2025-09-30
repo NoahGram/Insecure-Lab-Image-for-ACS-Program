@@ -1,0 +1,61 @@
+---
+- name: 01 - Create the Clean Base Lab Image
+  hosts: vps_lab
+  gather_facts: yes
+  
+  tasks:
+    - name: Ensure the system is updated
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+        autoremove: yes
+
+    - name: Install base required packages
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+          - apt-transport-https
+          - software-properties-common
+          - python3-apt # Ensure this is installed for Ansible to work optimally
+        state: present
+        
+    - name: Install Web Server (Nginx) and PHP-FPM
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - php-fpm
+        state: present
+
+    - name: Install Mail Relay (Postfix)
+      ansible.builtin.apt:
+        name: postfix
+        state: present
+      # Postfix setup is usually interactive, this ensures a non-interactive install
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+        
+    - name: Install Samba for File Sharing (required in the project brief)
+      ansible.builtin.apt:
+        name: samba
+        state: present
+        
+    - name: Install Git Server (Gitea requires a database, using SQLite for simplicity)
+      # For Gitea installation, you would typically download and configure the binary
+      # This task just installs the prerequisite database for later configuration
+      ansible.builtin.apt:
+        name: sqlite3
+        state: present
+        
+    - name: Ensure basic UFW firewall is active (initial hardening for "clean" image)
+      community.general.ufw:
+        state: enabled
+      
+    - name: Open SSH, HTTP, and HTTPS ports in the firewall
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop:
+        - '22'
+        - '80'
+        - '443'

