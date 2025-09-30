@@ -19,7 +19,7 @@ Thumbs.db
 .idea/
 
 # Ignore sensitive files
-*.pem
-*.key
-!vps_key
-!vps_key.pub
+#*.pem
+#*.key
+#!vps_key
+#!vps_key.pub
