@@ -1,0 +1,25 @@
+# Ignore large files
+*.iso
+*.img
+*.vmdk
+*.vdi
+*.qcow2
+
+# Ignore temporary files
+*.tmp
+*.temp
+*.log
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore sensitive files
+*.pem
+*.key
+!vps_key
+!vps_key.pub
