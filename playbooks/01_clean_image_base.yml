@@ -1,8 +1,33 @@
 ---
-- name: 01 - Create the Clean Base Lab Image
+- name: 01 - Create the Clean Base Lab Image with Complete Software Stack
   hosts: vps_lab
   gather_facts: yes
-  
+  vars:
+    # Database Configuration
+    mysql_root_password: "CleanLabPassword123!"
+    
+    # Software Versions (for vulnerability testing)
+    # Set to 'latest' for secure versions, or specific versions for known vulnerabilities
+    apache_version: "latest"              # Options: "latest", "2.4.41" (CVE-2019-0211), "2.4.29" (CVE-2017-15710)
+    php_version: "latest"                 # Options: "latest", "7.4", "7.3" (multiple CVEs), "5.6" (EOL, many vulns)
+    mysql_version: "latest"               # Options: "latest", "8.0.25" (CVE-2021-35604), "5.7.35" (multiple CVEs)
+    
+    # Application Versions
+    gitea_version: "1.17.3"              # Options: "1.21.0" (latest), "1.17.3" (CVE-2022-4188), "1.16.9" (CVE-2022-1928)
+    dokuwiki_version: "2020-07-29"       # Options: "stable", "2020-07-29" (CVE-2020-25790), "2018-04-22" (CVE-2018-15473)
+    mantisbt_version: "2.24.4"           # Options: "2.25.8" (latest), "2.24.4" (CVE-2022-42790), "2.21.1" (CVE-2019-15715)
+    
+    # Monitoring Versions  
+    wazuh_version: "4.3.10"              # Options: "4.7.0" (latest), "4.3.10" (older), "4.2.7" (multiple issues)
+    cockpit_version: "latest"            # Options: "latest", "238" (CVE-2020-35668)
+    
+    # System Service Versions
+    postfix_version: "latest"            # Options: "latest", "3.4.13" (CVE-2020-12063), "3.3.0" (CVE-2018-16554)
+    openssh_version: "latest"            # System will use available version
+    
+    # Vulnerability Mode (true = install vulnerable versions, false = secure versions)
+    vulnerable_mode: true
+
   tasks:
     - name: Ensure the system is updated
       ansible.builtin.apt:
@@ -15,47 +40,737 @@
         name:
           - git
           - curl
+          - wget
+          - unzip
           - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
           - software-properties-common
-          - python3-apt # Ensure this is installed for Ansible to work optimally
-        state: present
-        
-    - name: Install Web Server (Nginx) and PHP-FPM
-      ansible.builtin.apt:
-        name:
-          - nginx
-          - php-fpm
+          - python3-apt
+          - python3-pip
+          - python3-pymysql
         state: present
 
-    - name: Install Mail Relay (Postfix)
+    # ===========================================
+    # APACHE HTTP SERVER INSTALLATION
+    # ===========================================
+    - name: Stop and disable Nginx (if running) to free port 80
+      systemd:
+        name: nginx
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove Nginx package to avoid conflicts
+      ansible.builtin.apt:
+        name: nginx
+        state: absent
+      ignore_errors: yes
+
+    - name: Install Apache HTTP Server and PHP modules
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - "{% if php_version == 'latest' %}php{% else %}php{{ php_version }}{% endif %}"
+          - "{% if php_version == 'latest' %}php-mysql{% else %}php{{ php_version }}-mysql{% endif %}"
+          - "{% if php_version == 'latest' %}php-xml{% else %}php{{ php_version }}-xml{% endif %}"
+          - "{% if php_version == 'latest' %}php-gd{% else %}php{{ php_version }}-gd{% endif %}"
+          - "{% if php_version == 'latest' %}php-mbstring{% else %}php{{ php_version }}-mbstring{% endif %}"
+          - "{% if php_version == 'latest' %}php-curl{% else %}php{{ php_version }}-curl{% endif %}"
+          - "{% if php_version == 'latest' %}php-zip{% else %}php{{ php_version }}-zip{% endif %}"
+          - "{% if php_version == 'latest' %}php-intl{% else %}php{{ php_version }}-intl{% endif %}"
+          - "{% if php_version == 'latest' %}php-ldap{% else %}php{{ php_version }}-ldap{% endif %}"
+          - "{% if php_version == 'latest' %}libapache2-mod-php{% else %}libapache2-mod-php{{ php_version }}{% endif %}"
+        state: present
+
+    - name: Set Apache ServerName to suppress warnings
+      lineinfile:
+        path: /etc/apache2/apache2.conf
+        line: "ServerName lab.local"
+        create: yes
+
+    - name: Enable Apache modules
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - ssl
+        - headers
+      notify: restart apache
+
+    - name: Start and enable Apache service
+      systemd:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Create lab environment landing page
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Vulnerable Lab Environment</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                  .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                  h1 { color: #d32f2f; text-align: center; }
+                  h2 { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 5px; }
+                  .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                  .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+                  .service-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9; }
+                  .service-card h3 { margin-top: 0; color: #333; }
+                  .service-card a { color: #1976d2; text-decoration: none; font-weight: bold; }
+                  .service-card a:hover { text-decoration: underline; }
+                  .version-info { font-size: 0.9em; color: #666; margin-top: 5px; }
+                  .cve-info { background: #ffebee; padding: 5px; border-radius: 3px; font-size: 0.8em; color: #c62828; margin-top: 5px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>🔴 Vulnerable Lab Environment</h1>
+                  
+                  <div class="warning">
+                      <strong>⚠️ WARNING:</strong> This is an intentionally vulnerable environment for security testing and training purposes only. 
+                      Never expose this system to production networks or the internet.
+                  </div>
+
+                  <h2>📋 Available Services</h2>
+                  <div class="service-grid">
+                      <div class="service-card">
+                          <h3>🌐 Apache Web Server</h3>
+                          <p><a href="/">Default Apache Page</a></p>
+                          <div class="version-info">Status: Running on port 80</div>
+                      </div>
+
+                      <div class="service-card">
+                          <h3>📚 DokuWiki</h3>
+                          <p><a href="/dokuwiki/">DokuWiki Installation</a></p>
+                          <div class="version-info">Version: 2020-07-29</div>
+                          <div class="cve-info">CVE-2020-25790: File upload vulnerability</div>
+                      </div>
+
+                      <div class="service-card">
+                          <h3>🐛 MantisBT</h3>
+                          <p><a href="/mantisbt/">Bug Tracking System</a></p>
+                          <div class="version-info">Version: 2.24.4</div>
+                          <div class="cve-info">CVE-2022-42790: SQL injection vulnerability</div>
+                      </div>
+
+                      <div class="service-card">
+                          <h3>🔧 Git Server (Gitea)</h3>
+                          <p><a href="/gitea/">Gitea Git Server</a></p>
+                          <div class="version-info">Version: 1.17.3</div>
+                          <div class="cve-info">CVE-2022-4188: Authentication bypass</div>
+                      </div>
+
+                      <div class="service-card">
+                          <h3>🖥️ System Monitor (Cockpit)</h3>
+                          <p><a href="/cockpit/">System Dashboard</a></p>
+                          <div class="version-info">WebSocket-based interface</div>
+                          <div class="cve-info">Login with Ubuntu system credentials</div>
+                      </div>
+                  </div>
+
+                  <h2>🔑 Default Credentials</h2>
+                  <ul>
+                      <li><strong>System SSH:</strong> noah / [your Ubuntu password]</li>
+                      <li><strong>MySQL Root:</strong> root / CleanLabPassword123!</li>
+                      <li><strong>Gitea Database:</strong> gitea / GiteaDBPassword123!</li>
+                      <li><strong>MantisBT Database:</strong> mantisbt / MantisBTDBPassword123!</li>
+                  </ul>
+
+                  <h2>🌐 Access Methods</h2>
+                  <ul>
+                      <li><strong>From Windows Host:</strong> http://localhost:8080</li>
+                      <li><strong>SSH Access:</strong> ssh -p 2222 noah@localhost</li>
+                      <li><strong>Direct VM Access:</strong> http://localhost (from inside VM)</li>
+                  </ul>
+
+                  <h2>📖 Documentation</h2>
+                  <p>For complete setup and usage instructions, see <code>SETUP_DOCUMENTATION.md</code> in the project repository.</p>
+                  
+                  <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+                      <p>Lab Environment - Generated by Ansible • Ubuntu 24.04.3 LTS</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+
+    # ===========================================
+    # MYSQL/MARIADB DATABASE INSTALLATION
+    # ===========================================
+    - name: Add MariaDB repository for specific versions (if not latest)
+      block:
+        - name: Install MariaDB repository key
+          apt_key:
+            url: https://mariadb.org/mariadb_release_signing_key.asc
+            state: present
+        - name: Add MariaDB repository
+          apt_repository:
+            repo: "deb [arch=amd64,arm64,ppc64el] https://archive.mariadb.org/mariadb-{{ mysql_version }}/repo/ubuntu {{ ansible_distribution_release }} main"
+            state: present
+        - name: Update apt cache for MariaDB
+          apt:
+            update_cache: yes
+      when: mysql_version != "latest"
+
+    - name: Install MariaDB Server and client
+      ansible.builtin.apt:
+        name:
+          - "{% if mysql_version == 'latest' %}mariadb-server{% else %}mariadb-server={{ mysql_version }}*{% endif %}"
+          - "{% if mysql_version == 'latest' %}mariadb-client{% else %}mariadb-client={{ mysql_version }}*{% endif %}"
+          - python3-pymysql
+        state: present
+
+    - name: Start and enable MariaDB service
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Set MariaDB root password
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      ignore_errors: yes
+
+    - name: Create MariaDB configuration for root user
+      copy:
+        content: |
+          [client]
+          user=root
+          password={{ mysql_root_password }}
+        dest: /root/.my.cnf
+        mode: '0600'
+
+    - name: Remove anonymous MariaDB users
+      mysql_user:
+        name: ""
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Remove MariaDB test database
+      mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    # ===========================================
+    # POSTFIX MAIL SERVER
+    # ===========================================
+    - name: Install Postfix mail server
       ansible.builtin.apt:
         name: postfix
         state: present
-      # Postfix setup is usually interactive, this ensures a non-interactive install
       environment:
         DEBIAN_FRONTEND: noninteractive
-        
-    - name: Install Samba for File Sharing (required in the project brief)
-      ansible.builtin.apt:
-        name: samba
+
+    - name: Configure Postfix main.cf
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: "^{{ item.key }}"
+        line: "{{ item.key }} = {{ item.value }}"
+      loop:
+        - { key: "myhostname", value: "lab.local" }
+        - { key: "mydomain", value: "lab.local" }
+        - { key: "myorigin", value: "$mydomain" }
+        - { key: "inet_interfaces", value: "all" }
+        - { key: "mydestination", value: "$myhostname, localhost.$mydomain, localhost, $mydomain" }
+      notify: restart postfix
+
+    - name: Start and enable Postfix service
+      systemd:
+        name: postfix
+        state: started
+        enabled: yes
+
+    # ===========================================
+    # GITEA GIT SERVER
+    # ===========================================
+    - name: Stop Gitea service if running
+      systemd:
+        name: gitea
+        state: stopped
+      ignore_errors: yes
+
+    - name: Create gitea user
+      user:
+        name: gitea
+        system: yes
+        shell: /bin/bash
+        home: /home/gitea
+        create_home: yes
+
+    - name: Create gitea directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: gitea
+        group: gitea
+        mode: '0755'
+      loop:
+        - /var/lib/gitea
+        - /etc/gitea
+
+    - name: Remove existing Gitea binary
+      file:
+        path: /usr/local/bin/gitea
+        state: absent
+
+    - name: Download Gitea binary
+      get_url:
+        url: "https://dl.gitea.io/gitea/{{ gitea_version }}/gitea-{{ gitea_version }}-linux-amd64"
+        dest: /usr/local/bin/gitea
+        mode: '0755'
+        owner: root
+        group: root
+        force: yes
+
+    - name: Create Gitea database
+      mysql_db:
+        name: gitea
         state: present
-        
-    - name: Install Git Server (Gitea requires a database, using SQLite for simplicity)
-      # For Gitea installation, you would typically download and configure the binary
-      # This task just installs the prerequisite database for later configuration
-      ansible.builtin.apt:
-        name: sqlite3
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create Gitea database user
+      mysql_user:
+        name: gitea
+        password: "GiteaDBPassword123!"
+        priv: "gitea.*:ALL"
         state: present
-        
-    - name: Ensure basic UFW firewall is active (initial hardening for "clean" image)
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create Gitea systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Gitea (Git with a cup of tea)
+          After=syslog.target
+          After=network.target
+          After=mariadb.service
+
+          [Service]
+          Type=simple
+          User=gitea
+          Group=gitea
+          WorkingDirectory=/var/lib/gitea
+          ExecStart=/usr/local/bin/gitea web -c /etc/gitea/app.ini
+          Restart=always
+          Environment=USER=gitea HOME=/home/gitea GITEA_WORK_DIR=/var/lib/gitea
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/gitea.service
+        mode: '0644'
+
+    - name: Enable Gitea service (will start after configuration)
+      systemd:
+        name: gitea
+        enabled: yes
+        daemon_reload: yes
+
+    # ===========================================
+    # DOKUWIKI INSTALLATION
+    # ===========================================
+    - name: Download DokuWiki
+      get_url:
+        url: "{% if dokuwiki_version == 'stable' %}https://download.dokuwiki.org/src/dokuwiki/dokuwiki-stable.tgz{% else %}https://download.dokuwiki.org/src/dokuwiki/dokuwiki-{{ dokuwiki_version }}.tgz{% endif %}"
+        dest: /tmp/dokuwiki.tgz
+
+    - name: Extract DokuWiki
+      unarchive:
+        src: /tmp/dokuwiki.tgz
+        dest: /var/www/
+        remote_src: yes
+        owner: www-data
+        group: www-data
+
+    - name: Remove existing DokuWiki installation
+      file:
+        path: /var/www/dokuwiki
+        state: absent
+
+    - name: Find DokuWiki extracted directory
+      find:
+        paths: /var/www/
+        patterns: "dokuwiki-*"
+        file_type: directory
+      register: dokuwiki_dirs
+
+    - name: Rename DokuWiki directory to standard location
+      command: mv "{{ dokuwiki_dirs.files[0].path }}" /var/www/dokuwiki
+      when: dokuwiki_dirs.files | length > 0
+
+    - name: Set DokuWiki permissions
+      file:
+        path: /var/www/dokuwiki
+        owner: www-data
+        group: www-data
+        recurse: yes
+
+    - name: Create DokuWiki Apache virtual host
+      copy:
+        content: |
+          <VirtualHost *:80>
+              ServerName dokuwiki.lab.local
+              DocumentRoot /var/www/dokuwiki
+              
+              <Directory /var/www/dokuwiki>
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+              
+              ErrorLog ${APACHE_LOG_DIR}/dokuwiki_error.log
+              CustomLog ${APACHE_LOG_DIR}/dokuwiki_access.log combined
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/dokuwiki.conf
+
+    - name: Enable DokuWiki site
+      command: a2ensite dokuwiki.conf
+      notify: restart apache
+
+    # ===========================================
+    # MANTISBT BUG TRACKER
+    # ===========================================
+    - name: Remove existing MantisBT installation
+      file:
+        path: /var/www/mantisbt
+        state: absent
+
+    - name: Download MantisBT
+      get_url:
+        url: "https://sourceforge.net/projects/mantisbt/files/mantis-stable/{{ mantisbt_version }}/mantisbt-{{ mantisbt_version }}.tar.gz/download"
+        dest: /tmp/mantisbt.tar.gz
+
+    - name: Extract MantisBT
+      unarchive:
+        src: /tmp/mantisbt.tar.gz
+        dest: /var/www/
+        remote_src: yes
+        owner: www-data
+        group: www-data
+
+    - name: Find MantisBT extracted directory
+      find:
+        paths: /var/www/
+        patterns: "mantisbt-*"
+        file_type: directory
+      register: mantisbt_dirs
+
+    - name: Rename MantisBT directory
+      command: mv "{{ mantisbt_dirs.files[0].path }}" /var/www/mantisbt
+      when: mantisbt_dirs.files | length > 0
+      ignore_errors: yes
+
+    - name: Create MantisBT database
+      mysql_db:
+        name: mantisbt
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create MantisBT database user
+      mysql_user:
+        name: mantisbt
+        password: "MantisBTDBPassword123!"
+        priv: "mantisbt.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create MantisBT Apache virtual host
+      copy:
+        content: |
+          <VirtualHost *:80>
+              ServerName mantisbt.lab.local
+              DocumentRoot /var/www/mantisbt
+              
+              <Directory /var/www/mantisbt>
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+              
+              ErrorLog ${APACHE_LOG_DIR}/mantisbt_error.log
+              CustomLog ${APACHE_LOG_DIR}/mantisbt_access.log combined
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/mantisbt.conf
+
+    - name: Enable MantisBT site
+      command: a2ensite mantisbt.conf
+      notify: restart apache
+
+    # ===========================================
+    # APACHE PROXY CONFIGURATION FOR SERVICES
+    # ===========================================
+    - name: Enable Apache proxy modules
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - proxy
+        - proxy_http
+        - proxy_wstunnel
+
+    - name: Create Gitea proxy configuration
+      copy:
+        content: |
+          <VirtualHost *:80>
+              ServerName gitea.lab.local
+              
+              ProxyPreserveHost On
+              ProxyRequests Off
+              ProxyPass / http://localhost:3000/
+              ProxyPassReverse / http://localhost:3000/
+              
+              # WebSocket support for Gitea
+              RewriteEngine on
+              RewriteCond %{HTTP:Upgrade} websocket [NC]
+              RewriteCond %{HTTP:Connection} upgrade [NC]
+              RewriteRule ^/?(.*) "ws://localhost:3000/$1" [P,L]
+              
+              ErrorLog ${APACHE_LOG_DIR}/gitea_proxy_error.log
+              CustomLog ${APACHE_LOG_DIR}/gitea_proxy_access.log combined
+          </VirtualHost>
+          
+          # Gitea access via /gitea path
+          <VirtualHost *:80>
+              ServerName localhost
+              
+              ProxyPass /gitea/ http://localhost:3000/
+              ProxyPassReverse /gitea/ http://localhost:3000/
+              ProxyPassReverse /gitea/ http://localhost:8080/gitea/
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/gitea-proxy.conf
+
+    - name: Create Cockpit proxy configuration  
+      copy:
+        content: |
+          <VirtualHost *:80>
+              ServerName cockpit.lab.local
+              
+              ProxyPreserveHost On
+              ProxyRequests Off
+              ProxyPass / http://localhost:9090/
+              ProxyPassReverse / http://localhost:9090/
+              
+              # WebSocket support for Cockpit
+              RewriteEngine on
+              RewriteCond %{HTTP:Upgrade} websocket [NC]
+              RewriteCond %{HTTP:Connection} upgrade [NC]
+              RewriteRule ^/?(.*) "ws://localhost:9090/$1" [P,L]
+              
+              ErrorLog ${APACHE_LOG_DIR}/cockpit_proxy_error.log
+              CustomLog ${APACHE_LOG_DIR}/cockpit_proxy_access.log combined
+          </VirtualHost>
+          
+          # Cockpit access via /cockpit path
+          <VirtualHost *:80>
+              ServerName localhost
+              
+              ProxyPass /cockpit/ http://localhost:9090/
+              ProxyPassReverse /cockpit/ http://localhost:9090/
+              ProxyPassReverse /cockpit/ http://localhost:8080/cockpit/
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/cockpit-proxy.conf
+
+    - name: Enable proxy sites
+      command: "{{ item }}"
+      loop:
+        - a2ensite gitea-proxy.conf
+        - a2ensite cockpit-proxy.conf
+      notify: restart apache
+
+    # ===========================================
+    # COCKPIT SYSTEM MONITORING
+    # ===========================================
+    - name: Stop Cockpit service if running
+      systemd:
+        name: cockpit.socket
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove existing Cockpit installation
+      apt:
+        name:
+          - cockpit
+          - cockpit-system
+          - cockpit-networkmanager
+          - cockpit-storaged
+        state: absent
+      ignore_errors: yes
+
+    - name: Install Cockpit system monitoring
+      ansible.builtin.apt:
+        name:
+          - cockpit
+          - cockpit-system
+          - cockpit-networkmanager
+          - cockpit-storaged
+        state: present
+
+    - name: Start and enable Cockpit service
+      systemd:
+        name: cockpit.socket
+        state: started
+        enabled: yes
+
+    # ===========================================
+    # WAZUH SECURITY MONITORING
+    # ===========================================
+    - name: Stop Wazuh agent service if running
+      systemd:
+        name: wazuh-agent
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove existing Wazuh agent installation
+      apt:
+        name: wazuh-agent
+        state: absent
+        purge: yes
+      ignore_errors: yes
+
+    - name: Remove Wazuh configuration directory
+      file:
+        path: /var/ossec
+        state: absent
+      ignore_errors: yes
+
+    - name: Install Wazuh repository key
+      apt_key:
+        url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+        state: present
+
+    - name: Add Wazuh repository
+      apt_repository:
+        repo: "deb https://packages.wazuh.com/{{ wazuh_version.split('.')[0] }}.x/apt/ stable main"
+        state: present
+
+    - name: Update apt cache for Wazuh
+      apt:
+        update_cache: yes
+
+    - name: Install Wazuh agent (specific version if not latest)
+      ansible.builtin.apt:
+        name: "{% if wazuh_version == 'latest' %}wazuh-agent{% else %}wazuh-agent={{ wazuh_version }}-*{% endif %}"
+        state: present
+        allow_downgrade: yes
+
+    - name: Configure Wazuh agent (basic configuration)
+      lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '<server>.*</server>'
+        line: '    <server>127.0.0.1</server>'
+
+    - name: Enable Wazuh agent (don't start yet - needs server)
+      systemd:
+        name: wazuh-agent
+        enabled: yes
+        state: stopped
+
+    # ===========================================
+    # FIREWALL CONFIGURATION
+    # ===========================================
+    - name: Ensure UFW firewall is active
       community.general.ufw:
         state: enabled
-      
-    - name: Open SSH, HTTP, and HTTPS ports in the firewall
+
+    - name: Open required ports in firewall
       community.general.ufw:
         rule: allow
         port: "{{ item }}"
       loop:
-        - '22'
-        - '80'
-        - '443'
+        - '22'     # SSH
+        - '80'     # HTTP (Apache, DokuWiki, MantisBT)
+        - '443'    # HTTPS
+        - '3000'   # Gitea
+        - '9090'   # Cockpit
+        - '25'     # SMTP (Postfix)
+        - '1514'   # Wazuh agent
+        - '1515'   # Wazuh registration
+
+    # ===========================================
+    # FINAL SYSTEM CONFIGURATION
+    # ===========================================
+    - name: Create info file with service URLs
+      copy:
+        content: |
+          ==============================================
+          LAB ENVIRONMENT - INSTALLED SERVICES
+          ==============================================
+          
+          Web Services (Apache):
+          - Main Apache: http://{{ ansible_default_ipv4.address }}
+          
+          - MantisBT: http://mantisbt.lab.local
+          
+          Development Services:
+          - Gitea Git Server: http://{{ ansible_default_ipv4.address }}:3000
+          
+          System Monitoring:
+          - Cockpit: https://{{ ansible_default_ipv4.address }}:9090
+         
+          
+          Database:
+          - MariaDB: Running on localhost:3306
+          - Root password: {{ mysql_root_password }}
+          
+          Mail Service:
+          - Postfix: Running and configured
+          
+          Firewall Status:
+          - UFW enabled with required ports open
+          
+          ==============================================
+          Initial Setup Required:
+          ==============================================
+          
+          1. Gitea: Visit http://IP:3000 to complete setup
+             - Database: MySQL
+             - Host: 127.0.0.1:3306
+             - User: gitea
+             - Password: GiteaDBPassword123!
+             - Database: gitea
+          
+          2. MantisBT: Visit http://mantisbt.lab.local/admin/install.php
+             - Database: MySQL
+             - Host: localhost
+             - User: mantisbt
+             - Password: MantisBTDBPassword123!
+             - Database: mantisbt
+          
+          
+          
+          4. Cockpit: Login with system user credentials
+        dest: /root/lab-services-info.txt
+        mode: '0644'
+
+  handlers:
+    - name: restart apache
+      systemd:
+        name: apache2
+        state: restarted
+
+    - name: restart postfix
+      systemd:
+        name: postfix
+        state: restarted
+
+    - name: restart wazuh-agent
+      systemd:
+        name: wazuh-agent
+        enabled: yes
+        state: stopped

