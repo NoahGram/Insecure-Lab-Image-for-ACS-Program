@@ -16,7 +16,7 @@ This documentation describes the complete setup and operation of a vulnerable la
 ### Components:
 - **Windows Host**: Your local machine running Docker Desktop with WSL2
 - **Ansible Container**: Dockerized Ansible control node with vulnerability automation
-- **Ubuntu VM**: VirtualBox VM running Ubuntu 24.04.3 LTS as the target system
+- **Ubuntu VM**: VirtualBox VM running Ubuntu Server 24.04.3 LTS as the target system
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ This documentation describes the complete setup and operation of a vulnerable la
 
 #### 2. Oracle VirtualBox
 - **Oracle VirtualBox** (latest version)
-- **Ubuntu 24.04.3 LTS** installed as VM
+- **Ubuntu Server 24.04.3 LTS** installed as VM
 
 #### 3. VirtualBox VM Configuration
 - **Operating System**: Ubuntu 24.04.3 LTS (Server)
@@ -37,7 +37,9 @@ This documentation describes the complete setup and operation of a vulnerable la
 - **Port Forwarding Rules**:
   - **SSH**: Protocol TCP, Host Port 2222, Guest Port 22
   - **Apache**: Protocol TCP, Host Port 8080, Guest Port 80
-- **User Account**: `noah` with sudo privileges
+  - **Gitea**: Name="Gitea", Protocol=TCP, Host Port=3000, Guest Port=3000
+  - **Cockpit**: Name="Cockpit", Protocol=TCP, Host Port=9090, Guest Port=9090
+- **User Account**: `user` with sudo privileges
 - **SSH Server**: Installed and running
 
 ## Directory Structure
@@ -293,7 +295,7 @@ docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "
 docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini -v"
 ```
 
-#### 3.3 Deploy Specific Vulnerability Profile
+#### 3.3 Deploy Specific Vulnerability Profile (Not Implemented/ Testing Something so IGNORE)
 ```powershell
 # Deploy highly vulnerable environment
 .\run_vulnerability_profile.ps1 -Profile "highly_vulnerable"
@@ -305,7 +307,7 @@ docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "
 .\run_vulnerability_profile.ps1 -Profile "secure"
 ```
 
-#### 3.4 Add Additional Vulnerabilities
+#### 3.4 Add Additional Vulnerabilities (Not Implemented/ Testing Something so IGNORE)
 ```powershell
 # Introduce more vulnerabilities for advanced testing
 .\run_vulnerable.ps1
@@ -317,13 +319,13 @@ After successful deployment, access the services via your web browser:
 
 #### Web Applications
 - **Apache Default**: http://localhost:8080
-- **Gitea** (Git Server): http://localhost:8080:3000
+- **Gitea** (Git Server): http://localhost:3000
 - **DokuWiki** (Wiki): http://localhost:8080/dokuwiki
 - **MantisBT** (Bug Tracker): http://localhost:8080/mantisbt
 - **Cockpit** (System Monitor): https://localhost:9090
 
 #### Service Access
-- **SSH to Ubuntu VM**: `ssh -p 2222 noah@localhost`
+- **SSH to Ubuntu VM**: `ssh -p 2222 user@localhost`
 - **Database Access**: Available through web applications
 - **Log Monitoring**: Via Cockpit interface
 
@@ -332,7 +334,7 @@ After successful deployment, access the services via your web browser:
 #### 5.1 Check Service Status
 ```bash
 # SSH into the Ubuntu VM
-ssh -p 2222 noah@localhost
+ssh -p 2222 user@localhost
 
 # Check running services
 sudo systemctl status apache2
@@ -359,7 +361,7 @@ php --version                         # Check PHP version
 - Verify they load correctly
 - Check for expected vulnerable behavior (if using vulnerable profiles)
 
-## Vulnerability Profiles System
+## Vulnerability Profiles System (TESTING, SKIP!!!)
 
 ### Available Profiles
 
@@ -422,13 +424,13 @@ Get-Content .\vulnerability-profiles.yml
 - Remove passphrase from SSH key: `ssh-keygen -p -f .\Keys\vps_key -N '' -P 'old_passphrase'`
 - Verify key permissions are 600
 - Ensure public key is in Ubuntu VM: `~/.ssh/authorized_keys`
-- Test manual SSH: `ssh -i .\Keys\vps_key -p 2222 noah@localhost`
+- Test manual SSH: `ssh -i .\Keys\vps_key -p 2222 user@localhost`
 
 #### 4. **Sudo Password Issues**
 **Problem**: "Missing sudo password" or "Incorrect sudo password"
 **Solutions**:
 - Update `ansible_become_password` in inventory.ini with correct Ubuntu user password
-- Test sudo access: `ssh -p 2222 noah@localhost 'echo "password" | sudo -S whoami'`
+- Test sudo access: `ssh -p 2222 user@localhost 'echo "password" | sudo -S whoami'`
 
 #### 5. **Version Downgrade Issues**
 **Problem**: "Packages were downgraded and -y was used without --allow-downgrades"
@@ -452,7 +454,7 @@ Get-Content .\vulnerability-profiles.yml
 - Existing installations are cleaned up before new deployment
 - Manual fix: Remove `/var/www/mantisbt*` directories before rerunning
 
-#### 8. **Wazuh Agent Start Issues**
+#### 8. **Wazuh Agent Start Issues** (Still Working On This)
 **Problem**: "Unable to start service wazuh-agent"
 **Solutions**:
 - Wazuh agent is intentionally left stopped (needs Wazuh manager)
@@ -485,139 +487,6 @@ sudo ufw status verbose
 mysql -u root -p -e "SHOW DATABASES;"
 ```
 
-## Security Considerations for Lab Environment
-
-### Understanding the Vulnerability Lab
-
-**⚠️ IMPORTANT SECURITY WARNING ⚠️**
-
-This system is designed to create **intentionally vulnerable** environments for:
-- **Penetration testing training**
-- **Security research**
-- **Exploit development**
-- **Vulnerability assessment practice**
-
-### Security Measures for Lab Safety
-
-#### 1. **Network Isolation**
-- Use **NAT networking** in VirtualBox (not bridged)
-- Deploy only on **isolated lab networks**
-- **Never expose** to production networks
-- Consider **host-only networking** for maximum isolation
-
-#### 2. **Access Control**
-- **SSH key authentication** with strong keys
-- **Custom SSH port** (2222) for obscurity
-- **Firewall rules** limiting access
-- **Strong sudo passwords** for Ubuntu user
-
-#### 3. **Version Management**
-- **Documented vulnerable versions** for each component
-- **Clean baseline restoration** capability
-- **Profile-based deployment** for controlled testing
-- **Comprehensive cleanup** between tests
-
-#### 4. **Monitoring and Logging**
-- **Wazuh agent** for security monitoring
-- **Cockpit** for system monitoring
-- **Apache access logs** for web activity
-- **System audit logs** for privilege escalation
-
-### Lab Environment Guidelines
-
-#### ✅ **Safe Practices**
-- Deploy only in **isolated VMs or containers**
-- Use **dedicated lab networks**
-- Implement **regular snapshots** for quick recovery
-- Document **all changes and tests**
-- Keep **vulnerability documentation** updated
-
-#### ❌ **Dangerous Practices**
-- **Never expose** vulnerable systems to the internet
-- **Don't use** production credentials
-- **Avoid bridged networking** to production systems
-- **Don't install** on production hardware
-- **Never use** in corporate environments without approval
-
-## Lab Maintenance and Management
-
-### Regular Lab Tasks
-
-#### 1. **Environment Reset**
-```powershell
-# Reset to clean baseline
-.\run_clean.ps1
-
-# Deploy specific vulnerability profile
-.\run_vulnerability_profile.ps1 -Profile "vulnerable"
-
-# Add additional vulnerabilities
-.\run_vulnerable.ps1
-```
-
-#### 2. **VM Snapshot Management**
-- Create **snapshots** before major changes
-- Name snapshots with **profile and date**
-- Keep **clean baseline** snapshot
-- Document **snapshot purposes**
-
-#### 3. **Version Updates**
-- Update `vulnerability-profiles.yml` with new CVEs
-- Test new vulnerable versions
-- Update documentation with findings
-- Maintain compatibility with exploit tools
-
-### Monitoring and Analysis
-
-#### 1. **Security Monitoring**
-- **Wazuh Dashboard**: Monitor security events
-- **Cockpit Interface**: System performance and logs
-- **Apache Logs**: Web application activity
-- **Database Logs**: SQL query monitoring
-
-#### 2. **Vulnerability Testing**
-- Document successful **exploit attempts**
-- Record **CVE verification** results
-- Track **remediation effectiveness**
-- Maintain **exploit databases**
-
-### Advanced Lab Extensions
-
-#### 1. **Adding New Vulnerable Applications**
-```yaml
-# Example: Add new application to playbook
-- name: Install Vulnerable Application
-  get_url:
-    url: "https://example.com/vuln-app-{{ vuln_app_version }}.tar.gz"
-    dest: /tmp/vuln-app.tar.gz
-  when: vuln_app_version != "latest"
-```
-
-#### 2. **Creating Custom Vulnerability Profiles**
-Edit `vulnerability-profiles.yml`:
-```yaml
-custom_profile:
-  apache_version: "2.4.29"      # Specific CVE target
-  php_version: "7.3"           # Known vulnerability
-  gitea_version: "1.16.9"      # Authentication bypass
-  # Add more versions as needed
-```
-
-#### 3. **Multi-Target Environments**
-```ini
-# inventory.ini - Multiple targets
-[vps_lab]
-target1 ansible_host=host.docker.internal ansible_port=2222
-target2 ansible_host=host.docker.internal ansible_port=2223
-target3 ansible_host=host.docker.internal ansible_port=2224
-
-[web_servers]
-target1
-target2
-
-[database_servers]
-target3
-```
 
 ## Support and Resources
 
