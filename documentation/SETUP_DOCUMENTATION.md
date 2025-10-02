@@ -32,7 +32,7 @@ This documentation describes the complete setup and operation of a vulnerable la
 - **Ubuntu 24.04.3 LTS** installed as VM
 
 #### 3. VirtualBox VM Configuration
-- **Operating System**: Ubuntu 24.04.3 LTS (Desktop or Server)
+- **Operating System**: Ubuntu 24.04.3 LTS (Server)
 - **Network Adapter**: NAT
 - **Port Forwarding Rules**:
   - **SSH**: Protocol TCP, Host Port 2222, Guest Port 22
@@ -78,11 +78,11 @@ d:\ansible-control-node\
 
 #### 1.2 Install Oracle VirtualBox
 1. Download and install **Oracle VirtualBox** (latest version)
-2. Download **Ubuntu 24.04.3 LTS ISO** from official Ubuntu website
+2. Download **Ubuntu Server 24.04.3 LTS ISO** from official Ubuntu website (https://ubuntu.com/download/server#manual-install)
 
 #### 1.3 Create Ubuntu Virtual Machine
 1. Create new VM in VirtualBox:
-   - **Name**: Ubuntu-Lab-Target
+   - **Name**: Ubuntu-VPS
    - **Type**: Linux
    - **Version**: Ubuntu (64-bit)
    - **Memory**: 2GB minimum (4GB recommended)
@@ -95,10 +95,12 @@ d:\ansible-control-node\
    - Add rules:
      - **SSH**: Name="SSH", Protocol=TCP, Host Port=2222, Guest Port=22
      - **Apache**: Name="Apache", Protocol=TCP, Host Port=8080, Guest Port=80
+     - **Gitea**: Name="Gitea", Protocol=TCP, Host Port=3000, Guest Port=3000
+     - **Cockpit**: Name="Cockpit", Protocol=TCP, Host Port=9090, Guest Port=9090
 
-3. Install Ubuntu 24.04.3 LTS:
-   - Create user account: `noah`
-   - Set strong password (remember it for sudo)
+3. Install Ubuntu Server 24.04.3 LTS:
+   - Create user account: `name`
+   - Set password (remember it for sudo)
    - Install OpenSSH server during installation
 
 ### Step 2: Configure Ubuntu VM
@@ -111,18 +113,59 @@ sudo systemctl enable ssh
 sudo systemctl start ssh
 ```
 
-#### 2.2 Configure SSH Key Authentication
+#### 2.2 VPS Firewall Configuration
+1. Check Firewall & Ports Statuses
+   ```bash
+   sudo ufw status
+   ```
+
+2. Enable the Firewall (If Inactive)
+   ```bash
+   sudo ufw enable
+   ```
+
+3. Allow SSH
+   ```bash
+   sudo ufw allow ssh (Recommended)
+   sudo ufw allow 22/tcp
+   ```
+
+4. SSH PORT OPEN
+   ```bash
+   The output should show a rule for either 22/tcp (if using a different network mode) or 2222/tcp (for your NAT connection) with the action set to ALLOW
+   ```
+
+#### 2.3 Pull Ansible Repo (Private) From Github https://github.com/NoahGram/Lab-Image-ACS-VPS
+1. Make sure the root folder of the pulled repo is called: ansible-control-node. When you pull/clone, by default it's called 'Lab-Image-ACS-VPS'. (Will Fix, so that this step becomes obsolete)
+
+   So Not:
+   ```bash
+   D:\Lab-Image-ACS-VPS\Keys\vps_key.pub
+   ```
+   But:
+   ```bash
+   D:\ansible-control-node\Keys\vps_key.pub
+   ```
+
+#### 2.4 Echo The Public Key Into the VPS for Ansible Connection:
+1. In Windos PowerShell:
+   ```powershell
+   Get-Content D:\ansible-control-node\Keys\vps_key.pub | ssh -p 2222 user@127.0.0.1 "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+   ```
+
+#### (SKIP!!!) 2.4 Configure SSH Key Authentication (SKIP!!!)
 1. Generate SSH key pair on Windows:
    ```powershell
    ssh-keygen -t rsa -b 4096 -f .\Keys\vps_key
    ```
 2. Copy public key to Ubuntu VM:
    ```powershell
-   scp -P 2222 .\Keys\vps_key.pub noah@localhost:~/.ssh/authorized_keys
+   scp -P 2222 .\Keys\vps_key.pub user@localhost:~/.ssh/authorized_keys
    ```
 
-#### 2.3 Set Sudo Password
-Remember the password you set for the `noah` user during Ubuntu installation. This will be used as the sudo password in the Ansible configuration.
+
+#### 2.5 Set Sudo Password
+Remember the password you set for the `user` during Ubuntu installation. This will be used as the sudo password in the Ansible configuration.
 
 ## Configuration Files
 
@@ -196,13 +239,13 @@ The Dockerfile creates a containerized Ansible environment with all necessary to
 - SSL/TLS certificate support
 - Database security hardening
 
-#### 5. **Version Management System**
+#### 5. **Version Management System** (Overkill/ Possible Idea)
 The playbook uses a sophisticated version management system that allows switching between:
 - **Latest secure versions** for hardened environments
 - **Specific vulnerable versions** for penetration testing
 - **Multiple vulnerability profiles** for different training scenarios
 
-### 02_introduce_vulnerabilities.yml
+### 02_introduce_vulnerabilities.yml (Example)
 
 **Purpose**: Introduces additional controlled vulnerabilities and weakens system security
 
