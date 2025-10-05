@@ -6,27 +6,21 @@
     # Database Configuration
     mysql_root_password: "CleanLabPassword123!"
     
-    # Software Versions (for vulnerability testing)
-    # Set to 'latest' for secure versions, or specific versions for known vulnerabilities
-    apache_version: "latest"              # Options: "latest", "2.4.41" (CVE-2019-0211), "2.4.29" (CVE-2017-15710)
-    php_version: "latest"                 # Options: "latest", "7.4", "7.3" (multiple CVEs), "5.6" (EOL, many vulns)
-    mysql_version: "latest"               # Options: "latest", "8.0.25" (CVE-2021-35604), "5.7.35" (multiple CVEs)
+    # Software Versions - Set specific versions to ensure consistent deployments
+    apache_version: "latest"              # Use latest stable Apache version
+    php_version: "latest"                 # Use latest stable PHP version  
+    mysql_version: "latest"               # Use latest stable MariaDB version
     
-    # Application Versions
-    gitea_version: "1.17.3"              # Options: "1.21.0" (latest), "1.17.3" (CVE-2022-4188), "1.16.9" (CVE-2022-1928)
-    dokuwiki_version: "2020-07-29"       # Options: "stable", "2020-07-29" (CVE-2020-25790), "2018-04-22" (CVE-2018-15473)
-    mantisbt_version: "2.24.4"           # Options: "2.25.8" (latest), "2.24.4" (CVE-2022-42790), "2.21.1" (CVE-2019-15715)
+    # Application Versions - Specific versions for lab consistency
+    gitea_version: "1.15.0"              # Latest stable Gitea version
+    dokuwiki_version: "stable"           # Latest stable DokuWiki version
+    mantisbt_version: "2.25.8"           # Latest stable MantisBT version
     
-    # Monitoring Versions  
-    wazuh_version: "4.3.10"              # Options: "4.7.0" (latest), "4.3.10" (older), "4.2.7" (multiple issues)
-    cockpit_version: "latest"            # Options: "latest", "238" (CVE-2020-35668)
-    
-    # System Service Versions
-    postfix_version: "latest"            # Options: "latest", "3.4.13" (CVE-2020-12063), "3.3.0" (CVE-2018-16554)
-    openssh_version: "latest"            # System will use available version
-    
-    # Vulnerability Mode (true = install vulnerable versions, false = secure versions)
-    vulnerable_mode: true
+    # Monitoring and System Services
+    wazuh_version: "4.7.0"               # Latest stable Wazuh version
+    cockpit_version: "latest"            # Latest stable Cockpit version
+    postfix_version: "latest"            # Latest stable Postfix version
+    openssh_version: "latest"            # System available version
 
   tasks:
     - name: Ensure the system is updated
@@ -51,6 +45,41 @@
           - python3-pip
           - python3-pymysql
         state: present
+
+    # ===========================================
+    # VERSION CHECKING AND VALIDATION
+    # ===========================================
+    - name: Check currently installed Apache version
+      shell: apache2 -v 2>/dev/null | head -1 | awk '{print $3}' || echo "not_installed"
+      register: current_apache_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check currently installed PHP version  
+      shell: php -v 2>/dev/null | head -1 | awk '{print $2}' || echo "not_installed"
+      register: current_php_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check currently installed MariaDB version
+      shell: mariadb --version 2>/dev/null | awk '{print $5}' | sed 's/,//' || echo "not_installed"
+      register: current_mysql_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check currently installed Gitea version
+      shell: /usr/local/bin/gitea --version 2>/dev/null | head -1 | awk '{print $3}' || echo "not_installed"
+      register: current_gitea_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Display current software versions
+      debug:
+        msg:
+          - "Apache: {{ current_apache_version.stdout }}"
+          - "PHP: {{ current_php_version.stdout }}"
+          - "MariaDB: {{ current_mysql_version.stdout }}"
+          - "Gitea: {{ current_gitea_version.stdout }}"
 
     # ===========================================
     # APACHE HTTP SERVER INSTALLATION
@@ -207,7 +236,18 @@
     # ===========================================
     # MYSQL/MARIADB DATABASE INSTALLATION
     # ===========================================
-    - name: Add MariaDB repository for specific versions (if not latest)
+    - name: Check if MariaDB is already installed
+      command: dpkg -l mariadb-server
+      register: mariadb_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Display MariaDB version information if already installed
+      debug:
+        msg: "MariaDB is already installed: {{ mariadb_installed.stdout_lines | select('match', '.*mariadb-server.*') | list | first | default('Version info not found') }}"
+      when: mariadb_installed.rc == 0
+
+    - name: Add MariaDB repository for specific versions (if not latest and not already installed)
       block:
         - name: Install MariaDB repository key
           apt_key:
@@ -220,7 +260,7 @@
         - name: Update apt cache for MariaDB
           apt:
             update_cache: yes
-      when: mysql_version != "latest"
+      when: mysql_version != "latest" and mariadb_installed.rc != 0
 
     - name: Install MariaDB Server and client
       ansible.builtin.apt:
@@ -229,6 +269,8 @@
           - "{% if mysql_version == 'latest' %}mariadb-client{% else %}mariadb-client={{ mysql_version }}*{% endif %}"
           - python3-pymysql
         state: present
+        update_cache: yes
+      when: mariadb_installed.rc != 0
 
     - name: Start and enable MariaDB service
       systemd:
@@ -236,12 +278,24 @@
         state: started
         enabled: yes
 
-    - name: Set MariaDB root password
+    - name: Wait for MariaDB to be ready
+      wait_for:
+        port: 3306
+        host: localhost
+        timeout: 30
+
+    - name: Check if MariaDB root password is already set
+      command: mysql -u root -e "SELECT 1"
+      register: mysql_root_access
+      failed_when: false
+      changed_when: false
+
+    - name: Set MariaDB root password (first time setup)
       mysql_user:
         name: root
         password: "{{ mysql_root_password }}"
         login_unix_socket: /var/run/mysqld/mysqld.sock
-      ignore_errors: yes
+      when: mysql_root_access.rc == 0
 
     - name: Create MariaDB configuration for root user
       copy:
@@ -252,12 +306,22 @@
         dest: /root/.my.cnf
         mode: '0600'
 
+    - name: Verify MariaDB connection with new credentials
+      command: mysql -u root --password={{ mysql_root_password }} -e "SELECT VERSION();"
+      register: mysql_version_check
+      changed_when: false
+
+    - name: Display MariaDB version after installation
+      debug:
+        msg: "MariaDB is running: {{ mysql_version_check.stdout_lines | last }}"
+
     - name: Remove anonymous MariaDB users
       mysql_user:
         name: ""
         state: absent
         login_user: root
         login_password: "{{ mysql_root_password }}"
+      ignore_errors: yes
 
     - name: Remove MariaDB test database
       mysql_db:
@@ -265,6 +329,7 @@
         state: absent
         login_user: root
         login_password: "{{ mysql_root_password }}"
+      ignore_errors: yes
 
     # ===========================================
     # POSTFIX MAIL SERVER
@@ -298,11 +363,18 @@
     # ===========================================
     # GITEA GIT SERVER
     # ===========================================
+    - name: Check if Gitea service exists
+      systemd:
+        name: gitea
+      register: gitea_service_status
+      failed_when: false
+      
     - name: Stop Gitea service if running
       systemd:
         name: gitea
         state: stopped
       ignore_errors: yes
+      when: gitea_service_status is defined
 
     - name: Create gitea user
       user:
@@ -321,21 +393,50 @@
         mode: '0755'
       loop:
         - /var/lib/gitea
+        - /var/lib/gitea/custom
+        - /var/lib/gitea/data
+        - /var/lib/gitea/log
         - /etc/gitea
 
-    - name: Remove existing Gitea binary
+    - name: Check if Gitea version change is needed
+      set_fact:
+        gitea_needs_update: "{{ current_gitea_version.stdout == 'not_installed' or current_gitea_version.stdout != gitea_version }}"
+
+    - name: Display Gitea installation status
+      debug:
+        msg: 
+          - "Current Gitea version: {{ current_gitea_version.stdout }}"
+          - "Target Gitea version: {{ gitea_version }}"
+          - "Update needed: {{ gitea_needs_update }}"
+
+    - name: Remove existing Gitea binary (if version change needed)
       file:
         path: /usr/local/bin/gitea
         state: absent
+      when: gitea_needs_update
 
-    - name: Download Gitea binary
+    - name: Download Gitea binary (if needed)
       get_url:
         url: "https://dl.gitea.io/gitea/{{ gitea_version }}/gitea-{{ gitea_version }}-linux-amd64"
         dest: /usr/local/bin/gitea
         mode: '0755'
         owner: root
         group: root
-        force: yes
+        timeout: 60
+      when: gitea_needs_update
+      retries: 3
+      delay: 5
+
+    - name: Verify Gitea binary installation
+      command: /usr/local/bin/gitea --version
+      register: gitea_binary_version
+      changed_when: false
+      when: gitea_needs_update
+
+    - name: Display Gitea binary version
+      debug:
+        msg: "Gitea binary installed: {{ gitea_binary_version.stdout }}"
+      when: gitea_needs_update and gitea_binary_version is defined
 
     - name: Create Gitea database
       mysql_db:
@@ -370,6 +471,7 @@
           ExecStart=/usr/local/bin/gitea web -c /etc/gitea/app.ini
           Restart=always
           Environment=USER=gitea HOME=/home/gitea GITEA_WORK_DIR=/var/lib/gitea
+          RestartSec=10
 
           [Install]
           WantedBy=multi-user.target
@@ -385,10 +487,28 @@
     # ===========================================
     # DOKUWIKI INSTALLATION
     # ===========================================
+    - name: Check if DokuWiki is already installed
+      stat:
+        path: /var/www/dokuwiki
+      register: dokuwiki_installed
+
+    - name: Remove existing DokuWiki installation (for clean deployment)
+      file:
+        path: /var/www/dokuwiki
+        state: absent
+      when: dokuwiki_installed.stat.exists
+
+    - name: Clean up any old DokuWiki extracted directories
+      shell: rm -rf /var/www/dokuwiki-*
+      ignore_errors: yes
+
     - name: Download DokuWiki
       get_url:
         url: "{% if dokuwiki_version == 'stable' %}https://download.dokuwiki.org/src/dokuwiki/dokuwiki-stable.tgz{% else %}https://download.dokuwiki.org/src/dokuwiki/dokuwiki-{{ dokuwiki_version }}.tgz{% endif %}"
         dest: /tmp/dokuwiki.tgz
+        timeout: 30
+      retries: 3
+      delay: 5
 
     - name: Extract DokuWiki
       unarchive:
@@ -397,11 +517,6 @@
         remote_src: yes
         owner: www-data
         group: www-data
-
-    - name: Remove existing DokuWiki installation
-      file:
-        path: /var/www/dokuwiki
-        state: absent
 
     - name: Find DokuWiki extracted directory
       find:
@@ -413,6 +528,11 @@
     - name: Rename DokuWiki directory to standard location
       command: mv "{{ dokuwiki_dirs.files[0].path }}" /var/www/dokuwiki
       when: dokuwiki_dirs.files | length > 0
+
+    - name: Cleanup downloaded archive
+      file:
+        path: /tmp/dokuwiki.tgz
+        state: absent
 
     - name: Set DokuWiki permissions
       file:
@@ -445,15 +565,28 @@
     # ===========================================
     # MANTISBT BUG TRACKER
     # ===========================================
-    - name: Remove existing MantisBT installation
+    - name: Check if MantisBT is already installed
+      stat:
+        path: /var/www/mantisbt
+      register: mantisbt_installed
+
+    - name: Remove existing MantisBT installation (for clean deployment)
       file:
         path: /var/www/mantisbt
         state: absent
+      when: mantisbt_installed.stat.exists
+
+    - name: Clean up any old MantisBT extracted directories
+      shell: rm -rf /var/www/mantisbt-*
+      ignore_errors: yes
 
     - name: Download MantisBT
       get_url:
         url: "https://sourceforge.net/projects/mantisbt/files/mantis-stable/{{ mantisbt_version }}/mantisbt-{{ mantisbt_version }}.tar.gz/download"
         dest: /tmp/mantisbt.tar.gz
+        timeout: 60
+      retries: 3
+      delay: 5
 
     - name: Extract MantisBT
       unarchive:
@@ -470,10 +603,28 @@
         file_type: directory
       register: mantisbt_dirs
 
-    - name: Rename MantisBT directory
+    - name: Display found MantisBT directories
+      debug:
+        msg: "Found MantisBT directories: {{ mantisbt_dirs.files | map(attribute='path') | list }}"
+
+    - name: Rename MantisBT directory to standard location
       command: mv "{{ mantisbt_dirs.files[0].path }}" /var/www/mantisbt
       when: mantisbt_dirs.files | length > 0
-      ignore_errors: yes
+
+    - name: Verify MantisBT installation directory
+      stat:
+        path: /var/www/mantisbt
+      register: mantisbt_final_check
+
+    - name: Fail if MantisBT directory was not created properly
+      fail:
+        msg: "MantisBT installation directory /var/www/mantisbt was not created successfully"
+      when: not mantisbt_final_check.stat.exists
+
+    - name: Clean up MantisBT archive
+      file:
+        path: /tmp/mantisbt.tar.gz
+        state: absent
 
     - name: Create MantisBT database
       mysql_db:
@@ -596,13 +747,25 @@
     # ===========================================
     # COCKPIT SYSTEM MONITORING
     # ===========================================
+    - name: Check if Cockpit is already installed
+      command: dpkg -l cockpit
+      register: cockpit_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Display Cockpit status if already installed
+      debug:
+        msg: "Cockpit is already installed: {{ cockpit_installed.stdout_lines | select('match', '.*cockpit.*') | list | first | default('Version info not found') }}"
+      when: cockpit_installed.rc == 0
+
     - name: Stop Cockpit service if running
       systemd:
         name: cockpit.socket
         state: stopped
       ignore_errors: yes
+      when: cockpit_installed.rc == 0
 
-    - name: Remove existing Cockpit installation
+    - name: Remove existing Cockpit installation (for clean deployment)
       apt:
         name:
           - cockpit
@@ -610,7 +773,9 @@
           - cockpit-networkmanager
           - cockpit-storaged
         state: absent
+        purge: yes
       ignore_errors: yes
+      when: cockpit_installed.rc == 0
 
     - name: Install Cockpit system monitoring
       ansible.builtin.apt:
@@ -620,12 +785,28 @@
           - cockpit-networkmanager
           - cockpit-storaged
         state: present
+        update_cache: yes
+
+    - name: Verify Cockpit installation
+      command: dpkg -l cockpit
+      register: cockpit_version_check
+      changed_when: false
+
+    - name: Display Cockpit version after installation
+      debug:
+        msg: "Cockpit installed successfully: {{ cockpit_version_check.stdout_lines | select('match', '.*cockpit.*') | list | first | default('Version info not found') }}"
 
     - name: Start and enable Cockpit service
       systemd:
         name: cockpit.socket
         state: started
         enabled: yes
+
+    - name: Wait for Cockpit to be ready
+      wait_for:
+        port: 9090
+        host: localhost
+        timeout: 30
 
     # ===========================================
     # WAZUH SECURITY MONITORING
@@ -669,17 +850,26 @@
         state: present
         allow_downgrade: yes
 
-    - name: Configure Wazuh agent (basic configuration)
+    - name: Configure Wazuh agent (standalone mode for lab)
       lineinfile:
         path: /var/ossec/etc/ossec.conf
         regexp: '<server>.*</server>'
-        line: '    <server>127.0.0.1</server>'
+        line: '    <!-- <server>127.0.0.1</server> -->'
+        backup: yes
 
-    - name: Enable Wazuh agent (don't start yet - needs server)
+    - name: Set Wazuh agent to local analysis mode
+      lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '<client_buffer>.*</client_buffer>'
+        line: '    <client_buffer>disabled</client_buffer>'
+        insertafter: '<ossec_config>'
+
+    - name: Enable Wazuh agent but keep stopped (lab environment)
       systemd:
         name: wazuh-agent
         enabled: yes
         state: stopped
+      ignore_errors: yes
 
     # ===========================================
     # FIREWALL CONFIGURATION
@@ -757,6 +947,65 @@
           4. Cockpit: Login with system user credentials
         dest: /root/lab-services-info.txt
         mode: '0644'
+
+    # ===========================================
+    # FINAL SERVICE VERIFICATION
+    # ===========================================
+    - name: Force all handlers to run now
+      meta: flush_handlers
+
+    - name: Wait for all services to be fully ready
+      pause:
+        seconds: 10
+
+    - name: Verify Apache service is running
+      systemd:
+        name: apache2
+      register: apache_status
+
+    - name: Verify MariaDB service is running
+      systemd:
+        name: mariadb
+      register: mariadb_status
+
+    - name: Verify Postfix service is running
+      systemd:
+        name: postfix
+      register: postfix_status
+
+    - name: Verify Cockpit service is running
+      systemd:
+        name: cockpit.socket
+      register: cockpit_status
+
+    - name: Check service ports
+      wait_for:
+        port: "{{ item.port }}"
+        host: localhost
+        timeout: 5
+      register: port_check
+      failed_when: false
+      loop:
+        - { port: 80, service: "Apache" }
+        - { port: 3306, service: "MariaDB" }
+        - { port: 9090, service: "Cockpit" }
+
+    - name: Display service status summary
+      debug:
+        msg:
+          - "=== SERVICE STATUS SUMMARY ==="
+          - "Apache: {{ 'RUNNING' if apache_status.status.ActiveState == 'active' else 'FAILED' }}"
+          - "MariaDB: {{ 'RUNNING' if mariadb_status.status.ActiveState == 'active' else 'FAILED' }}"
+          - "Postfix: {{ 'RUNNING' if postfix_status.status.ActiveState == 'active' else 'FAILED' }}"
+          - "Cockpit: {{ 'RUNNING' if cockpit_status.status.ActiveState == 'active' else 'FAILED' }}"
+          - ""
+          - "Port Check Results:"
+          - "{% for result in port_check.results -%}
+             {{ result.item.service }} Port {{ result.item.port }}: {{ 'OPEN' if result.failed == false else 'CLOSED' }}
+             {% endfor %}"
+          - ""
+          - "Lab environment setup complete!"
+          - "Check /root/lab-services-info.txt for detailed service information"
 
   handlers:
     - name: restart apache
