@@ -274,7 +274,12 @@ The playbook uses a sophisticated version management system that allows switchin
 
 ### Step 3: Deploy Vulnerable Lab Environment
 
-#### 3.1 Test Connectivity First
+#### 3.1 Mount Docker into the ansible-control-node
+```powershell
+docker build -t ansible-control-node .
+```
+
+#### 3.2 Test Connectivity First
 ```powershell
 # Test SSH connection to Ubuntu VM
 docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ssh -o StrictHostKeyChecking=no -i /ansible/Keys/vps_key -p 2222 noah@host.docker.internal 'echo Connection successful'"
@@ -283,7 +288,7 @@ docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "
 docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible all -i /ansible/inventory.ini -m ping"
 ```
 
-#### 3.2 Deploy Clean Base System
+#### 3.3 Deploy Clean Base System
 ```powershell
 # Method 1: Using PowerShell script (Recommended)
 .\run_clean.ps1
@@ -293,24 +298,6 @@ docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "
 
 # Method 3: With verbose output for debugging
 docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini -v"
-```
-
-#### 3.3 Deploy Specific Vulnerability Profile (Not Implemented/ Testing Something so IGNORE)
-```powershell
-# Deploy highly vulnerable environment
-.\run_vulnerability_profile.ps1 -Profile "highly_vulnerable"
-
-# Deploy moderately vulnerable environment
-.\run_vulnerability_profile.ps1 -Profile "vulnerable"
-
-# Deploy secure baseline
-.\run_vulnerability_profile.ps1 -Profile "secure"
-```
-
-#### 3.4 Add Additional Vulnerabilities (Not Implemented/ Testing Something so IGNORE)
-```powershell
-# Introduce more vulnerabilities for advanced testing
-.\run_vulnerable.ps1
 ```
 
 ### Step 4: Access Deployed Services
@@ -347,7 +334,7 @@ sudo systemctl status wazuh-agent
 ls -la /var/www/
 ```
 
-#### 5.2 Verify Versions (Important for Vulnerability Testing)
+#### 5.2 Verify Versions
 ```bash
 # Check installed versions
 /usr/local/bin/gitea --version        # Should show 1.17.3
@@ -359,44 +346,8 @@ php --version                         # Check PHP version
 #### 5.3 Test Web Applications
 - Browse to each web application URL
 - Verify they load correctly
-- Check for expected vulnerable behavior (if using vulnerable profiles)
+- Check for expected vulnerable behavior
 
-## Vulnerability Profiles System (TESTING, SKIP!!!)
-
-### Available Profiles
-
-The system includes three pre-configured vulnerability profiles:
-
-#### 1. **Secure Profile**
-- Latest versions of all software
-- Security hardening enabled
-- Minimal attack surface
-- **Use Case**: Baseline security testing
-
-#### 2. **Vulnerable Profile**  
-- Mix of current and older versions
-- Some known vulnerabilities
-- Moderate attack surface
-- **Use Case**: Intermediate penetration testing
-
-#### 3. **Highly Vulnerable Profile**
-- Older versions with known CVEs
-- Multiple vulnerability vectors
-- Maximum attack surface
-- **Use Case**: Advanced security training and exploit development
-
-### Profile Management
-
-```powershell
-# List available profiles
-Get-Content .\vulnerability-profiles.yml
-
-# Deploy specific profile
-.\run_vulnerability_profile.ps1 -Profile "vulnerable"
-
-# Check current profile status
-# (Profile information is displayed after deployment)
-```
 
 ## Troubleshooting Guide
 

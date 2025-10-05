@@ -850,26 +850,182 @@
         state: present
         allow_downgrade: yes
 
-    - name: Configure Wazuh agent (standalone mode for lab)
-      lineinfile:
-        path: /var/ossec/etc/ossec.conf
-        regexp: '<server>.*</server>'
-        line: '    <!-- <server>127.0.0.1</server> -->'
+    - name: Create Wazuh agent configuration for standalone lab mode
+      copy:
+        content: |
+          <!--
+          Wazuh Agent Configuration for Educational Lab Environment
+          Running in standalone mode for security learning purposes
+          -->
+          <ossec_config>
+            <client>
+              <server>
+                <address>127.0.0.1</address>
+                <port>1514</port>
+                <protocol>tcp</protocol>
+              </server>
+              <config-profile>ubuntu, ubuntu20, ubuntu20.04</config-profile>
+              <notify_time>10</notify_time>
+              <time-reconnect>60</time-reconnect>
+              <auto_restart>yes</auto_restart>
+              <crypto_method>aes</crypto_method>
+            </client>
+
+            <client_buffer>
+              <disabled>no</disabled>
+              <queue_size>5000</queue_size>
+              <events_per_second>500</events_per_second>
+            </client_buffer>
+
+            <!-- File integrity monitoring -->
+            <syscheck>
+              <disabled>no</disabled>
+              <frequency>43200</frequency>
+              <scan_on_start>yes</scan_on_start>
+              
+              <!-- Files/directories to monitor -->
+              <directories>/etc,/usr/bin,/usr/sbin</directories>
+              <directories>/bin,/sbin,/boot</directories>
+              
+              <!-- Files/directories to ignore -->
+              <ignore>/etc/mtab</ignore>
+              <ignore>/etc/hosts.deny</ignore>
+              <ignore>/etc/mail/statistics</ignore>
+              <ignore>/etc/random-seed</ignore>
+              <ignore>/etc/random.seed</ignore>
+              <ignore>/etc/adjtime</ignore>
+              <ignore>/etc/httpd/logs</ignore>
+              <ignore>/etc/utmpx</ignore>
+              <ignore>/etc/wtmpx</ignore>
+              <ignore>/etc/cups/certs</ignore>
+              <ignore>/etc/dumpdates</ignore>
+              <ignore>/etc/svc/volatile</ignore>
+            </syscheck>
+
+            <!-- Rootcheck - Policy monitoring -->
+            <rootcheck>
+              <disabled>no</disabled>
+              <check_files>yes</check_files>
+              <check_trojans>yes</check_trojans>
+              <check_dev>yes</check_dev>
+              <check_sys>yes</check_sys>
+              <check_pids>yes</check_pids>
+              <check_ports>yes</check_ports>
+              <check_if>yes</check_if>
+              
+              <!-- Frequency that rootcheck is executed - every 12 hours -->
+              <frequency>43200</frequency>
+              
+              <rootkit_files>/var/ossec/etc/rootcheck/rootkit_files.txt</rootkit_files>
+              <rootkit_trojans>/var/ossec/etc/rootcheck/rootkit_trojans.txt</rootkit_trojans>
+              
+              <system_audit>/var/ossec/etc/rootcheck/system_audit_rcl.txt</system_audit>
+              <system_audit>/var/ossec/etc/rootcheck/system_audit_ssh.txt</system_audit>
+              <system_audit>/var/ossec/etc/rootcheck/cis_debian_linux_rcl.txt</system_audit>
+            </rootcheck>
+
+            <!-- OpenSCAP -->
+            <wodle name="open-scap">
+              <disabled>yes</disabled>
+              <timeout>1800</timeout>
+              <interval>1d</interval>
+              <scan-on-start>yes</scan-on-start>
+            </wodle>
+
+            <!-- CIS-CAT -->
+            <wodle name="cis-cat">
+              <disabled>yes</disabled>
+              <timeout>1800</timeout>
+              <interval>1d</interval>
+              <scan-on-start>yes</scan-on-start>
+            </wodle>
+
+            <!-- Osquery -->
+            <wodle name="osquery">
+              <disabled>yes</disabled>
+              <run_daemon>yes</run_daemon>
+              <log_path>/var/log/osquery/osqueryd.results.log</log_path>
+              <config_path>/etc/osquery/osquery.conf</config_path>
+              <ad_labels>yes</ad_labels>
+            </wodle>
+
+            <!-- System inventory -->
+            <wodle name="syscollector">
+              <disabled>no</disabled>
+              <interval>1h</interval>
+              <scan_on_start>yes</scan_on_start>
+              <hardware>yes</hardware>
+              <os>yes</os>
+              <network>yes</network>
+              <packages>yes</packages>
+              <ports all="no">yes</ports>
+              <processes>yes</processes>
+            </wodle>
+
+            <!-- Active response -->
+            <active-response>
+              <disabled>no</disabled>
+              <ca_store>/var/ossec/etc/wpk_root.pem</ca_store>
+              <ca_verification>yes</ca_verification>
+            </active-response>
+
+            <!-- Log analysis -->
+            <localfile>
+              <log_format>command</log_format>
+              <command>df -P</command>
+              <frequency>360</frequency>
+            </localfile>
+
+            <localfile>
+              <log_format>full_command</log_format>
+              <command>netstat -tulpn | sed 's/\([[:alnum:]]\+\)\ \+[[:digit:]]\+\ \+[[:digit:]]\+\ \+\(.*\):\([[:digit:]]*\)\ \+\([0-9\.\:\*]\+\).\+\ \([[:digit:]]*\/[[:alnum:]\-]*\).*/\1 \2 \3 \4 \5/' | sort -k 4 -g | sed 's/.*[[:space:]]\([[:digit:]]*\/[[:alnum:]\-]*\)/\1/' | sort | uniq</command>
+              <alias>netstat listening ports</alias>
+              <frequency>360</frequency>
+            </localfile>
+
+            <localfile>
+              <log_format>syslog</log_format>
+              <location>/var/log/auth.log</location>
+            </localfile>
+
+            <localfile>
+              <log_format>syslog</log_format>
+              <location>/var/log/syslog</location>
+            </localfile>
+
+            <localfile>
+              <log_format>syslog</log_format>
+              <location>/var/log/dpkg.log</location>
+            </localfile>
+
+            <localfile>
+              <log_format>syslog</log_format>
+              <location>/var/log/kern.log</location>
+            </localfile>
+
+            <!-- Apache logs -->
+            <localfile>
+              <log_format>apache</log_format>
+              <location>/var/log/apache2/error.log</location>
+            </localfile>
+
+            <localfile>
+              <log_format>apache</log_format>
+              <location>/var/log/apache2/access.log</location>
+            </localfile>
+
+          </ossec_config>
+        dest: /var/ossec/etc/ossec.conf
+        owner: root
+        group: wazuh
+        mode: '0644'
         backup: yes
 
-    - name: Set Wazuh agent to local analysis mode
-      lineinfile:
-        path: /var/ossec/etc/ossec.conf
-        regexp: '<client_buffer>.*</client_buffer>'
-        line: '    <client_buffer>disabled</client_buffer>'
-        insertafter: '<ossec_config>'
-
-    - name: Enable Wazuh agent but keep stopped (lab environment)
+    - name: Start and enable Wazuh agent (lab mode with local monitoring)
       systemd:
         name: wazuh-agent
         enabled: yes
-        state: stopped
-      ignore_errors: yes
+        state: started
 
     # ===========================================
     # FIREWALL CONFIGURATION
