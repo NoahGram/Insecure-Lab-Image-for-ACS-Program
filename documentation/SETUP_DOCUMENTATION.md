@@ -8,9 +8,9 @@ This documentation describes the complete setup and operation of a vulnerable la
 
 ```
 ┌─────────────────────┐    Docker    ┌──────────────────────┐    SSH:2222    ┌─────────────────┐
-│   Windows Host      │ ◄─────────► │  Ansible Container   │ ◄────────────► │   Ubuntu VM     │
-│   Docker + WSL2    │             │  (Control Node)      │                │   VirtualBox    │
-└─────────────────────┘             └──────────────────────┘                └─────────────────┘
+│   Windows Host      │ ◄─────────►  │  Ansible Container   │ ◄────────────► │   Ubuntu VM     │
+│   Docker + WSL2     │              │  (Control Node)      │                │   VirtualBox    │
+└─────────────────────┘              └──────────────────────┘                └─────────────────┘
 ```
 
 ### Components:
