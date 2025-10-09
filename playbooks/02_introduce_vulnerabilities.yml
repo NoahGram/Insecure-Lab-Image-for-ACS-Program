@@ -6,12 +6,12 @@
     # Load vulnerability profile (change this to switch profiles)
     vulnerability_profile: "vulnerable_profile"  # Options: secure_profile, vulnerable_profile, highly_vulnerable_profile
     mysql_root_password: "CleanLabPassword123!"
-    
+
   tasks:
     # ===========================================
     # INTRODUCE WEB VULNERABILITIES
     # ===========================================
-    - name: Create vulnerable web pages for testing
+    - name: "Create vulnerable web pages for testing"
       copy:
         content: |
           <?php
@@ -61,19 +61,16 @@
         owner: www-data
         group: www-data
         mode: '0644'
-        regexp: '^\s*#?server_tokens off;'
-        line: 'server_tokens on;'
         state: present
-        backrefs: yes # Use backrefs to replace the commented line
 
-    - name: Vuln 2: Create a Vague Account ('backupman') with weak privileges
+    - name: "Vuln 2: Create a Vague Account ('backupman') with weak privileges"
       ansible.builtin.user:
         name: backupman
-        password: "$6$rounds=65536$somesalt$WEAK_PASS_HASH_HERE" # Use 'ansible-vault' in a real scenario
+        password: "$6$rounds=65536$somesalt$WEAK_PASS_HASH_HERE"
         shell: /bin/bash
-        groups: sudo # Grant unnecessary sudo access
+        groups: sudo
         state: present
-        
+
     - name: Create vulnerable upload directory
       file:
         path: /var/www/html/uploads
@@ -149,24 +146,7 @@
     # ===========================================
     # DATABASE VULNERABILITIES
     # ===========================================
-    - name: Create vulnerable database with weak credentials
-      mysql_db:
-        name: testdb
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-
-    - name: Create database user with weak password
-      mysql_user:
-        name: testuser
-        password: "testpass"
-        priv: "testdb.*:ALL"
-        host: "%"  # Allow connections from any host - VULNERABILITY
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-
-    - name: Create vulnerable database table with sample data
+    - name: Create vulnerable database table
       mysql_query:
         login_user: root
         login_password: "{{ mysql_root_password }}"
@@ -179,13 +159,18 @@
             email VARCHAR(100),
             role VARCHAR(20)
           );
-          
+
+    - name: Insert sample data into users table
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
           INSERT IGNORE INTO users (id, username, password, email, role) VALUES
           (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
           (2, 'john', 'password', 'john@lab.local', 'user'),
           (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
           (4, 'test', 'test123', 'test@lab.local', 'user');
-
     # ===========================================
     # CONFIGURE VULNERABLE SERVICES
     # ===========================================
