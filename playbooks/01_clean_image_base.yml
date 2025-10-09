@@ -25,9 +25,9 @@
   tasks:
     - name: Ensure the system is updated
       ansible.builtin.apt:
-        update_cache: yes
-        upgrade: dist
-        autoremove: yes
+        update_cache: yes   # Equivalent to 'apt update'
+        upgrade: dist       # Equivalent to 'apt dist-upgrade'
+        autoremove: yes     # Clean up unused packages
 
     - name: Install base required packages
       ansible.builtin.apt:
@@ -192,14 +192,14 @@
 
                       <div class="service-card">
                           <h3>🔧 Git Server (Gitea)</h3>
-                          <p><a href="/gitea/">Gitea Git Server</a></p>
+                          <p><a href="https://localhost:3000/">Gitea Git Server</a></p>
                           <div class="version-info">Version: 1.17.3</div>
                           <div class="cve-info">CVE-2022-4188: Authentication bypass</div>
                       </div>
 
                       <div class="service-card">
                           <h3>🖥️ System Monitor (Cockpit)</h3>
-                          <p><a href="/cockpit/">System Dashboard</a></p>
+                          <p><a href="https://localhost:9090/">System Dashboard</a></p>
                           <div class="version-info">WebSocket-based interface</div>
                           <div class="cve-info">Login with Ubuntu system credentials</div>
                       </div>
@@ -541,25 +541,36 @@
         group: www-data
         recurse: yes
 
-    - name: Create DokuWiki Apache virtual host
+    - name: Create DokuWiki Apache configuration (subdirectory access)
       copy:
         content: |
-          <VirtualHost *:80>
-              ServerName dokuwiki.lab.local
-              DocumentRoot /var/www/dokuwiki
+          # DokuWiki configuration for subdirectory access
+          Alias /dokuwiki /var/www/dokuwiki
+          
+          <Directory /var/www/dokuwiki>
+              AllowOverride All
+              Require all granted
               
-              <Directory /var/www/dokuwiki>
-                  AllowOverride All
-                  Require all granted
-              </Directory>
+              # DokuWiki specific settings
+              <Files ~ "^\.">
+                  Require all denied
+              </Files>
               
-              ErrorLog ${APACHE_LOG_DIR}/dokuwiki_error.log
-              CustomLog ${APACHE_LOG_DIR}/dokuwiki_access.log combined
-          </VirtualHost>
-        dest: /etc/apache2/sites-available/dokuwiki.conf
+              <Files ~ "\.(tgz|tar|gz)$">
+                  Require all denied
+              </Files>
+          </Directory>
+          
+          # Custom error and access logs for DokuWiki
+          LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" dokuwiki_combined
+          CustomLog ${APACHE_LOG_DIR}/dokuwiki_access.log dokuwiki_combined env=dokuwiki_request
+          
+          # Set environment variable for DokuWiki requests
+          SetEnvIf Request_URI "^/dokuwiki" dokuwiki_request
+        dest: /etc/apache2/conf-available/dokuwiki.conf
 
-    - name: Enable DokuWiki site
-      command: a2ensite dokuwiki.conf
+    - name: Enable DokuWiki configuration
+      command: a2enconf dokuwiki.conf
       notify: restart apache
 
     # ===========================================
