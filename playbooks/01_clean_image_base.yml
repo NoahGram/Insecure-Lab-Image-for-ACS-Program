@@ -192,14 +192,14 @@
 
                       <div class="service-card">
                           <h3>🔧 Git Server (Gitea)</h3>
-                          <p><a href="https://localhost:3000/">Gitea Git Server</a></p>
-                          <div class="version-info">Version: 1.17.3</div>
-                          <div class="cve-info">CVE-2022-4188: Authentication bypass</div>
+                          <p><a href="http://localhost:3000/" target="_blank">Gitea Git Server</a></p>
+                          <div class="version-info">Version: {{ gitea_version }}</div>
+                          <div class="cve-info">Access via port 3000 - Complete setup required</div>
                       </div>
 
                       <div class="service-card">
                           <h3>🖥️ System Monitor (Cockpit)</h3>
-                          <p><a href="https://localhost:9090/">System Dashboard</a></p>
+                          <p><a href="https://localhost:9090/" target="_blank">System Dashboard</a></p>
                           <div class="version-info">WebSocket-based interface</div>
                           <div class="cve-info">Login with Ubuntu system credentials</div>
                       </div>
@@ -653,25 +653,36 @@
         login_user: root
         login_password: "{{ mysql_root_password }}"
 
-    - name: Create MantisBT Apache virtual host
+    - name: Create MantisBT Apache configuration (subdirectory access)
       copy:
         content: |
-          <VirtualHost *:80>
-              ServerName mantisbt.lab.local
-              DocumentRoot /var/www/mantisbt
+          # MantisBT configuration for subdirectory access
+          Alias /mantisbt /var/www/mantisbt
+          
+          <Directory /var/www/mantisbt>
+              AllowOverride All
+              Require all granted
               
-              <Directory /var/www/mantisbt>
-                  AllowOverride All
-                  Require all granted
-              </Directory>
+              # MantisBT specific settings
+              <Files ~ "^\.">
+                  Require all denied
+              </Files>
               
-              ErrorLog ${APACHE_LOG_DIR}/mantisbt_error.log
-              CustomLog ${APACHE_LOG_DIR}/mantisbt_access.log combined
-          </VirtualHost>
-        dest: /etc/apache2/sites-available/mantisbt.conf
+              <Files ~ "\.(tgz|tar|gz)$">
+                  Require all denied
+              </Files>
+          </Directory>
+          
+          # Custom error and access logs for MantisBT
+          LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" mantisbt_combined
+          CustomLog ${APACHE_LOG_DIR}/mantisbt_access.log mantisbt_combined env=mantisbt_request
+          
+          # Set environment variable for MantisBT requests
+          SetEnvIf Request_URI "^/mantisbt" mantisbt_request
+        dest: /etc/apache2/conf-available/mantisbt.conf
 
-    - name: Enable MantisBT site
-      command: a2ensite mantisbt.conf
+    - name: Enable MantisBT configuration
+      command: a2enconf mantisbt.conf
       notify: restart apache
 
     # ===========================================
@@ -1145,6 +1156,17 @@
         name: cockpit.socket
       register: cockpit_status
 
+    - name: Start Gitea service (ensure it's running)
+      systemd:
+        name: gitea
+        state: started
+        enabled: yes
+
+    - name: Verify Gitea service is running
+      systemd:
+        name: gitea
+      register: gitea_status
+
     - name: Check service ports
       wait_for:
         port: "{{ item.port }}"
@@ -1155,6 +1177,7 @@
       loop:
         - { port: 80, service: "Apache" }
         - { port: 3306, service: "MariaDB" }
+        - { port: 3000, service: "Gitea" }
         - { port: 9090, service: "Cockpit" }
 
     - name: Display service status summary
@@ -1164,6 +1187,7 @@
           - "Apache: {{ 'RUNNING' if apache_status.status.ActiveState == 'active' else 'FAILED' }}"
           - "MariaDB: {{ 'RUNNING' if mariadb_status.status.ActiveState == 'active' else 'FAILED' }}"
           - "Postfix: {{ 'RUNNING' if postfix_status.status.ActiveState == 'active' else 'FAILED' }}"
+          - "Gitea: {{ 'RUNNING' if gitea_status.status.ActiveState == 'active' else 'FAILED' }}"
           - "Cockpit: {{ 'RUNNING' if cockpit_status.status.ActiveState == 'active' else 'FAILED' }}"
           - ""
           - "Port Check Results:"
