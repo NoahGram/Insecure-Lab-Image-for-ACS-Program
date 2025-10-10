@@ -1,152 +1,387 @@
 ---
-- name: 02 - Introduce Controlled Vulnerabilities for Penetration Testing
+- name: 02 - Deploy System Management Portal (Vulnerable Training Environment)
   hosts: vps_lab
   gather_facts: yes
   vars:
-    # Load vulnerability profile (change this to switch profiles)
-    vulnerability_profile: "vulnerable_profile"  # Options: secure_profile, vulnerable_profile, highly_vulnerable_profile
     mysql_root_password: "CleanLabPassword123!"
 
   tasks:
     # ===========================================
-    # INTRODUCE WEB VULNERABILITIES
+    # INSTALL DEPENDENCIES
     # ===========================================
-    - name: "Create vulnerable web pages for testing"
+    - name: Ensure Apache, PHP, and MySQL are installed
+      apt:
+        name:
+          - apache2
+          - php
+          - php-mysqli
+          - mariadb-server
+        state: present
+        update_cache: yes
+
+    # ===========================================
+    # DEPLOY WEB PORTAL (Looks legit, but vulnerable)
+    # ===========================================
+    - name: "Deploy System Management Portal (accessible theme)"
       copy:
         content: |
-          <?php
-          // VULNERABLE PHP SCRIPT - FOR TESTING ONLY
-          // This script contains intentional vulnerabilities
-          
-          echo "<h1>Vulnerable Test Page</h1>";
-          
-          // SQL Injection vulnerability
-          if (isset($_GET['id'])) {
-              $id = $_GET['id'];
-              $query = "SELECT * FROM users WHERE id = " . $id; // Vulnerable to SQL injection
-              echo "<p>Query: " . $query . "</p>";
-          }
-          
-          // XSS vulnerability
-          if (isset($_GET['name'])) {
-              echo "<p>Hello " . $_GET['name'] . "</p>"; // Vulnerable to XSS
-          }
-          
-          // Command injection vulnerability  
-          if (isset($_POST['ping'])) {
-              $host = $_POST['host'];
-              $output = shell_exec('ping -c 1 ' . $host); // Vulnerable to command injection
-              echo "<pre>" . $output . "</pre>";
-          }
-          
-          // File inclusion vulnerability
-          if (isset($_GET['page'])) {
-              include($_GET['page']); // Vulnerable to LFI/RFI
-          }
-          
-          ?>
-          
-          <h2>Test Forms</h2>
-          <form method="GET">
-              <label>Test XSS: <input type="text" name="name"></label>
-              <input type="submit" value="Submit">
-          </form>
-          
-          <form method="POST">
-              <label>Test Command Injection: <input type="text" name="host" value="127.0.0.1"></label>
-              <input type="hidden" name="ping" value="1">
-              <input type="submit" value="Ping">
-          </form>
-        dest: /var/www/html/vulnerable.php
+          <!--
+          VULNERABLE LAB PORTAL
+          Filename: vulnerable_lab_portal.html (PHP)
+
+          Purpose: single-file, "legit-looking" internal system portal for training.
+          Contains INTENTIONAL vulnerabilities for education and pentesting practice.
+          DO NOT DEPLOY TO PRODUCTION. Use only in an isolated lab.
+          -->
+
+          <!doctype html>
+          <html lang="nl">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Enterprise System Console</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+            <style>
+              :root{--bg:#f7fafc;--card:#ffffff;--muted:#6b7280;--text:#0f172a;--accent:#0ea5e9;--radius:12px;--max-width:1100px}
+              html,body{height:100%;}
+              body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#eef2f7,#ffffff);color:var(--text);padding:24px}
+              .container{max-width:var(--max-width);margin:0 auto}
+              header{display:flex;align-items:center;justify-content:space-between}
+              .brand{display:flex;gap:12px;align-items:center}
+              .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#0284c7);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+              h1{margin:0;font-size:1.25rem}
+              .lead{color:var(--muted);margin-top:4px}
+              .grid{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:18px}
+              @media (max-width:900px){.grid{grid-template-columns:1fr}}
+              .card{background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:0 8px 24px rgba(2,6,23,0.04);border:1px solid rgba(2,6,23,0.03)}
+              label{display:block;font-weight:600;margin-bottom:6px}
+              input[type="text"], input[type="password"], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef6;background:#fff}
+              .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;background:var(--accent);color:#fff}
+              .muted{color:var(--muted)}
+              pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
+              nav a{margin-left:8px;text-decoration:none;color:var(--accent)}
+            </style>
+          </head>
+          <body>
+            <?php
+            /*
+            * Simple single-file portal: intentionally insecure.
+            * - SQLi: unsanitized query building
+            * - XSS: user input echoed without proper context (some places htmlspecialchar used, others not)
+            * - Command injection: shell_exec using user-supplied host
+            * - File upload: no validation, files served from /uploads
+            * - SSRF: server fetches URL from user-provided param without whitelist
+            * - Open redirect: redirect_to param used directly
+            * - Broken access control: role controlled by hidden fields / URL param
+            * - Auth: weak passwords, session fixation, insecure reset token
+            * - No logging/monitoring (intentionally omitted)
+            */
+
+            session_start();
+
+            // Session fixation demonstration: allow setting SID via GET (VERY insecure)
+            if (isset($_GET['sid'])) {
+                session_id($_GET['sid']); // intentional
+                session_start();
+            }
+
+            // Simple "user database" (insecure defaults)
+            $DB_HOST = 'localhost';
+            $DB_USER = 'root';
+            $DB_PASS = 'CleanLabPassword123!';
+            $DB_NAME = 'testdb';
+
+            function db_connect() {
+                global $DB_HOST, $DB_USER, $DB_PASS, $DB_NAME;
+                $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+                if ($conn->connect_error) {
+                    return null;
+                }
+                return $conn;
+            }
+
+            // Very small "auth" check: username/password via POST; no rate-limit, weak passwords
+            if (isset($_POST['action']) && $_POST['action'] === 'login') {
+                $u = $_POST['username'] ?? '';
+                $p = $_POST['password'] ?? '';
+                // insecure: plaintext password check from DB
+                $conn = db_connect();
+                if ($conn) {
+                    $q = "SELECT * FROM users WHERE username = '" . $conn->real_escape_string($u) . "' LIMIT 1";
+                    $r = $conn->query($q);
+                    if ($r && $row = $r->fetch_assoc()) {
+                        if ($row['password'] === $p) { // INSECURE: plain comparison
+                            $_SESSION['user'] = $row['username'];
+                            $_SESSION['role'] = 'user';
+                            // Demonstrate session fixation: don't regenerate id
+                        } else {
+                            $login_error = 'Ongeldige inloggegevens';
+                        }
+                    } else {
+                        $login_error = 'Ongeldige inloggegevens';
+                    }
+                }
+            }
+
+            // Simple logout
+            if (isset($_GET['logout'])) { session_destroy(); header('Location: /'); exit; }
+
+            ?>
+
+            <div class="container" role="application" aria-label="Enterprise Console">
+              <header>
+                <div class="brand">
+                  <div class="logo">EC</div>
+                  <div>
+                    <h1>Enterprise System Console</h1>
+                    <div class="lead">Internal admin portal — diagnostics & support (lab environment)</div>
+                  </div>
+                </div>
+                <nav>
+                  <?php if (!empty($_SESSION['user'])) { ?>
+                    <span class="muted">Ingelogd als <?php echo htmlspecialchars($_SESSION['user']); ?></span>
+                    <a href="?logout=1">Logout</a>
+                  <?php } else { ?>
+                    <a href="#login">Login</a>
+                  <?php } ?>
+                  <a href="/server-status">Server Status</a>
+                  <a href="/server-info">Server Info</a>
+                </nav>
+              </header>
+
+              <div class="grid">
+                <main class="card">
+
+                  <!-- USER SEARCH (SQLi) -->
+                  <section>
+                    <h2>User directory</h2>
+                    <p class="muted">Zoek gebruikers op ID. (Intentional SQLi for training)</p>
+                    <form method="GET" action="">
+                      <label for="userid">User ID</label>
+                      <input id="userid" name="userid" type="text" placeholder="bijv. 1 or 1 OR 1=1" value="<?php echo isset($_GET['userid'])?htmlspecialchars($_GET['userid']):''; ?>">
+                      <button class="btn" type="submit">Zoek</button>
+                    </form>
+
+                    <?php
+                    if (isset($_GET['userid'])) {
+                        $conn = db_connect();
+                        if ($conn) {
+                            // INTENTIONAL VULN: directly concatenating user input (SQLi)
+                            $query = "SELECT id,username,email FROM users WHERE id = " . $_GET['userid'];
+                            echo '<pre class="results" aria-live="polite">';
+                            echo "Query: " . htmlspecialchars($query) . "\n\n"; // show query for training
+                            $res = $conn->query($query);
+                            if ($res) {
+                                while ($row = $res->fetch_assoc()) {
+                                    // NOTE: intentionally echoing values without encoding in one place to show XSS risk
+                                    echo "User: " . $row['username'] . " (" . $row['email'] . ")\n";
+                                }
+                            } else {
+                                echo "DB Error: " . $conn->error . "\n";
+                            }
+                            echo '</pre>';
+                            $conn->close();
+                        }
+                    }
+                    ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- PING TOOL (command injection) -->
+                  <section>
+                    <h2>Network diagnostics</h2>
+                    <p class="muted">Ping een host vanaf de server. (Command injection aanwezig)</p>
+                    <form method="POST" action="">
+                      <label for="pinghost">Host of IP</label>
+                      <input id="pinghost" name="pinghost" type="text" value="<?php echo isset($_POST['pinghost'])?htmlspecialchars($_POST['pinghost']):'127.0.0.1'; ?>">
+                      <input type="hidden" name="do_ping" value="1">
+                      <button class="btn" type="submit">Run Ping</button>
+                    </form>
+
+                    <?php
+                    if (isset($_POST['do_ping'])) {
+                        $host = $_POST['pinghost'];
+                        echo '<pre class="results" aria-live="polite">';
+                        // INTENTIONAL VULN: directly pass to shell_exec -> command injection
+                        $out = shell_exec('ping -c 1 ' . $host . ' 2>&1');
+                        echo $out;
+                        echo '</pre>';
+                    }
+                    ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- FILE UPLOAD (no validation) -->
+                  <section>
+                    <h2>Upload config / logs</h2>
+                    <p class="muted">Upload bestanden die beschikbaar worden gemaakt via /uploads/ (geen validatie)</p>
+                    <form method="POST" enctype="multipart/form-data">
+                      <label for="file">Bestand kiezen</label>
+                      <input id="file" name="file" type="file">
+                      <button class="btn" type="submit">Upload</button>
+                    </form>
+
+                    <?php
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+                        $uploaddir = __DIR__ . '/uploads/';
+                        if (!is_dir($uploaddir)) mkdir($uploaddir, 0777, true);
+                        $uploadfile = $uploaddir . basename($_FILES['file']['name']);
+                        if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)) {
+                            // Show direct link to uploaded file (RCE via PHP upload possible if extension allowed)
+                            echo '<div class="results">Bestand geüpload: <a href="uploads/' . rawurlencode(basename($_FILES['file']['name'])) . '">Bekijk</a></div>';
+                        } else {
+                            echo '<div class="results">Upload mislukt</div>';
+                        }
+                    }
+                    ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- SSRF / URL fetch -->
+                  <section>
+                    <h2>Fetch external resource</h2>
+                    <p class="muted">Ophalen van een URL (geen whitelist — SSRF mogelijk)</p>
+                    <form method="GET">
+                      <label for="fetchurl">URL om te fetchen</label>
+                      <input id="fetchurl" name="fetchurl" type="text" placeholder="https://example.com/" value="<?php echo isset($_GET['fetchurl'])?htmlspecialchars($_GET['fetchurl']):''; ?>">
+                      <button class="btn" type="submit">Fetch</button>
+                    </form>
+
+                    <?php
+                    if (!empty($_GET['fetchurl'])) {
+                        $url = $_GET['fetchurl'];
+                        echo '<pre class="results" aria-live="polite">';
+                        // INTENTIONAL: no whitelist or php:// filters prevented
+                        $content = @file_get_contents($url);
+                        if ($content === false) {
+                            echo "Kon niet ophalen: " . htmlspecialchars($url);
+                        } else {
+                            echo "Inhoud van: " . htmlspecialchars($url) . "\n\n";
+                            // show a snippet only
+                            echo htmlspecialchars(substr($content, 0, 800));
+                        }
+                        echo '</pre>';
+                    }
+                    ?>
+                  </section>
+
+                </main>
+
+                <aside class="card">
+                  <!-- LOGIN (weak) -->
+                  <section id="login">
+                    <h3>Login</h3>
+                    <?php if (!empty($login_error)) { echo '<div class="muted">' . htmlspecialchars($login_error) . '</div>'; } ?>
+                    <?php if (empty($_SESSION['user'])) { ?>
+                      <form method="POST" action="#login">
+                        <input type="hidden" name="action" value="login">
+                        <label for="username">Gebruikersnaam</label>
+                        <input id="username" name="username" type="text">
+                        <label for="password">Wachtwoord</label>
+                        <input id="password" name="password" type="password">
+                        <button class="btn" type="submit">Login</button>
+                      </form>
+                      <p class="muted">Voor training: gebruik gebruikers uit de sample DB (admin/admin123, jane/password, guest/guest)</p>
+                    <?php } else { ?>
+                      <p class="muted">Welkom, <?php echo htmlspecialchars($_SESSION['user']); ?></p>
+                    <?php } ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- BROKEN ACCESS CONTROL demo -->
+                  <section>
+                    <h3>Account role (hidden)</h3>
+                    <p class="muted">Rol wordt hier als hidden field gestuurd — kan gemanipuleerd worden (broken access control)</p>
+                    <form method="POST" action="/admin.php">
+                      <input type="hidden" name="role" value="user"> <!-- Aanpasbaar -> privilege escalation -->
+                      <label for="displayname">Display name</label>
+                      <input id="displayname" name="displayname" type="text">
+                      <button class="btn" type="submit">Update</button>
+                    </form>
+                  </section>
+
+                  <hr>
+
+                  <!-- OPEN REDIRECT -->
+                  <section>
+                    <h3>Quick links</h3>
+                    <p class="muted">Open redirect demo (redirect_to wordt direct gebruikt)</p>
+                    <form method="GET" action="">
+                      <label for="redirect_to">Redirect naar</label>
+                      <input id="redirect_to" name="redirect_to" type="text" placeholder="/dashboard or https://evil.example/">
+                      <button class="btn" type="submit">Ga</button>
+                    </form>
+
+                    <?php
+                    if (!empty($_GET['redirect_to'])) {
+                        // INTENTIONAL VULN: no validation
+                        header('Location: ' . $_GET['redirect_to']);
+                        exit;
+                    }
+                    ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- Password reset (insecure flow) -->
+                  <section>
+                    <h3>Reset wachtwoord</h3>
+                    <p class="muted">Insecure reset token flow (token in URL, no expiry validation)</p>
+                    <form method="GET" action="">
+                      <label for="reset_user">Gebruiker</label>
+                      <input id="reset_user" name="reset_user" type="text">
+                      <label for="reset_token">Token</label>
+                      <input id="reset_token" name="reset_token" type="text">
+                      <button class="btn" type="submit">Reset</button>
+                    </form>
+
+                    <?php
+                    if (!empty($_GET['reset_user']) && isset($_GET['reset_token'])) {
+                        // INTENTIONAL: accept any token and show password reset link
+                        echo '<div class="muted">Reset link voor ' . htmlspecialchars($_GET['reset_user']) . ': <a href="/do_reset.php?user=' . rawurlencode($_GET['reset_user']) . '&token=' . rawurlencode($_GET['reset_token']) . '">Reset now</a></div>';
+                    }
+                    ?>
+                  </section>
+
+                  <hr>
+
+                  <!-- Info: intentional disclosure -->
+                  <section>
+                    <h3>Lab notes</h3>
+                    <p class="muted">Deze applicatie bevat opzettelijk kwetsbaarheden voor trainingsdoeleinden. Niet in productie gebruiken.</p>
+                    <ul class="muted">
+                      <li>Voorbeelden: SQLi, XSS, Command injection, SSRF, RCE via uploads, Open redirect</li>
+                      <li>Sample scan: <code>sqlmap -u "http://localhost/?userid=1"</code></li>
+                      <li>Server tokens / signatures mogelijk ingeschakeld door Apache config.</li>
+                    </ul>
+                  </section>
+
+                </aside>
+              </div>
+
+              <!-- Footer with simulated diagnostic links -->
+              <footer style="margin-top:18px;text-align:center;" class="muted">
+                <small>Enterprise System Console — forensic / red-team lab (do not expose). Generated for training.</small>
+              </footer>
+            </div>
+
+          </body>
+          </html>
+        dest: /var/www/html/index.php
         owner: www-data
         group: www-data
         mode: '0644'
-        state: present
 
-    - name: "Vuln 2: Create a Vague Account ('backupman') with weak privileges"
-      ansible.builtin.user:
-        name: backupman
-        password: "$6$rounds=65536$somesalt$WEAK_PASS_HASH_HERE"
-        shell: /bin/bash
-        groups: sudo
-        state: present
-
-    - name: Create vulnerable upload directory
-      file:
-        path: /var/www/html/uploads
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0777'  # Intentionally permissive
-
-    - name: Create vulnerable file upload script
-      copy:
-        content: |
-          <?php
-          // VULNERABLE FILE UPLOAD - FOR TESTING ONLY
-          
-          if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-              $target_dir = "uploads/";
-              $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-              
-              // No file type validation - VULNERABILITY
-              if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-                  echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
-              } else {
-                  echo "Sorry, there was an error uploading your file.";
-              }
-          }
-          ?>
-          
-          <h2>Vulnerable File Upload</h2>
-          <form action="" method="post" enctype="multipart/form-data">
-              <label>Select file to upload:</label>
-              <input type="file" name="fileToUpload" required>
-              <input type="submit" value="Upload File" name="submit">
-          </form>
-          
-          <h3>Uploaded Files:</h3>
-          <?php
-          $files = scandir('uploads/');
-          foreach($files as $file) {
-              if($file != "." && $file != "..") {
-                  echo "<a href='uploads/$file'>$file</a><br>";
-              }
-          }
-          ?>
-        dest: /var/www/html/upload.php
-        owner: www-data
-        group: www-data
-        mode: '0644'
 
     # ===========================================
-    # WEAKEN SYSTEM SECURITY
+    # CREATE DATABASE (Still insecure)
     # ===========================================
-    - name: Create test users with weak passwords
-      user:
-        name: "{{ item.name }}"
-        password: "{{ item.password | password_hash('sha512') }}"
-        shell: /bin/bash
-        create_home: yes
-      loop:
-        - { name: "admin", password: "admin" }
-        - { name: "test", password: "test" }
-        - { name: "guest", password: "guest" }
-        - { name: "user", password: "password" }
-
-    - name: Add weak sudo privileges
-      lineinfile:
-        path: /etc/sudoers
-        line: "{{ item }}"
-        validate: 'visudo -cf %s'
-      loop:
-        - "admin ALL=(ALL) NOPASSWD:ALL"
-        - "test ALL=(ALL) ALL"
-
-    # ===========================================
-    # DATABASE VULNERABILITIES
-    # ===========================================
-    - name: Create vulnerable database table
+       # CREATE DATABASE (Still insecure) - FIXED: split into two tasks
+    - name: Create users table (single statement)
       mysql_query:
         login_user: root
         login_password: "{{ mysql_root_password }}"
@@ -156,120 +391,85 @@
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(50),
             password VARCHAR(50),
-            email VARCHAR(100),
-            role VARCHAR(20)
+            email VARCHAR(100)
           );
 
-    - name: Insert sample data into users table
+    - name: Insert sample users (one INSERT per loop item)
       mysql_query:
         login_user: root
         login_password: "{{ mysql_root_password }}"
         login_db: testdb
-        query: |
-          INSERT IGNORE INTO users (id, username, password, email, role) VALUES
-          (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
-          (2, 'john', 'password', 'john@lab.local', 'user'),
-          (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
-          (4, 'test', 'test123', 'test@lab.local', 'user');
-    # ===========================================
-    # CONFIGURE VULNERABLE SERVICES
-    # ===========================================
-    - name: Configure Apache with vulnerable settings
-      lineinfile:
-        path: /etc/apache2/apache2.conf
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
+        query: "INSERT IGNORE INTO users (id, username, password, email) VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}');"
       loop:
-        - { regexp: "^ServerTokens", line: "ServerTokens Full" }  # Expose version info
-        - { regexp: "^ServerSignature", line: "ServerSignature On" }  # Show server info in error pages
-      notify: restart apache
+        - { id: 1, username: 'admin', password: 'admin123', email: 'admin@portal.local' }
+        - { id: 2, username: 'jane',  password: 'password',  email: 'jane@portal.local' }
+        - { id: 3, username: 'guest', password: 'guest',     email: 'guest@portal.local' }
 
-    - name: Enable Apache server-info and server-status (information disclosure)
+    # ===========================================
+    # CREATE VULNERABLE USERS
+    # ===========================================
+    - name: Create test users
+      user:
+        name: "{{ item.name }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        shell: /bin/bash
+      loop:
+        - { name: "sysadmin", password: "admin" }
+        - { name: "guest", password: "guest" }
+        - { name: "backup", password: "backup123" }
+
+    # ===========================================
+    # APACHE CONFIGURATION (EXPOSE INFO)
+    # ===========================================
+    - name: Enable Apache Info Disclosure
       copy:
         content: |
           <Location "/server-info">
               SetHandler server-info
               Require all granted
           </Location>
-          
+
           <Location "/server-status">
               SetHandler server-status
               Require all granted
           </Location>
-        dest: /etc/apache2/conf-available/server-info.conf
+        dest: /etc/apache2/conf-available/info.conf
 
-    - name: Enable server-info configuration
-      command: a2enconf server-info
+    - name: Enable vulnerable Apache settings
+      lineinfile:
+        path: /etc/apache2/apache2.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^ServerTokens", line: "ServerTokens Full" }
+        - { regexp: "^ServerSignature", line: "ServerSignature On" }
+
+    - name: Enable info config and restart Apache
+      command: a2enconf info
       notify: restart apache
 
     # ===========================================
-    # CREATE VULNERABILITY DOCUMENTATION
+    # VULN DOC
     # ===========================================
-    - name: Create vulnerability assessment guide
+    - name: Create System Portal Documentation
       copy:
         content: |
-          ==============================================
-          VULNERABILITY ASSESSMENT LAB GUIDE
-          ==============================================
+          =========================================
+          SYSTEM MANAGEMENT PORTAL
+          =========================================
           
-          This system has been configured with intentional vulnerabilities
-          for educational and testing purposes.
+          This application is a simulated "System Management Dashboard" used for
+          training and penetration testing exercises. It looks like a real portal
+          but contains intentional flaws:
           
-          ⚠️  WARNING: This system should NEVER be exposed to the internet!
+          - SQL Injection via User Lookup
+          - Command Injection via Ping Tool
+          - File Upload vulnerability
+          - Weak MySQL credentials and local users
+          - Apache info disclosure enabled
           
-          ==============================================
-          INSTALLED VULNERABILITIES:
-          ==============================================
-          
-          Web Application Vulnerabilities:
-          --------------------------------
-          1. SQL Injection: /vulnerable.php?id=1' OR '1'='1
-          2. XSS: /vulnerable.php?name=<script>alert('XSS')</script>
-          3. Command Injection: /vulnerable.php (POST ping form)
-          4. File Upload: /upload.php (accepts any file type)
-          5. Directory Traversal: /vulnerable.php?page=../../../etc/passwd
-          
-          System Vulnerabilities:
-          ----------------------
-          1. Weak User Accounts:
-             - admin:admin (with sudo NOPASSWD)
-             - test:test (with sudo access)
-             - guest:guest
-             - user:password
-          
-          2. Database Vulnerabilities:
-             - testuser:testpass (remote access allowed)
-             - Unencrypted passwords in database
-             - Sample data with weak credentials
-          
-          3. Information Disclosure:
-             - Apache server info: /server-info
-             - Apache server status: /server-status
-             - Full server tokens enabled
-          
-          ==============================================
-          TESTING TOOLS SUGGESTIONS:
-          ==============================================
-          
-          Network Scanning:
-          - nmap -sV -sC {{ ansible_default_ipv4.address }}
-          - nmap -p- {{ ansible_default_ipv4.address }}
-          
-          Web Application Testing:
-          - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
-          - nikto -h {{ ansible_default_ipv4.address }}
-          - dirb http://{{ ansible_default_ipv4.address }}
-          
-          Password Attacks:
-          - hydra -l admin -P passwords.txt ssh://{{ ansible_default_ipv4.address }}
-          - hydra -l testuser -P passwords.txt mysql://{{ ansible_default_ipv4.address }}
-          
-          File Upload Testing:
-          - Upload PHP shell to /upload.php
-          - Access uploaded files at /uploads/
-          
-          ==============================================
-        dest: /root/vulnerability-guide.txt
+          Use responsibly in an isolated lab environment.
+        dest: /root/system_portal_info.txt
         mode: '0644'
 
   handlers:
