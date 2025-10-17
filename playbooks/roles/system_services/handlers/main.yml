@@ -1,0 +1,6 @@
+---
+# System Services Role - Handlers
+- name: restart postfix
+  systemd:
+    name: postfix
+    state: restarted

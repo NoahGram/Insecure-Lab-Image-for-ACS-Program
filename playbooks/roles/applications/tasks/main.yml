@@ -1,0 +1,94 @@
+---
+# Applications Role - Gitea, DokuWiki, MantisBT
+- name: Create gitea user
+  user:
+    name: gitea
+    system: yes
+    shell: /bin/bash
+    home: /home/gitea
+    create_home: yes
+
+- name: Create gitea directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: gitea
+    group: gitea
+    mode: '0755'
+  loop:
+    - /var/lib/gitea
+    - /etc/gitea
+
+- name: Download DokuWiki (stable version)
+  get_url:
+    url: "https://download.dokuwiki.org/src/dokuwiki/dokuwiki-stable.tgz"
+    dest: /tmp/dokuwiki.tgz
+    timeout: 30
+  retries: 3
+
+- name: Extract DokuWiki to web directory
+  unarchive:
+    src: /tmp/dokuwiki.tgz
+    dest: /var/www/
+    remote_src: yes
+    owner: www-data
+    group: www-data
+
+- name: Find and rename DokuWiki directory
+  shell: |
+    cd /var/www && 
+    if [ -d dokuwiki-* ]; then
+      mv dokuwiki-* dokuwiki 2>/dev/null || true
+    fi
+  ignore_errors: yes
+
+- name: Create DokuWiki Apache configuration
+  copy:
+    content: |
+      Alias /dokuwiki /var/www/dokuwiki
+      <Directory /var/www/dokuwiki>
+          AllowOverride All
+          Require all granted
+      </Directory>
+    dest: /etc/apache2/conf-available/dokuwiki.conf
+
+- name: Enable DokuWiki configuration
+  command: a2enconf dokuwiki
+  notify: restart apache
+
+- name: Download MantisBT
+  get_url:
+    url: "https://sourceforge.net/projects/mantisbt/files/mantis-stable/{{ mantisbt_version }}/mantisbt-{{ mantisbt_version }}.tar.gz/download"
+    dest: /tmp/mantisbt.tar.gz
+    timeout: 60
+  retries: 3
+
+- name: Extract MantisBT to web directory
+  unarchive:
+    src: /tmp/mantisbt.tar.gz
+    dest: /var/www/
+    remote_src: yes
+    owner: www-data
+    group: www-data
+
+- name: Find and rename MantisBT directory
+  shell: |
+    cd /var/www &&
+    if [ -d mantisbt-* ]; then
+      mv mantisbt-* mantisbt 2>/dev/null || true
+    fi
+  ignore_errors: yes
+
+- name: Create MantisBT Apache configuration  
+  copy:
+    content: |
+      Alias /mantisbt /var/www/mantisbt
+      <Directory /var/www/mantisbt>
+          AllowOverride All
+          Require all granted
+      </Directory>
+    dest: /etc/apache2/conf-available/mantisbt.conf
+
+- name: Enable MantisBT configuration
+  command: a2enconf mantisbt
+  notify: restart apache

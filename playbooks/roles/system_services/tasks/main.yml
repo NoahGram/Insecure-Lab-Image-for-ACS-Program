@@ -1,0 +1,74 @@
+---
+# System Services Role - Cockpit, Wazuh, Postfix
+- name: Install Postfix mail server
+  ansible.builtin.apt:
+    name: postfix
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Configure Postfix main settings
+  lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: "myhostname", value: "lab.local" }
+    - { key: "mydomain", value: "lab.local" }
+  notify: restart postfix
+
+- name: Start and enable Postfix
+  systemd:
+    name: postfix
+    state: started
+    enabled: yes
+
+- name: Install Cockpit system monitoring
+  ansible.builtin.apt:
+    name:
+      - cockpit
+      - cockpit-system
+      - cockpit-networkmanager
+    state: present
+
+- name: Start and enable Cockpit
+  systemd:
+    name: cockpit.socket
+    state: started
+    enabled: yes
+
+- name: Install Wazuh agent
+  block:
+    - name: Add Wazuh repository key
+      apt_key:
+        url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+        state: present
+    
+    - name: Add Wazuh repository
+      apt_repository:
+        repo: "deb https://packages.wazuh.com/4.x/apt/ stable main"
+        state: present
+    
+    - name: Install Wazuh agent
+      apt:
+        name: wazuh-agent
+        state: present
+        update_cache: yes
+  ignore_errors: yes
+
+- name: Configure UFW firewall
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+  loop:
+    - '22'
+    - '80'
+    - '443'
+    - '3000'
+    - '9090'
+  ignore_errors: yes
+
+- name: Enable UFW firewall
+  community.general.ufw:
+    state: enabled
+  ignore_errors: yes

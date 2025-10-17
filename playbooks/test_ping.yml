@@ -1,8 +1,0 @@
-# D:\ansible-control-node\test_ping.yml
----
-- name: Test connectivity to local host
-  hosts: local
-  gather_facts: no
-  tasks:
-    - name: Run a ping test
-      ansible.builtin.ping:

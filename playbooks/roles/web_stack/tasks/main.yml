@@ -1,0 +1,69 @@
+---
+# Web Stack Role - Apache, PHP installation and configuration
+- name: Stop and disable Nginx (if running) to free port 80
+  systemd:
+    name: nginx
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: Remove Nginx package to avoid conflicts
+  ansible.builtin.apt:
+    name: nginx
+    state: absent
+  ignore_errors: yes
+
+- name: Install Apache HTTP Server and PHP modules
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - "{% if php_version == 'latest' %}php{% else %}php{{ php_version }}{% endif %}"
+      - "{% if php_version == 'latest' %}php-mysql{% else %}php{{ php_version }}-mysql{% endif %}"
+      - "{% if php_version == 'latest' %}php-xml{% else %}php{{ php_version }}-xml{% endif %}"
+      - "{% if php_version == 'latest' %}php-gd{% else %}php{{ php_version }}-gd{% endif %}"
+      - "{% if php_version == 'latest' %}php-mbstring{% else %}php{{ php_version }}-mbstring{% endif %}"
+      - "{% if php_version == 'latest' %}php-curl{% else %}php{{ php_version }}-curl{% endif %}"
+      - "{% if php_version == 'latest' %}php-zip{% else %}php{{ php_version }}-zip{% endif %}"
+      - "{% if php_version == 'latest' %}php-intl{% else %}php{{ php_version }}-intl{% endif %}"
+      - "{% if php_version == 'latest' %}php-ldap{% else %}php{{ php_version }}-ldap{% endif %}"
+      - "{% if php_version == 'latest' %}libapache2-mod-php{% else %}libapache2-mod-php{{ php_version }}{% endif %}"
+    state: present
+
+- name: Set Apache ServerName to suppress warnings
+  lineinfile:
+    path: /etc/apache2/apache2.conf
+    line: "ServerName lab.local"
+    create: yes
+
+- name: Enable Apache modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rewrite
+    - ssl
+    - headers
+  notify: restart apache
+
+- name: Start and enable Apache service
+  systemd:
+    name: apache2
+    state: started
+    enabled: yes
+
+- name: Create lab environment landing page
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: www-data
+    group: www-data
+
+- name: Enable Apache proxy modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - proxy
+    - proxy_http
+    - proxy_wstunnel
+  notify: restart apache
