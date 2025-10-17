@@ -1,0 +1,321 @@
+---
+- name: 02 - Deploy LabSys Wiki Portal (Vulnerable Training Environment)
+  hosts: vps_lab
+  gather_facts: yes
+  vars:
+    mysql_root_password: "CleanLabPassword123!"
+
+  tasks:
+
+    # ===========================================
+    # INSTALL DEPENDENCIES
+    # ===========================================
+    - name: Ensure Apache, PHP, and MySQL are installed
+      apt:
+        name:
+          - apache2
+          - php
+          - php-mysqli
+          - mariadb-server
+        state: present
+        update_cache: yes
+
+    # ===========================================
+    # DEPLOY WIKI PORTAL (Training Lab)
+    # ===========================================
+    - name: Deploy LabSys Wiki Portal (No Login Check)
+      copy:
+        dest: /var/www/html/index.php
+        owner: www-data
+        group: www-data
+        mode: '0644'
+        content: |
+          <!doctype html>
+          <html lang="nl">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>LabSys Wiki — Internal Knowledgebase</title>
+          <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,300&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+          <style>
+          :root{
+            --bg: #f7f8fb;
+            --panel: #ffffff;
+            --muted: #6b7280;
+            --text: #111827;
+            --accent: #1f6feb;
+            --accent-600: #184ea8;
+            --radius: 8px;
+            --max-width:1000px;
+            --sidebar-width:260px;
+          }
+          html,body{height:100%;}
+          body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text);padding:24px}
+          .wrap{max-width:var(--max-width);margin:0 auto;display:grid;grid-template-columns:1fr var(--sidebar-width);gap:18px}
+          header{grid-column:1 / span 2;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+          .brand{display:flex;gap:12px;align-items:center}
+          .logo{width:46px;height:46px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent-600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:'Merriweather', serif;font-size:1.05rem}
+          h1{margin:0;font-size:1.1rem;font-family:'Merriweather',serif}
+          .lead{color:var(--muted);font-size:0.9rem}
+          main.card{background:var(--panel);padding:18px;border-radius:var(--radius);box-shadow:0 6px 18px rgba(2,6,23,0.04);border:1px solid rgba(2,6,23,0.03)}
+          aside.card{background:var(--panel);padding:14px;border-radius:var(--radius);box-shadow:0 6px 18px rgba(2,6,23,0.03);border:1px solid rgba(2,6,23,0.02)}
+          .muted{color:var(--muted)}
+          label{display:block;font-weight:700;margin-bottom:6px}
+          input[type="text"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:#fff}
+          .btn{display:inline-block;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:var(--accent);color:#fff;font-weight:700}
+          .toc{font-size:0.95rem}
+          .meta{font-size:0.85rem;color:var(--muted);margin-bottom:10px}
+          pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
+          .page-title{font-family:'Merriweather',serif;font-size:1.4rem;margin:0 0 6px 0}
+          .content{line-height:1.6}
+          .editor{margin-top:12px}
+          .small{font-size:0.85rem;color:var(--muted)}
+          footer{grid-column:1 / span 2;text-align:center;color:var(--muted);margin-top:14px}
+          @media (max-width:920px){ .wrap{grid-template-columns:1fr} aside.card{order:2} }
+          </style>
+          </head>
+          <body>
+          <?php
+          $DB_HOST='localhost';
+          $DB_USER='root';
+          $DB_PASS='CleanLabPassword123!';
+          $DB_NAME='testdb';
+
+          function db_connect(){
+              global $DB_HOST,$DB_USER,$DB_PASS,$DB_NAME;
+              $conn = new mysqli($DB_HOST,$DB_USER,$DB_PASS,$DB_NAME);
+              if($conn->connect_error) return null;
+              return $conn;
+          }
+
+          $action=$_REQUEST['action']??'view';
+          $page=$_REQUEST['page']??'Home';
+
+          // SAVE / CREATE PAGE
+          if($action==='save' && $_SERVER['REQUEST_METHOD']==='POST'){
+              $save_page=$_POST['page']??'Home';
+              $save_content=$_POST['content']??'';
+              $conn=db_connect();
+              if($conn){
+                  $r=$conn->query("SELECT id FROM pages WHERE title='".$conn->real_escape_string($save_page)."' LIMIT 1");
+                  if($r && $row=$r->fetch_assoc()){
+                      $conn->query("UPDATE pages SET content='".$conn->real_escape_string($save_content)."', excerpt='".$conn->real_escape_string(substr($save_content,0,140))."' WHERE id=".$row['id']);
+                  } else {
+                      $conn->query("INSERT INTO pages (title, content, excerpt) VALUES ('".$conn->real_escape_string($save_page)."','".$conn->real_escape_string($save_content)."','".$conn->real_escape_string(substr($save_content,0,140))."')");
+                  }
+                  $conn->close();
+                  header('Location: ?page='.rawurlencode($save_page));
+                  exit;
+              }
+          }
+          ?>
+          <div class="wrap" role="application" aria-label="LabSys Wiki">
+          <header>
+            <div class="brand">
+              <div class="logo">LW</div>
+              <div>
+                <h1>LabSys Wiki — Internal Knowledgebase</h1>
+                <div class="lead">Documentation • How‑tos • Diagnostics — Training Lab</div>
+              </div>
+            </div>
+          </header>
+
+          <main class="card" role="main">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <form method="GET" style="display:flex;gap:8px;align-items:center">
+                <input type="hidden" name="action" value="search">
+                <input name="q" type="text" placeholder="Zoek pagina's..." value="<?php echo isset($_GET['q'])?htmlspecialchars($_GET['q']):''; ?>">
+                <button class="btn" type="submit">Zoek</button>
+              </form>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <a class="btn" href="?action=edit&page=<?php echo rawurlencode($page); ?>">Bewerk pagina</a>
+              <a class="btn" href="?action=create">Maak nieuwe pagina</a>
+            </div>
+          </div>
+          <hr>
+
+          <?php
+          $conn=db_connect();
+
+          if($action==='view'){
+              echo '<h2 class="page-title">'.htmlspecialchars($page).'</h2>';
+              if($conn){
+                  $r=$conn->query("SELECT content FROM pages WHERE title='".$conn->real_escape_string($page)."' LIMIT 1");
+                  if($r && $row=$r->fetch_assoc()) echo '<div class="content">'.$row['content'].'</div>';
+                  else echo '<div class="content muted">Pagina niet gevonden. Klik "Maak nieuwe pagina" om een nieuwe pagina te maken.</div>';
+                  $conn->close();
+              }
+          }
+          elseif($action==='edit' || $action==='create'){
+              $content='';
+              $edit_page='';
+              if($action==='edit') $edit_page = $page;
+              if($action==='create' && isset($_POST['new_page'])) $edit_page = $_POST['new_page'];
+              if($conn && $edit_page){
+                  $r=$conn->query("SELECT content FROM pages WHERE title='".$conn->real_escape_string($edit_page)."' LIMIT 1");
+                  if($r && $row=$r->fetch_assoc()) $content=$row['content'];
+                  $conn->close();
+              }
+              ?>
+              <h2 class="page-title"><?php echo ($content?'Bewerk':'Maak').' pagina: '.htmlspecialchars($edit_page??''); ?></h2>
+              <?php if($action==='create' && !$edit_page){ ?>
+                  <form method="POST" class="editor" action="">
+                    <label for="new_page">Titel nieuwe pagina</label>
+                    <input id="new_page" name="new_page" type="text" required>
+                    <div style="margin-top:8px">
+                      <button class="btn" type="submit">Ga verder</button>
+                    </div>
+                  </form>
+              <?php } else { ?>
+                  <form method="POST" class="editor" action="">
+                    <input type="hidden" name="action" value="save">
+                    <input type="hidden" name="page" value="<?php echo htmlspecialchars($edit_page); ?>">
+                    <label for="content">Pagina inhoud (Markdown-achtig)</label>
+                    <textarea id="content" name="content" rows="12"><?php echo htmlspecialchars($content); ?></textarea>
+                    <div style="margin-top:8px">
+                      <button class="btn" type="submit"><?php echo $content?'Opslaan':'Creëer'; ?></button>
+                      <a href="?page=Home" style="margin-left:8px" class="small">Annuleer</a>
+                    </div>
+                  </form>
+              <?php }
+          }
+          elseif($action==='search' && !empty($_GET['q'])){
+              $q=$_GET['q'];
+              echo '<h2 class="page-title">Zoekresultaten</h2>';
+              if($conn){
+                  $r=$conn->query("SELECT title, excerpt FROM pages WHERE title LIKE '%".$conn->real_escape_string($q)."%' OR content LIKE '%".$conn->real_escape_string($q)."%' LIMIT 20");
+                  echo '<pre class="results" aria-live="polite">';
+                  if($r) while($row=$r->fetch_assoc()) echo "Page: <a href='?page=".rawurlencode($row['title'])."'>".$row['title']."</a> — ".$row['excerpt']."\n";
+                  echo '</pre>';
+                  $conn->close();
+              }
+          }
+          ?>
+          </main>
+
+          <aside class="card">
+          <section class="toc">
+          <h4>Inhoud</h4>
+          <ul class="small muted">
+          <li><a href="?page=Home">Home</a></li>
+          <li><a href="?page=Getting-Started">Getting Started</a></li>
+          <li><a href="?page=Network-Diagnostics">Network Diagnostics</a></li>
+          <li><a href="?page=Security-Notes">Security Notes</a></li>
+          <li><a href="?action=search&q=FAQ">Zoek: FAQ</a></li>
+          </ul>
+          </section>
+          </aside>
+
+          <footer>
+          <small>LabSys Wiki — training lab. Keep it isolated and responsible.</small>
+          </footer>
+          </div>
+          </body>
+          </html>
+
+
+
+
+
+    # ===========================================
+    # DATABASE SETUP
+    # ===========================================
+    - name: Create users table
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50),
+            password VARCHAR(50),
+            email VARCHAR(100)
+          );
+
+    - name: Insert sample users
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: "INSERT IGNORE INTO users (id, username, password, email) VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}');"
+      loop:
+        - { id: 1, username: 'admin', password: 'admin123', email: 'admin@portal.local' }
+        - { id: 2, username: 'jane',  password: 'password',  email: 'jane@portal.local' }
+        - { id: 3, username: 'guest', password: 'guest',     email: 'guest@portal.local' }
+
+    - name: Create pages table
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          CREATE TABLE IF NOT EXISTS pages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(100) UNIQUE,
+            content TEXT,
+            excerpt TEXT
+          );
+    - name: Insert default Home page
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          INSERT IGNORE INTO pages (title, content, excerpt) 
+          VALUES ('Home', 'Welkom bij LabSys Wiki! Gebruik de "Bewerken"-knop om inhoud toe te voegen.', 'Welkom bij LabSys Wiki!');
+
+
+    # ===========================================
+    # CREATE TEST USERS (SYSTEM USERS)
+    # ===========================================
+    - name: Create test users
+      user:
+        name: "{{ item.name }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        shell: /bin/bash
+      loop:
+        - { name: "sysadmin", password: "admin" }
+        - { name: "guest", password: "guest" }
+        - { name: "backup", password: "backup123" }
+
+    # ===========================================
+    # APACHE INFO DISCLOSURE
+    # ===========================================
+    - name: Enable Apache Info Disclosure
+      copy:
+        content: |
+          <Location "/server-info">
+              SetHandler server-info
+              Require all granted
+          </Location>
+
+          <Location "/server-status">
+              SetHandler server-status
+              Require all granted
+          </Location>
+        dest: /etc/apache2/conf-available/info.conf
+
+    - name: Enable vulnerable Apache settings
+      lineinfile:
+        path: /etc/apache2/apache2.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^ServerTokens", line: "ServerTokens Full" }
+        - { regexp: "^ServerSignature", line: "ServerSignature On" }
+
+    - name: Enable info config and restart Apache
+      command: a2enconf info
+      notify: restart apache
+
+    # ===========================================
+    # HANDLERS
+    # ===========================================
+  handlers:
+    - name: restart apache
+      systemd:
+        name: apache2
+        state: restarted

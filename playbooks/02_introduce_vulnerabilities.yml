@@ -26,10 +26,10 @@
       copy:
         content: |
           <!--
-          VULNERABLE LAB PORTAL
-          Filename: vulnerable_lab_portal.html (PHP)
+          VULNERABLE CANDY SHOP PORTAL
+          Filename: vulnerable_candy_portal.html (PHP)
 
-          Purpose: single-file, "legit-looking" internal system portal for training.
+          Purpose: single-file, "legit-looking" candy webstore-themed portal for training.
           Contains INTENTIONAL vulnerabilities for education and pentesting practice.
           DO NOT DEPLOY TO PRODUCTION. Use only in an isolated lab.
           -->
@@ -39,338 +39,328 @@
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Enterprise System Console</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+            <title>SweetBytes Candy Shop — Admin Console</title>
+            <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
             <style>
-              :root{--bg:#f7fafc;--card:#ffffff;--muted:#6b7280;--text:#0f172a;--accent:#0ea5e9;--radius:12px;--max-width:1100px}
+              :root{
+                --bg: #fff7fb;
+                --card: #ffffff;
+                --muted: #6b7280;
+                --text: #2b2b2b;
+                --accent: #ff6bcb;     /* pink candy */
+                --accent-600: #ff2fa8;
+                --candy1: #ffd166;     /* yellow */
+                --candy2: #6be6ff;     /* blue */
+                --radius: 14px;
+                --max-width:1100px;
+              }
               html,body{height:100%;}
-              body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#eef2f7,#ffffff);color:var(--text);padding:24px}
+              body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg),#fff);color:var(--text);padding:28px}
               .container{max-width:var(--max-width);margin:0 auto}
               header{display:flex;align-items:center;justify-content:space-between}
-              .brand{display:flex;gap:12px;align-items:center}
-              .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#0284c7);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
-              h1{margin:0;font-size:1.25rem}
+              .brand{display:flex;gap:14px;align-items:center}
+              .logo{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:'Baloo 2', cursive;font-size:1.25rem}
+              h1{margin:0;font-size:1.4rem}
               .lead{color:var(--muted);margin-top:4px}
-              .grid{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:18px}
+              .grid{display:grid;grid-template-columns:1fr 360px;gap:20px;margin-top:20px}
               @media (max-width:900px){.grid{grid-template-columns:1fr}}
-              .card{background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:0 8px 24px rgba(2,6,23,0.04);border:1px solid rgba(2,6,23,0.03)}
-              label{display:block;font-weight:600;margin-bottom:6px}
-              input[type="text"], input[type="password"], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef6;background:#fff}
-              .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;background:var(--accent);color:#fff}
+              .card{background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:0 10px 30px rgba(43,43,43,0.06);border:1px solid rgba(2,6,23,0.03)}
+              label{display:block;font-weight:700;margin-bottom:8px}
+              input[type="text"], input[type="password"], select, textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #f2e7ef;background:#fff}
+              .btn{display:inline-block;padding:10px 16px;border-radius:12px;border:none;cursor:pointer;background:var(--accent);color:#fff;font-weight:700}
               .muted{color:var(--muted)}
-              pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
-              nav a{margin-left:8px;text-decoration:none;color:var(--accent)}
+              pre.results{background:linear-gradient(180deg,#0b1220,#0f1420);color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
+              .shop-banner{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:linear-gradient(90deg,var(--candy1),var(--candy2));color:#222}
+              .product{display:flex;align-items:center;gap:12px}
+              .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#fff;color:var(--text);font-weight:700}
+              footer{margin-top:18px;text-align:center;color:var(--muted)}
             </style>
           </head>
           <body>
-            <?php
-            /*
-            * Simple single-file portal: intentionally insecure.
-            * - SQLi: unsanitized query building
-            * - XSS: user input echoed without proper context (some places htmlspecialchar used, others not)
-            * - Command injection: shell_exec using user-supplied host
-            * - File upload: no validation, files served from /uploads
-            * - SSRF: server fetches URL from user-provided param without whitelist
-            * - Open redirect: redirect_to param used directly
-            * - Broken access control: role controlled by hidden fields / URL param
-            * - Auth: weak passwords, session fixation, insecure reset token
-            * - No logging/monitoring (intentionally omitted)
-            */
+          <?php
+          /*
+          * SweetBytes Candy Shop — intentionally insecure lab portal.
+          * Vulnerabilities preserved on purpose for training: SQLi, Stored XSS (output without escaping), Command injection, Insecure file upload, SSRF, Open redirect, Session fixation, weak auth, broken access control.
+          */
+          session_start();
+          if (isset($_GET['sid'])) { session_id($_GET['sid']); session_start(); }
+          $DB_HOST = 'localhost';
+          $DB_USER = 'root';
+          $DB_PASS = 'CleanLabPassword123!';
+          $DB_NAME = 'testdb';
+          function db_connect() {
+              global $DB_HOST,$DB_USER,$DB_PASS,$DB_NAME;
+              $conn = new mysqli($DB_HOST,$DB_USER,$DB_PASS,$DB_NAME);
+              if ($conn->connect_error) return null;
+              return $conn;
+          }
+          // Weak login
+          if (isset($_POST['action']) && $_POST['action'] === 'login') {
+              $u = $_POST['username'] ?? '';
+              $p = $_POST['password'] ?? '';
+              $conn = db_connect();
+              if ($conn) {
+                  $q = "SELECT * FROM users WHERE username = '" . $conn->real_escape_string($u) . "' LIMIT 1";
+                  $r = $conn->query($q);
+                  if ($r && $row = $r->fetch_assoc()) {
+                      if ($row['password'] === $p) { $_SESSION['user'] = $row['username']; $_SESSION['role'] = 'staff'; }
+                      else $login_error = 'Ongeldige inloggegevens';
+                  } else {
+                      $login_error = 'Ongeldige inloggegevens';
+                  }
+              }
+          }
+          if (isset($_GET['logout'])) { session_destroy(); header('Location: /'); exit; }
+          ?>
 
-            session_start();
-
-            // Session fixation demonstration: allow setting SID via GET (VERY insecure)
-            if (isset($_GET['sid'])) {
-                session_id($_GET['sid']); // intentional
-                session_start();
-            }
-
-            // Simple "user database" (insecure defaults)
-            $DB_HOST = 'localhost';
-            $DB_USER = 'root';
-            $DB_PASS = 'CleanLabPassword123!';
-            $DB_NAME = 'testdb';
-
-            function db_connect() {
-                global $DB_HOST, $DB_USER, $DB_PASS, $DB_NAME;
-                $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-                if ($conn->connect_error) {
-                    return null;
-                }
-                return $conn;
-            }
-
-            // Very small "auth" check: username/password via POST; no rate-limit, weak passwords
-            if (isset($_POST['action']) && $_POST['action'] === 'login') {
-                $u = $_POST['username'] ?? '';
-                $p = $_POST['password'] ?? '';
-                // insecure: plaintext password check from DB
-                $conn = db_connect();
-                if ($conn) {
-                    $q = "SELECT * FROM users WHERE username = '" . $conn->real_escape_string($u) . "' LIMIT 1";
-                    $r = $conn->query($q);
-                    if ($r && $row = $r->fetch_assoc()) {
-                        if ($row['password'] === $p) { // INSECURE: plain comparison
-                            $_SESSION['user'] = $row['username'];
-                            $_SESSION['role'] = 'user';
-                            // Demonstrate session fixation: don't regenerate id
-                        } else {
-                            $login_error = 'Ongeldige inloggegevens';
-                        }
-                    } else {
-                        $login_error = 'Ongeldige inloggegevens';
-                    }
-                }
-            }
-
-            // Simple logout
-            if (isset($_GET['logout'])) { session_destroy(); header('Location: /'); exit; }
-
-            ?>
-
-            <div class="container" role="application" aria-label="Enterprise Console">
-              <header>
-                <div class="brand">
-                  <div class="logo">EC</div>
-                  <div>
-                    <h1>Enterprise System Console</h1>
-                    <div class="lead">Internal admin portal — diagnostics & support (lab environment)</div>
-                  </div>
+          <div class="container" role="application" aria-label="SweetBytes Admin Console">
+            <header>
+              <div class="brand">
+                <div class="logo">SB</div>
+                <div>
+                  <h1>SweetBytes Candy Shop — Admin Console</h1>
+                  <div class="lead">Orders • Inventory • Diagnostics — Training Lab</div>
                 </div>
-                <nav>
-                  <?php if (!empty($_SESSION['user'])) { ?>
-                    <span class="muted">Ingelogd als <?php echo htmlspecialchars($_SESSION['user']); ?></span>
-                    <a href="?logout=1">Logout</a>
-                  <?php } else { ?>
-                    <a href="#login">Login</a>
-                  <?php } ?>
-                  <a href="/server-status">Server Status</a>
-                  <a href="/server-info">Server Info</a>
-                </nav>
-              </header>
-
-              <div class="grid">
-                <main class="card">
-
-                  <!-- USER SEARCH (SQLi) -->
-                  <section>
-                    <h2>User directory</h2>
-                    <p class="muted">Zoek gebruikers op ID. (Intentional SQLi for training)</p>
-                    <form method="GET" action="">
-                      <label for="userid">User ID</label>
-                      <input id="userid" name="userid" type="text" placeholder="bijv. 1 or 1 OR 1=1" value="<?php echo isset($_GET['userid'])?htmlspecialchars($_GET['userid']):''; ?>">
-                      <button class="btn" type="submit">Zoek</button>
-                    </form>
-
-                    <?php
-                    if (isset($_GET['userid'])) {
-                        $conn = db_connect();
-                        if ($conn) {
-                            // INTENTIONAL VULN: directly concatenating user input (SQLi)
-                            $query = "SELECT id,username,email FROM users WHERE id = " . $_GET['userid'];
-                            echo '<pre class="results" aria-live="polite">';
-                            echo "Query: " . htmlspecialchars($query) . "\n\n"; // show query for training
-                            $res = $conn->query($query);
-                            if ($res) {
-                                while ($row = $res->fetch_assoc()) {
-                                    // NOTE: intentionally echoing values without encoding in one place to show XSS risk
-                                    echo "User: " . $row['username'] . " (" . $row['email'] . ")\n";
-                                }
-                            } else {
-                                echo "DB Error: " . $conn->error . "\n";
-                            }
-                            echo '</pre>';
-                            $conn->close();
-                        }
-                    }
-                    ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- PING TOOL (command injection) -->
-                  <section>
-                    <h2>Network diagnostics</h2>
-                    <p class="muted">Ping een host vanaf de server. (Command injection aanwezig)</p>
-                    <form method="POST" action="">
-                      <label for="pinghost">Host of IP</label>
-                      <input id="pinghost" name="pinghost" type="text" value="<?php echo isset($_POST['pinghost'])?htmlspecialchars($_POST['pinghost']):'127.0.0.1'; ?>">
-                      <input type="hidden" name="do_ping" value="1">
-                      <button class="btn" type="submit">Run Ping</button>
-                    </form>
-
-                    <?php
-                    if (isset($_POST['do_ping'])) {
-                        $host = $_POST['pinghost'];
-                        echo '<pre class="results" aria-live="polite">';
-                        // INTENTIONAL VULN: directly pass to shell_exec -> command injection
-                        $out = shell_exec('ping -c 1 ' . $host . ' 2>&1');
-                        echo $out;
-                        echo '</pre>';
-                    }
-                    ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- FILE UPLOAD (no validation) -->
-                  <section>
-                    <h2>Upload config / logs</h2>
-                    <p class="muted">Upload bestanden die beschikbaar worden gemaakt via /uploads/ (geen validatie)</p>
-                    <form method="POST" enctype="multipart/form-data">
-                      <label for="file">Bestand kiezen</label>
-                      <input id="file" name="file" type="file">
-                      <button class="btn" type="submit">Upload</button>
-                    </form>
-
-                    <?php
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
-                        $uploaddir = __DIR__ . '/uploads/';
-                        if (!is_dir($uploaddir)) mkdir($uploaddir, 0777, true);
-                        $uploadfile = $uploaddir . basename($_FILES['file']['name']);
-                        if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)) {
-                            // Show direct link to uploaded file (RCE via PHP upload possible if extension allowed)
-                            echo '<div class="results">Bestand geüpload: <a href="uploads/' . rawurlencode(basename($_FILES['file']['name'])) . '">Bekijk</a></div>';
-                        } else {
-                            echo '<div class="results">Upload mislukt</div>';
-                        }
-                    }
-                    ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- SSRF / URL fetch -->
-                  <section>
-                    <h2>Fetch external resource</h2>
-                    <p class="muted">Ophalen van een URL (geen whitelist — SSRF mogelijk)</p>
-                    <form method="GET">
-                      <label for="fetchurl">URL om te fetchen</label>
-                      <input id="fetchurl" name="fetchurl" type="text" placeholder="https://example.com/" value="<?php echo isset($_GET['fetchurl'])?htmlspecialchars($_GET['fetchurl']):''; ?>">
-                      <button class="btn" type="submit">Fetch</button>
-                    </form>
-
-                    <?php
-                    if (!empty($_GET['fetchurl'])) {
-                        $url = $_GET['fetchurl'];
-                        echo '<pre class="results" aria-live="polite">';
-                        // INTENTIONAL: no whitelist or php:// filters prevented
-                        $content = @file_get_contents($url);
-                        if ($content === false) {
-                            echo "Kon niet ophalen: " . htmlspecialchars($url);
-                        } else {
-                            echo "Inhoud van: " . htmlspecialchars($url) . "\n\n";
-                            // show a snippet only
-                            echo htmlspecialchars(substr($content, 0, 800));
-                        }
-                        echo '</pre>';
-                    }
-                    ?>
-                  </section>
-
-                </main>
-
-                <aside class="card">
-                  <!-- LOGIN (weak) -->
-                  <section id="login">
-                    <h3>Login</h3>
-                    <?php if (!empty($login_error)) { echo '<div class="muted">' . htmlspecialchars($login_error) . '</div>'; } ?>
-                    <?php if (empty($_SESSION['user'])) { ?>
-                      <form method="POST" action="#login">
-                        <input type="hidden" name="action" value="login">
-                        <label for="username">Gebruikersnaam</label>
-                        <input id="username" name="username" type="text">
-                        <label for="password">Wachtwoord</label>
-                        <input id="password" name="password" type="password">
-                        <button class="btn" type="submit">Login</button>
-                      </form>
-                      <p class="muted">Voor training: gebruik gebruikers uit de sample DB (admin/admin123, jane/password, guest/guest)</p>
-                    <?php } else { ?>
-                      <p class="muted">Welkom, <?php echo htmlspecialchars($_SESSION['user']); ?></p>
-                    <?php } ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- BROKEN ACCESS CONTROL demo -->
-                  <section>
-                    <h3>Account role (hidden)</h3>
-                    <p class="muted">Rol wordt hier als hidden field gestuurd — kan gemanipuleerd worden (broken access control)</p>
-                    <form method="POST" action="/admin.php">
-                      <input type="hidden" name="role" value="user"> <!-- Aanpasbaar -> privilege escalation -->
-                      <label for="displayname">Display name</label>
-                      <input id="displayname" name="displayname" type="text">
-                      <button class="btn" type="submit">Update</button>
-                    </form>
-                  </section>
-
-                  <hr>
-
-                  <!-- OPEN REDIRECT -->
-                  <section>
-                    <h3>Quick links</h3>
-                    <p class="muted">Open redirect demo (redirect_to wordt direct gebruikt)</p>
-                    <form method="GET" action="">
-                      <label for="redirect_to">Redirect naar</label>
-                      <input id="redirect_to" name="redirect_to" type="text" placeholder="/dashboard or https://evil.example/">
-                      <button class="btn" type="submit">Ga</button>
-                    </form>
-
-                    <?php
-                    if (!empty($_GET['redirect_to'])) {
-                        // INTENTIONAL VULN: no validation
-                        header('Location: ' . $_GET['redirect_to']);
-                        exit;
-                    }
-                    ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- Password reset (insecure flow) -->
-                  <section>
-                    <h3>Reset wachtwoord</h3>
-                    <p class="muted">Insecure reset token flow (token in URL, no expiry validation)</p>
-                    <form method="GET" action="">
-                      <label for="reset_user">Gebruiker</label>
-                      <input id="reset_user" name="reset_user" type="text">
-                      <label for="reset_token">Token</label>
-                      <input id="reset_token" name="reset_token" type="text">
-                      <button class="btn" type="submit">Reset</button>
-                    </form>
-
-                    <?php
-                    if (!empty($_GET['reset_user']) && isset($_GET['reset_token'])) {
-                        // INTENTIONAL: accept any token and show password reset link
-                        echo '<div class="muted">Reset link voor ' . htmlspecialchars($_GET['reset_user']) . ': <a href="/do_reset.php?user=' . rawurlencode($_GET['reset_user']) . '&token=' . rawurlencode($_GET['reset_token']) . '">Reset now</a></div>';
-                    }
-                    ?>
-                  </section>
-
-                  <hr>
-
-                  <!-- Info: intentional disclosure -->
-                  <section>
-                    <h3>Lab notes</h3>
-                    <p class="muted">Deze applicatie bevat opzettelijk kwetsbaarheden voor trainingsdoeleinden. Niet in productie gebruiken.</p>
-                    <ul class="muted">
-                      <li>Voorbeelden: SQLi, XSS, Command injection, SSRF, RCE via uploads, Open redirect</li>
-                      <li>Sample scan: <code>sqlmap -u "http://localhost/?userid=1"</code></li>
-                      <li>Server tokens / signatures mogelijk ingeschakeld door Apache config.</li>
-                    </ul>
-                  </section>
-
-                </aside>
               </div>
+              <div>
+                <?php if (!empty($_SESSION['user'])) { ?>
+                  <span class="muted">Ingelogd als <?php echo htmlspecialchars($_SESSION['user']); ?></span>
+                  <a href="?logout=1" style="margin-left:10px;">Logout</a>
+                <?php } else { ?>
+                  <a href="#login" class="pill">Staff Login</a>
+                <?php } ?>
+                <a href="/server-status" style="margin-left:12px;">Server Status</a>
+              </div>
+            </header>
 
-              <!-- Footer with simulated diagnostic links -->
-              <footer style="margin-top:18px;text-align:center;" class="muted">
-                <small>Enterprise System Console — forensic / red-team lab (do not expose). Generated for training.</small>
-              </footer>
+            <div class="shop-banner" style="margin-top:16px">
+              <div style="font-size:1.2rem;font-weight:800">🍭</div>
+              <div>
+                <div style="font-weight:800">SweetBytes Promo</div>
+                <div style="font-size:0.9rem;color:rgba(0,0,0,0.7)">Internal tools & diagnostics — for lab only</div>
+              </div>
+              <div style="margin-left:auto"><span class="pill">Lab Mode</span></div>
             </div>
+
+            <div class="grid">
+              <main class="card">
+
+                <!-- USER SEARCH (SQLi / stored XSS) -->
+                <section>
+                  <h2>Customer lookup</h2>
+                  <p class="muted">Zoek klanten op ID (training). Let op: SQL injection aanwezig.</p>
+                  <form method="GET" action="">
+                    <label for="userid">Customer ID</label>
+                    <input id="userid" name="userid" type="text" placeholder="bijv. 1 or -1 UNION SELECT ..." value="<?php echo isset($_GET['userid'])?htmlspecialchars($_GET['userid']):''; ?>">
+                    <button class="btn" type="submit">Zoek</button>
+                  </form>
+
+                  <?php
+                  if (isset($_GET['userid'])) {
+                      $conn = db_connect();
+                      if ($conn) {
+                          // INTENTIONAL: vulnerable SQL concatenation
+                          $query = "SELECT id,username,email FROM users WHERE id = " . $_GET['userid'];
+                          echo '<pre class="results" aria-live="polite">';
+                          echo "Query: " . htmlspecialchars($query) . "
+
+          ";
+                          $res = $conn->query($query);
+                          if ($res) {
+                              while ($row = $res->fetch_assoc()) {
+                                  // INTENTIONAL: output without escaping to demonstrate stored XSS
+                                  echo "Customer: " . $row['username'] . " (" . $row['email'] . ")
+          ";
+                              }
+                          } else {
+                              echo "DB Error: " . $conn->error . "
+          ";
+                          }
+                          echo '</pre>';
+                          $conn->close();
+                      }
+                  }
+                  ?>
+                </section>
+
+                <hr>
+
+                <!-- PING TOOL (command injection) -->
+                <section>
+                  <h2>Network diagnostics</h2>
+                  <p class="muted">Ping een host vanaf de server. (Command injection aanwezig)</p>
+                  <form method="POST" action="">
+                    <label for="pinghost">Host of IP</label>
+                    <input id="pinghost" name="pinghost" type="text" value="<?php echo isset($_POST['pinghost'])?htmlspecialchars($_POST['pinghost']):'127.0.0.1'; ?>">
+                    <input type="hidden" name="do_ping" value="1">
+                    <button class="btn" type="submit">Run Ping</button>
+                  </form>
+
+                  <?php
+                  if (isset($_POST['do_ping'])) {
+                      $host = $_POST['pinghost'];
+                      echo '<pre class="results" aria-live="polite">';
+                      // INTENTIONAL VULN: direct shell_exec
+                      $out = shell_exec('ping -c 1 ' . $host . ' 2>&1');
+                      echo $out;
+                      echo '</pre>';
+                  }
+                  ?>
+                </section>
+
+                <hr>
+
+                <!-- FILE UPLOAD (no validation) -->
+                <section>
+                  <h2>Upload product image / config</h2>
+                  <p class="muted">Upload bestanden (geen server-side validatie). Geüploade bestanden worden gepubliceerd onder /uploads/</p>
+                  <form method="POST" enctype="multipart/form-data">
+                    <label for="file">Bestand kiezen</label>
+                    <input id="file" name="file" type="file">
+                    <button class="btn" type="submit">Upload</button>
+                  </form>
+
+                  <?php
+                  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+                      $uploaddir = __DIR__ . '/uploads/';
+                      if (!is_dir($uploaddir)) mkdir($uploaddir, 0777, true);
+                      $uploadfile = $uploaddir . basename($_FILES['file']['name']);
+                      if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile)) {
+                          echo '<div class="results">Bestand geüpload: <a href="uploads/' . rawurlencode(basename($_FILES['file']['name'])) . '">Bekijk</a></div>';
+                      } else {
+                          echo '<div class="results">Upload mislukt</div>';
+                      }
+                  }
+                  ?>
+                </section>
+
+                <hr>
+
+                <!-- SSRF / URL fetch -->
+                <section>
+                  <h2>Fetch supplier resource</h2>
+                  <p class="muted">Ophalen van een URL (geen whitelist — SSRF mogelijk)</p>
+                  <form method="GET">
+                    <label for="fetchurl">URL om te fetchen</label>
+                    <input id="fetchurl" name="fetchurl" type="text" placeholder="https://supplier.example/" value="<?php echo isset($_GET['fetchurl'])?htmlspecialchars($_GET['fetchurl']):''; ?>">
+                    <button class="btn" type="submit">Fetch</button>
+                  </form>
+
+                  <?php
+                  if (!empty($_GET['fetchurl'])) {
+                      $url = $_GET['fetchurl'];
+                      echo '<pre class="results" aria-live="polite">';
+                      $content = @file_get_contents($url);
+                      if ($content === false) {
+                          echo "Kon niet ophalen: " . htmlspecialchars($url);
+                      } else {
+                          echo "Inhoud van: " . htmlspecialchars($url) . "
+
+          ";
+                          echo htmlspecialchars(substr($content, 0, 800));
+                      }
+                      echo '</pre>';
+                  }
+                  ?>
+                </section>
+
+              </main>
+
+              <aside class="card">
+                <!-- LOGIN (weak) -->
+                <section id="login">
+                  <h3>Staff Login</h3>
+                  <?php if (!empty($login_error)) { echo '<div class="muted">' . htmlspecialchars($login_error) . '</div>'; } ?>
+                  <?php if (empty($_SESSION['user'])) { ?>
+                    <form method="POST" action="#login">
+                      <input type="hidden" name="action" value="login">
+                      <label for="username">Gebruikersnaam</label>
+                      <input id="username" name="username" type="text">
+                      <label for="password">Wachtwoord</label>
+                      <input id="password" name="password" type="password">
+                      <button class="btn" type="submit">Login</button>
+                    </form>
+                    <p class="muted">Test accounts: admin/admin123, jane/password, guest/guest</p>
+                  <?php } else { ?>
+                    <p class="muted">Welkom, <?php echo htmlspecialchars($_SESSION['user']); ?></p>
+                  <?php } ?>
+                </section>
+
+                <hr>
+
+                <!-- BROKEN ACCESS CONTROL demo -->
+                <section>
+                  <h3>Account role (hidden)</h3>
+                  <p class="muted">Rol wordt hier als hidden field gestuurd — kan gemanipuleerd worden (broken access control)</p>
+                  <form method="POST" action="/admin.php">
+                    <input type="hidden" name="role" value="staff">
+                    <label for="displayname">Display name</label>
+                    <input id="displayname" name="displayname" type="text">
+                    <button class="btn" type="submit">Update</button>
+                  </form>
+                </section>
+
+                <hr>
+
+                <!-- OPEN REDIRECT -->
+                <section>
+                  <h3>Quick links</h3>
+                  <p class="muted">Open redirect demo (redirect_to wordt direct gebruikt)</p>
+                  <form method="GET" action="">
+                    <label for="redirect_to">Redirect naar</label>
+                    <input id="redirect_to" name="redirect_to" type="text" placeholder="/dashboard or https://evil.example/">
+                    <button class="btn" type="submit">Ga</button>
+                  </form>
+
+                  <?php
+                  if (!empty($_GET['redirect_to'])) { header('Location: ' . $_GET['redirect_to']); exit; }
+                  ?>
+                </section>
+
+                <hr>
+
+                <!-- Password reset (insecure flow) -->
+                <section>
+                  <h3>Reset wachtwoord</h3>
+                  <p class="muted">Insecure reset token flow (token in URL, no expiry validation)</p>
+                  <form method="GET" action="">
+                    <label for="reset_user">Gebruiker</label>
+                    <input id="reset_user" name="reset_user" type="text">
+                    <label for="reset_token">Token</label>
+                    <input id="reset_token" name="reset_token" type="text">
+                    <button class="btn" type="submit">Reset</button>
+                  </form>
+
+                  <?php
+                  if (!empty($_GET['reset_user']) && isset($_GET['reset_token'])) {
+                      echo '<div class="muted">Reset link voor ' . htmlspecialchars($_GET['reset_user']) . ': <a href="/do_reset.php?user=' . rawurlencode($_GET['reset_user']) . '&token=' . rawurlencode($_GET['reset_token']) . '">Reset now</a></div>';
+                  }
+                  ?>
+                </section>
+
+                <hr>
+
+                <!-- Info: intentional disclosure -->
+                <section>
+                  <h3>Lab notes</h3>
+                  <p class="muted">Deze webshop-app bevat opzettelijk kwetsbaarheden voor trainingsdoeleinden. Niet in productie gebruiken.</p>
+                  <ul class="muted">
+                    <li>Voorbeelden: SQLi, Stored XSS, Command injection, SSRF, RCE via uploads, Open redirect</li>
+                    <li>Scanvoorbeeld: <code>sqlmap -u "http://localhost/?userid=1"</code></li>
+                  </ul>
+                </section>
+
+              </aside>
+            </div>
+
+            <footer class="muted">
+              <small>SweetBytes Candy Shop — training lab. Keep it sweet & isolated.</small>
+            </footer>
+          </div>
 
           </body>
           </html>
+
         dest: /var/www/html/index.php
         owner: www-data
         group: www-data
