@@ -36,11 +36,16 @@
           - "MySQL version: {{ mysql_version }}"
 
   roles:
-    - base_system
-    - web_stack
-    - database
-    - applications
-    - system_services
+    - role: base_system
+      tags: base_system
+    - role: web_stack
+      tags: web_stack
+    - role: database
+      tags: database
+    - role: applications
+      tags: applications
+    - role: system_services
+      tags: system_services
     
   post_tasks:
     # Final system verification
