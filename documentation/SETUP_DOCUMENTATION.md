@@ -15,7 +15,7 @@ This documentation describes the complete setup and operation of a vulnerable la
 
 ### Components:
 - **Windows Host**: Your local machine running Docker Desktop with WSL2
-- **Ansible Container**: Dockerized Ansible control node with vulnerability automation
+- **Ansible Container**: Dockerized Ansible control node
 - **Ubuntu VM**: VirtualBox VM running Ubuntu Server 24.04.3 LTS as the target system
 
 ## Prerequisites
@@ -28,7 +28,7 @@ This documentation describes the complete setup and operation of a vulnerable la
 - **Windows Subsystem for Linux** installed
 
 #### 2. Oracle VirtualBox
-- **Oracle VirtualBox** (latest version)
+- **Oracle VirtualBox** (latest version) 
 - **Ubuntu Server 24.04.3 LTS** installed as VM
 
 #### 3. VirtualBox VM Configuration
@@ -41,28 +41,6 @@ This documentation describes the complete setup and operation of a vulnerable la
   - **Cockpit**: Name="Cockpit", Protocol=TCP, Host Port=9090, Guest Port=9090
 - **User Account**: `user` with sudo privileges
 - **SSH Server**: Installed and running
-
-## Directory Structure
-
-```
-d:\ansible-control-node\
-├── Dockerfile                           # Container definition
-├── inventory.ini                        # Ansible inventory configuration
-├── vulnerability-profiles.yml           # Vulnerability scenario configurations
-├── run_clean.ps1                       # PowerShell script to run clean playbook
-├── run_vulnerable.ps1                  # PowerShell script to run vulnerability playbook
-├── run_vulnerability_profile.ps1       # PowerShell script to run specific profiles
-├── SETUP_DOCUMENTATION.md             # This documentation file
-├── README_VULNERABILITIES.md           # Vulnerability profiles documentation
-├── Keys/
-│   ├── vps_key                         # SSH private key (passphrase-free)
-│   └── vps_key.pub                    # SSH public key
-└── playbooks/
-    ├── 01_clean_image_base.yml         # Clean base system with vulnerable versions
-    ├── 02_introduce_vulnerabilities.yml # Additional vulnerability introduction
-    ├── initial_setup.yml               # Initial system configuration
-    └── test_ping.yml                   # Connectivity test playbook
-```
 
 ## Detailed Setup Instructions
 
@@ -79,7 +57,7 @@ d:\ansible-control-node\
 5. Verify Docker is running with WSL2 backend
 
 #### 1.2 Install Oracle VirtualBox
-1. Download and install **Oracle VirtualBox** (latest version)
+1. Download and install **Oracle VirtualBox** (latest version) (https://www.virtualbox.org/wiki/Downloads)
 2. Download **Ubuntu Server 24.04.3 LTS ISO** from official Ubuntu website (https://ubuntu.com/download/server#manual-install)
 
 #### 1.3 Create Ubuntu Virtual Machine
@@ -87,7 +65,7 @@ d:\ansible-control-node\
    - **Name**: Ubuntu-VPS
    - **Type**: Linux
    - **Version**: Ubuntu (64-bit)
-   - **Memory**: 2GB minimum (4GB recommended)
+   - **Memory**: 2GB minimum (8GB recommended)
    - **Storage**: 20GB minimum (40GB recommended)
 
 2. Configure VM Network:
@@ -100,14 +78,13 @@ d:\ansible-control-node\
      - **Gitea**: Name="Gitea", Protocol=TCP, Host Port=3000, Guest Port=3000
      - **Cockpit**: Name="Cockpit", Protocol=TCP, Host Port=9090, Guest Port=9090
 
-3. Install Ubuntu Server 24.04.3 LTS:
-   - Create user account: `name`
-   - Set password (remember it for sudo)
-   - Install OpenSSH server during installation
+   - Image: Ubuntu Server 24.04.3 LTS:
+      - Modify user name (Default: **vboxuser**)
+      - Set password (remember it for sudo)
 
 ### Step 2: Configure Ubuntu VM
 
-#### 2.1 Install SSH Server (if not installed during setup)
+#### 2.1 Install SSH Server
 ```bash
 sudo apt update
 sudo apt install openssh-server -y
@@ -138,21 +115,21 @@ sudo systemctl start ssh
    ```
 
 #### 2.3 Pull Ansible Repo (Private) From Github https://github.com/NoahGram/Lab-Image-ACS-VPS
-1. Make sure the root folder of the pulled repo is called: ansible-control-node. When you pull/clone, by default it's called 'Lab-Image-ACS-VPS'. (Will Fix, so that this step becomes obsolete)
+1. Make sure the root folder of the pulled repo is called: ansible-control-node. When you pull/clone
 
    So Not:
    ```bash
-   D:\Lab-Image-ACS-VPS\Keys\vps_key.pub
+   C:\Users\{username}\Lab-Image-ACS-VPS\Keys\vps_key.pub
    ```
    But:
    ```bash
-   D:\ansible-control-node\Keys\vps_key.pub
+   C:\Users\{username}\ansible-control-node\Keys\vps_key.pub
    ```
 
 #### 2.4 Echo The Public Key Into the VPS for Ansible Connection:
 1. In Windos PowerShell:
    ```powershell
-   Get-Content D:\ansible-control-node\Keys\vps_key.pub | ssh -p 2222 user@127.0.0.1 "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+   Get-Content C:\Users\{username}\ansible-control-node\Keys\vps_key.pub | ssh -p 2222 user@127.0.0.1 "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
    ```
 
 #### (SKIP!!!) 2.4 Configure SSH Key Authentication (SKIP!!!)
@@ -180,7 +157,7 @@ vps_target ansible_host=host.docker.internal ansible_user=noah ansible_port=2222
 
 [all:vars]       
 ansible_become=yes                                    # Enable sudo privileges
-ansible_become_password=ColdBrew                     # Sudo password
+ansible_become_password=password                     # Sudo password
 ansible_private_key_file=/ansible/Keys/vps_key      # SSH private key path
 host_key_checking=False                              # Disable host key verification
 ansible_ssh_common_args='-o StrictHostKeyChecking=no' # Skip SSH host verification
@@ -190,85 +167,39 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no' # Skip SSH host verificati
 - `ansible_host=host.docker.internal`: Connects to Docker host from container
 - `ansible_port=2222`: Custom SSH port (not standard 22)
 - `ansible_user=noah`: SSH username on target system
-- `ansible_become_password=ColdBrew`: Password for sudo operations
+- `ansible_become_password=password`: Password for sudo operations
 
+## 1.2 Change Username & Password
+```ini
+[vps_lab]
+ansible_user=noah #Change to YOUR username
+
+[all:vars]       
+ansible_become_password=password # Change to YOUR password
+```
 ### 2. Docker Configuration (`Dockerfile`)
 
 The Dockerfile creates a containerized Ansible environment with all necessary tools and dependencies.
-
-## SSH Key Management
-
-### SSH Key Setup Process
-
-1. **Original Key**: Had a passphrase (`.`) which caused authentication issues in containerized environment
-2. **Solution**: Removed passphrase using `ssh-keygen`:
-   ```bash
-   ssh-keygen -p -f /ansible/Keys/vps_key -N '' -P '.'
-   ```
-3. **Result**: Passphrase-free key that works seamlessly with Ansible automation
-
-### Security Considerations
-
-- SSH key is mounted read-only into container
-- Key permissions are set to `600` (owner read/write only)
-- Key is never transmitted outside the secure channel
-
-## Playbook Overview
-
-### 01_clean_image_base.yml
-
-**Purpose**: Creates a complete vulnerable lab environment with specific software versions
-
-**Software Stack Installed:**
-
-#### 1. **Web Server Infrastructure**
-- **Apache HTTP Server** (configurable version)
-- **PHP** (configurable version with known vulnerabilities)
-- **MariaDB/MySQL** (configurable version)
-
-#### 2. **Web Applications**
-- **Gitea** (Git server) - Version 1.17.3 (CVE-2022-4188)
-- **DokuWiki** (Wiki) - Version 2020-07-29 (CVE-2020-25790)
-- **MantisBT** (Bug Tracker) - Version 2.24.4 (CVE-2022-42790)
-
-#### 3. **System Services**
-- **Postfix** (Mail server)
-- **Wazuh Agent** (Security monitoring) - Version 4.3.10
-- **Cockpit** (System monitoring)
-
-#### 4. **Security Features**
-- UFW firewall with configured rules
-- SSL/TLS certificate support
-- Database security hardening
-
-#### 5. **Version Management System** (Overkill/ Possible Idea)
-The playbook uses a sophisticated version management system that allows switching between:
-- **Latest secure versions** for hardened environments
-- **Specific vulnerable versions** for penetration testing
-- **Multiple vulnerability profiles** for different training scenarios
-
-### 02_introduce_vulnerabilities.yml (Example)
-
-**Purpose**: Introduces additional controlled vulnerabilities and weakens system security
-
-**Vulnerabilities Added:**
-- SQL injection opportunities
-- File upload vulnerabilities
-- Weak user accounts and passwords
-- Insecure service configurations
-- Directory traversal possibilities
-
-## Network Configuration
-
-### Port Mapping
-- **SSH**: Port 2222 (custom port for security)
-- **HTTP**: Port 80 (web traffic)
-- **HTTPS**: Port 443 (secure web traffic)
 
 ### Docker Networking
 - Uses `host.docker.internal` to access host machine from container
 - Container runs with standard Docker networking (not host mode)
 - SSH connectivity verified before playbook execution
+
+
+## SSH Key Management
+
+1. **Original Key**: Had a passphrase (`.`) which caused authentication issues in containerized environment
+2. **Solution**: Removed passphrase using `ssh-keygen`:
+   ```bash
+   ssh-keygen -p -f C:\Users\noah\ansible-control-node\Keys\vps_key -m PEM
+   ```
+   #### Or
+   ```bash
+   ssh-keygen -p -f /ansible/Keys/vps_key -N '' -P '.'
+   ```
+3. **Result**: Passphrase-free key that works smoothly with Ansible automation
+
 
 ## Usage Instructions
 
@@ -282,22 +213,22 @@ docker build -t ansible-control-node .
 #### 3.2 Test Connectivity First
 ```powershell
 # Test SSH connection to Ubuntu VM
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ssh -o StrictHostKeyChecking=no -i /ansible/Keys/vps_key -p 2222 noah@host.docker.internal 'echo Connection successful'"
+docker run --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ssh -o StrictHostKeyChecking=no -i /ansible/Keys/vps_key -p 2222 user@host.docker.internal 'echo Connection successful'"
 
 # Test Ansible connectivity
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible all -i /ansible/inventory.ini -m ping"
+docker run --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible all -i /ansible/inventory.ini -m ping"
 ```
 
 #### 3.3 Deploy Clean Base System
 ```powershell
-# Method 1: Using PowerShell script (Recommended)
+# Method 1: Using PowerShell script
 .\run_clean.ps1
 
-# Method 2: Direct Docker command
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini"
+# Method 2: Direct Docker command (Recommended)
+docker run --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini"
 
 # Method 3: With verbose output for debugging
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini -v"
+docker run --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini -v"
 ```
 
 ### Step 4: Access Deployed Services
@@ -372,7 +303,7 @@ php --version                         # Check PHP version
 #### 3. **SSH Key Authentication Issues**
 **Problem**: "Permission denied (publickey,password)" Error
 **Solutions**:
-- Remove passphrase from SSH key: `ssh-keygen -p -f .\Keys\vps_key -N '' -P 'old_passphrase'`
+- Remove passphrase from SSH key: `ssh-keygen -p -f C:\Users\noah\ansible-control-node\Keys\vps_key -m PEM`
 - Verify key permissions are 600
 - Ensure public key is in Ubuntu VM: `~/.ssh/authorized_keys`
 - Test manual SSH: `ssh -i .\Keys\vps_key -p 2222 user@localhost`
@@ -398,25 +329,12 @@ php --version                         # Check PHP version
 - Test local access: `curl http://localhost:8080`
 - Check UFW firewall: `sudo ufw status`
 
-#### 7. **MantisBT Directory Issues**
-**Problem**: "cannot stat '/var/www/mantisbt-*': No such file or directory"
-**Solutions**:
-- This is automatically handled by improved directory detection
-- Existing installations are cleaned up before new deployment
-- Manual fix: Remove `/var/www/mantisbt*` directories before rerunning
-
-#### 8. **Wazuh Agent Start Issues** (Still Working On This)
-**Problem**: "Unable to start service wazuh-agent"
-**Solutions**:
-- Wazuh agent is intentionally left stopped (needs Wazuh manager)
-- Service is enabled but not started
-- For testing, install Wazuh manager or configure remote manager
 
 ### Verification Commands
 
 ```bash
 # Check SSH connectivity to Ubuntu VM
-ssh -p 2222 noah@localhost
+ssh -p 2222 user@localhost
 
 # Verify sudo access with your Ubuntu password
 echo 'your_ubuntu_password' | sudo -S whoami
@@ -479,10 +397,10 @@ curl http://localhost:8080
 docker build -t ansible-control-node .
 
 # Run interactive Ansible shell
-docker run -it --rm -v D:\ansible-control-node:/ansible ansible-control-node sh
+docker run -it --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh
 
 # Manual playbook execution
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini"
+docker run --rm -v C:\Users\{username}\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini"
 ```
 
 ### Essential Ansible Commands (inside container)
@@ -561,6 +479,6 @@ MantisBT DB Password: MantisBTDBPassword123!
 
 ---
 
-**Last Updated**: October 2, 2025
-**Version**: 2.0 - Vulnerable Lab Environment
-**Author**: Penetration Testing Lab Setup
+**Last Updated**: October 23, 2025
+**Version**: 3.0 - Vulnerable Lab Environment Setup Guide
+**Author**: Noah Gram

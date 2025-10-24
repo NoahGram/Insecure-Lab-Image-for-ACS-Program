@@ -1,0 +1,118 @@
+---
+- name: Deploy Complete Vulnerable Lab Environment (Role-Based)
+  hosts: vps_lab
+  gather_facts: yes
+  vars:
+    # Default to vulnerable profile
+    vulnerability_profile: "{{ vulnerability_profile | default('vulnerable_profile') }}"
+    
+  vars_files:
+    - ../vulnerability-profiles.yml
+  
+  # Set version variables based on selected profile
+  pre_tasks:
+    - name: Load profile-specific versions
+      set_fact:
+        apache_version: "{{ vars[vulnerability_profile]['apache_version'] | default('latest') }}"
+        php_version: "{{ vars[vulnerability_profile]['php_version'] | default('latest') }}"
+        mysql_version: "{{ vars[vulnerability_profile]['mysql_version'] | default('latest') }}"
+        gitea_version: "{{ vars[vulnerability_profile]['gitea_version'] | default('1.15.0') }}"
+        dokuwiki_version: "{{ vars[vulnerability_profile]['dokuwiki_version'] | default('stable') }}"
+        mantisbt_version: "{{ vars[vulnerability_profile]['mantisbt_version'] | default('2.25.8') }}"
+        wazuh_version: "{{ vars[vulnerability_profile]['wazuh_version'] | default('4.7.0') }}"
+        cockpit_version: "{{ vars[vulnerability_profile]['cockpit_version'] | default('latest') }}"
+        postfix_version: "{{ vars[vulnerability_profile]['postfix_version'] | default('latest') }}"
+        vulnerable_mode: "{{ vars[vulnerability_profile]['vulnerable_mode'] | default(true) }}"
+        
+    - name: Display selected vulnerability profile
+      debug:
+        msg:
+          - "Selected vulnerability profile: {{ vulnerability_profile }}"
+          - "Vulnerable mode: {{ vulnerable_mode }}"
+          - "Apache version: {{ apache_version }}"
+          - "PHP version: {{ php_version }}"
+
+  roles:
+    - base_system
+    - web_stack  
+    - database
+    - applications
+    - system_services
+    - vulnerabilities  # Add vulnerabilities role
+    
+  post_tasks:
+    # Create vulnerable database entries
+    - name: Create vulnerable database with weak credentials
+      mysql_db:
+        name: testdb
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create database user with weak password
+      mysql_user:
+        name: testuser
+        password: "testpass"
+        priv: "testdb.*:ALL"
+        host: "%"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create vulnerable database table with sample data
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50),
+            password VARCHAR(50),
+            email VARCHAR(100),
+            role VARCHAR(20)
+          );
+          INSERT IGNORE INTO users (id, username, password, email, role) VALUES
+          (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
+          (2, 'john', 'password', 'john@lab.local', 'user'),
+          (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
+          (4, 'test', 'test123', 'test@lab.local', 'user');
+          
+    - name: Create comprehensive vulnerability guide
+      copy:
+        content: |
+          ==============================================
+          VULNERABILITY ASSESSMENT LAB GUIDE
+          ==============================================
+          Profile: {{ vulnerability_profile }}
+          
+          This system contains intentional vulnerabilities for educational testing.
+          ⚠️  WARNING: NEVER expose this system to the internet!
+          
+          Web Vulnerabilities:
+          - SQL Injection: /vulnerable.php?id=1' OR '1'='1
+          - XSS: /vulnerable.php?name=<script>alert('XSS')</script>  
+          - File Upload: /upload.php (accepts any file type)
+          - Info Disclosure: /server-info, /server-status
+          
+          System Access:
+          - Weak accounts: admin/admin, test/test, guest/guest
+          - Database: testuser/testpass (% access)
+          
+          Testing Tools:
+          - nmap -sV {{ ansible_default_ipv4.address }}
+          - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
+          - nikto -h {{ ansible_default_ipv4.address }}
+          
+          ==============================================
+        dest: /root/vulnerability-guide.txt
+        mode: '0644'
+        
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "=== VULNERABLE LAB DEPLOYMENT COMPLETE ==="
+          - "Profile: {{ vulnerability_profile }}"  
+          - "Vulnerable endpoints available at http://localhost:8080"
+          - "See /root/vulnerability-guide.txt for testing instructions"
+          - "⚠️  WARNING: Contains intentional vulnerabilities!"
