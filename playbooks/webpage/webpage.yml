@@ -203,6 +203,39 @@
               }
           }
 
+          // DELETE PAGE (admin only)
+          if($action === 'delete'){
+              $del_page = $_GET['page'] ?? '';
+              $user_role = $_SESSION['role'] ?? null;
+
+              if($user_role !== 'admin'){
+                  http_response_code(403);
+                  die('Verboden: alleen admins mogen pagina\'s verwijderen.');
+              }
+
+              if($del_page === 'Home'){
+                  echo "<script>
+                          alert('De startpagina kan niet worden verwijderd.');
+                          window.location.href='?page=Home';
+                        </script>";
+                  exit;
+              }
+
+              $conn = db_connect();
+              if($conn){
+                  if($stmt = $conn->prepare('DELETE FROM pages WHERE title = ? LIMIT 1')){
+                      $stmt->bind_param('s', $del_page);
+                      $stmt->execute();
+                      $stmt->close();
+                  }
+                  $conn->close();
+              }
+
+              header('Location: ?page=Home');
+              exit;
+          }
+
+
           // Render site (HTML)
           ?>
           <!doctype html>
@@ -213,7 +246,17 @@
             <title>LabSys Wiki — Internal Knowledgebase</title>
             <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,300&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
             <style>
-            :root{ --bg:#f7f8fb; --panel:#fff; --muted:#6b7280; --text:#111827; --accent:#1f6feb; --accent-600:#184ea8; --radius:8px; --max-width:1000px; --sidebar-width:260px;}
+            :root{
+              --bg:#f7f8fb;
+              --panel:#fff;
+              --muted:#6b7280;
+              --text:#111827;
+              --accent:#1f6feb;
+              --accent-600:#184ea8;
+              --radius:10px;
+              --max-width:1300px;
+              --sidebar-width:300px;
+            }
             html,body{height:100%;}
             body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text);padding:24px}
             .wrap{max-width:var(--max-width);margin:0 auto;display:grid;grid-template-columns:1fr var(--sidebar-width);gap:18px}
@@ -227,8 +270,33 @@
             .muted{color:var(--muted)}
             label{display:block;font-weight:700;margin-bottom:6px}
             input[type="text"], input[type="password"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:#fff}
-            .btn{display:inline-block;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:var(--accent);color:#fff;font-weight:700;text-decoration:none}
-            .toc{font-size:0.95rem}
+            .btn {
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              padding:6px 10px;
+              border-radius:6px;
+              border:none;
+              cursor:pointer;
+              background:var(--accent);
+              color:#fff;
+              font-weight:600;
+              font-size:0.88rem;
+              text-decoration:none;
+              transition:background 0.2s ease, transform 0.1s ease;
+            }
+            .btn:hover { background:var(--accent-600); transform:translateY(-1px); }
+            .btn:active { transform:translateY(0); }
+
+            .btn-delete {
+              background:#d33;
+            }
+            .btn-delete:hover {
+              background:#b22;
+            }
+            .textarea#content {
+                resize: vertical;
+            }
             .meta{font-size:0.85rem;color:var(--muted);margin-bottom:10px}
             pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
             .page-title{font-family:'Merriweather',serif;font-size:1.4rem;margin:0 0 6px 0}
@@ -267,6 +335,14 @@
                   <form method="GET" style="display:flex;gap:8px;align-items:center">
                     <input type="hidden" name="action" value="search">
                     <input name="q" type="text" placeholder="Zoek pagina's..." value="<?php echo isset($_GET['q'])?h($_GET['q']):''; ?>">
+
+                    <!-- New: search scope control -->
+                    <label for="scope" class="small muted" style="margin:0 6px 0 0;">Zoek in:</label>
+                    <select id="scope" name="scope" aria-label="Zoek in">
+                      <option value="both" <?php echo (isset($_GET['scope']) && $_GET['scope']==='title') ? '' : 'selected'; ?>>Titel + inhoud</option>
+                      <option value="title" <?php echo (isset($_GET['scope']) && $_GET['scope']==='title') ? 'selected' : ''; ?>>Alleen titel</option>
+                    </select>
+
                     <button class="btn" type="submit">Zoek</button>
                   </form>
                 </div>
@@ -353,29 +429,71 @@
                             <div style="margin-top:8px">
                               <button class="btn" type="submit"><?php echo $content ? 'Opslaan' : 'Creëer'; ?></button>
                               <a href="?page=Home" style="margin-left:8px" class="small">Annuleer</a>
+
+                              <div style="margin-top:10px">
+                                <a href="?action=delete&page=<?php echo rawurlencode($edit_page); ?>"
+                                  class="btn btn-delete"
+                                  onclick="return confirm('Weet je zeker dat je deze pagina wilt verwijderen?');">Verwijder pagina</a>
+                              </div>
+
                             </div>
                           </form>
                       <?php }
                   }
               }
               elseif($action === 'search' && !empty($_GET['q'])){
-                  $q = $_GET['q'];
-                  echo '<h2 class="page-title">Zoekresultaten</h2>';
-                  if($conn){
-                      if($s = $conn->prepare("SELECT title, excerpt FROM pages WHERE title LIKE CONCAT('%', ?, '%') OR content LIKE CONCAT('%', ?, '%') LIMIT 20")){
-                          $s->bind_param('ss', $q, $q);
-                          $s->execute();
-                          $res = $s->get_result();
-                          echo '<pre class="results" aria-live="polite">';
-                          while($row = $res->fetch_assoc()){
-                              echo "Page: <a href='?page=".rawurlencode($row['title'])."'>".h($row['title'])."</a> — ".h($row['excerpt'])."\n";
-                          }
-                          echo '</pre>';
-                          $s->close();
-                      }
-                      $conn->close();
-                  }
-              }
+                $q = trim($_GET['q']);
+                $scope = $_GET['scope'] ?? 'both'; // 'both' or 'title'
+
+                echo '<h2 class="page-title">Zoekresultaten</h2>';
+
+                if($conn){
+                    if($scope === 'title'){
+                        // search only in title
+                        $sql = "SELECT title, excerpt FROM pages WHERE title LIKE CONCAT('%', ?, '%') LIMIT 50";
+                        if($s = $conn->prepare($sql)){
+                            $s->bind_param('s', $q);
+                            $s->execute();
+                            $res = $s->get_result();
+
+                            echo '<pre class="results" aria-live="polite">';
+                            if($res->num_rows === 0) {
+                                echo "Geen resultaten gevonden voor '".h($q)."' in titels.\n";
+                            } else {
+                                while($row = $res->fetch_assoc()){
+                                    echo "Page: <a href='?page=".rawurlencode($row['title'])."'>".h($row['title'])."</a> — ".h($row['excerpt'])."\n";
+                                }
+                            }
+                            echo '</pre>';
+                            $s->close();
+                        } else {
+                            echo '<div class="muted">Databasefout bij zoeken.</div>';
+                        }
+                    } else {
+                        // default: search title OR content (legacy behavior)
+                        $sql = "SELECT title, excerpt FROM pages WHERE title LIKE CONCAT('%', ?, '%') OR content LIKE CONCAT('%', ?, '%') LIMIT 50";
+                        if($s = $conn->prepare($sql)){
+                            $s->bind_param('ss', $q, $q);
+                            $s->execute();
+                            $res = $s->get_result();
+
+                            echo '<pre class="results" aria-live="polite">';
+                            if($res->num_rows === 0) {
+                                echo "Geen resultaten gevonden voor '".h($q)."' in titels of inhoud.\n";
+                            } else {
+                                while($row = $res->fetch_assoc()){
+                                    echo "Page: <a href='?page=".rawurlencode($row['title'])."'>".h($row['title'])."</a> — ".h($row['excerpt'])."\n";
+                                }
+                            }
+                            echo '</pre>';
+                            $s->close();
+                        } else {
+                            echo '<div class="muted">Databasefout bij zoeken.</div>';
+                        }
+                    }
+                    $conn->close();
+                }
+            }
               ?>
             </main>
 
