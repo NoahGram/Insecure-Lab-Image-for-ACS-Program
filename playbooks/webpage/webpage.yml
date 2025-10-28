@@ -294,9 +294,6 @@
             .btn-delete:hover {
               background:#b22;
             }
-            .textarea#content {
-                resize: vertical;
-            }
             .meta{font-size:0.85rem;color:var(--muted);margin-bottom:10px}
             pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;white-space:pre-wrap}
             .page-title{font-family:'Merriweather',serif;font-size:1.4rem;margin:0 0 6px 0}
@@ -425,7 +422,7 @@
                           <form method="POST" class="editor" action="?action=save">
                             <input type="hidden" name="page" value="<?php echo h($edit_page); ?>">
                             <label for="content">Pagina inhoud (Markdown-achtig)</label>
-                            <textarea id="content" name="content" rows="12"><?php echo h($content); ?></textarea>
+                            <textarea id="content" name="content" rows="12" style="resize: vertical; width: 98%;"><?php echo h($content); ?></textarea>                            
                             <div style="margin-top:8px">
                               <button class="btn" type="submit"><?php echo $content ? 'Opslaan' : 'Creëer'; ?></button>
                               <a href="?page=Home" style="margin-left:8px" class="small">Annuleer</a>
