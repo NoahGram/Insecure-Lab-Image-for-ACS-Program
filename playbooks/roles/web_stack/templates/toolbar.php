@@ -4,17 +4,17 @@
         <form method="GET" style="display:flex; gap:6px; align-items:center; margin:0;">
             <input type="hidden" name="action" value="search">
             
-            <input name="q" type="text" placeholder="Zoek pagina's..." 
+            <input name="q" type="text" placeholder="Search pages..." 
                 value="<?= isset($_GET['q']) ? h($_GET['q']) : '' ?>" 
                 style="width:180px; height:32px; padding:4px 6px; line-height:24px; box-sizing:border-box;">
 
-            <select id="scope" name="scope" aria-label="Zoek in" 
+            <select id="scope" name="scope" aria-label="Search in" 
                 style="height:32px; padding:4px 6px; line-height:24px;">
-                <option value="both" <?= (isset($_GET['scope']) && $_GET['scope']==='title') ? '' : 'selected'; ?>>Titel + inhoud</option>
-                <option value="title" <?= (isset($_GET['scope']) && $_GET['scope']==='title') ? 'selected' : ''; ?>>Alleen titel</option>
+                <option value="both" <?= (isset($_GET['scope']) && $_GET['scope']==='title') ? '' : 'selected'; ?>>Title + content</option>
+                <option value="title" <?= (isset($_GET['scope']) && $_GET['scope']==='title') ? 'selected' : ''; ?>>Title only</option>
             </select>
 
-            <button class="btn" type="submit" style="height:32px; padding:4px 12px;">Zoek</button>
+            <button class="btn" type="submit" style="height:32px; padding:4px 12px;">Search</button>
         </form>
     </div>
 
@@ -22,9 +22,9 @@
      <div style="flex:0 0 auto; display:flex; gap:6px;">
         <?php if (is_admin()): ?>
             <?php if ($action === 'view'): ?>
-                <a class="btn" href="?action=edit&page=<?= rawurlencode($page) ?>">Bewerk pagina</a>
+                <a class="btn" href="?action=edit&page=<?= rawurlencode($page) ?>">Edit page</a>
             <?php endif; ?>
-            <a class="btn" href="?action=create">Maak nieuwe pagina</a>
+            <a class="btn" href="?action=create">Create new page</a>
         <?php endif; ?>
     </div>
 </div>

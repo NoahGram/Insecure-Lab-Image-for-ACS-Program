@@ -44,7 +44,7 @@
     login_db: testdb
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
-      VALUES ('Home', 'Welkom bij LabSys Wiki! Gebruik de "Bewerken"-knop om inhoud toe te voegen.', 'Welkom bij LabSys Wiki!');
+      VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');
 
 - name: Upgrade users table for login system
   mysql_query:

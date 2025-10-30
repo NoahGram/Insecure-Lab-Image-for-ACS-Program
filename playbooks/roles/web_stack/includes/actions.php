@@ -11,38 +11,95 @@ switch ($action) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = $_POST['username'] ?? '';
             $password = $_POST['password'] ?? '';
+
             $conn = db_connect();
             if ($conn && $stmt = $conn->prepare('SELECT id, username, password, role FROM users WHERE username=? LIMIT 1')) {
                 $stmt->bind_param('s', $username);
                 $stmt->execute();
                 $res = $stmt->get_result();
+
                 if ($row = $res->fetch_assoc()) {
                     $stored = $row['password'];
-                    $ok = false;
-                    if (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2'))) {
-                        $ok = password_verify($password, $stored);
-                    } else {
-                        $ok = hash_equals((string)$stored, (string)$password);
-                    }
+                    $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
+                            ? password_verify($password, $stored)
+                            : hash_equals((string)$stored, (string)$password);
+
                     if ($ok) {
                         session_regenerate_id(true);
                         $_SESSION['username'] = $row['username'];
                         $_SESSION['role'] = $row['role'] ?? 'user';
-                        header('Location: ?page=' . rawurlencode($page));
+                        header('Location: ?page=' . rawurlencode($page)); // only redirect on success
                         exit;
                     } else {
-                        $login_error = 'Ongeldige gebruikersnaam of wachtwoord.';
+                        $login_error = 'Invalid username or password.'; // display error
                     }
                 } else {
-                    $login_error = 'Ongeldige gebruikersnaam of wachtwoord.';
+                    $login_error = 'Invalid username or password.'; // display error
+                }
+
+                $stmt->close();
+                $conn->close();
+            } else {
+                $login_error = 'Database error.'; // display error
+            }
+        }
+        // IMPORTANT: do NOT redirect here
+        break;
+
+
+
+    case 'register':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $username = trim($_POST['username'] ?? '');
+            $password = trim($_POST['password'] ?? '');
+            $password_confirm = trim($_POST['password_confirm'] ?? '');
+            $email    = trim($_POST['email'] ?? '');
+
+            if (!$username || !$password || !$password_confirm || !$email) {
+                $register_error = 'All fields are required.';
+                break;
+            }
+
+            if ($password !== $password_confirm) {
+                $register_error = 'Passwords do not match.';
+                break;
+            }
+
+            $conn = db_connect();
+            if ($conn) {
+                $stmt = $conn->prepare('SELECT id FROM users WHERE username=? LIMIT 1');
+                $stmt->bind_param('s', $username);
+                $stmt->execute();
+                $stmt->store_result();
+                if ($stmt->num_rows > 0) {
+                    $register_error = 'Username already exists.';
+                    $stmt->close();
+                    $conn->close();
+                    break;
+                }
+                $stmt->close();
+
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+
+                $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
+                $role = 'user'; 
+                $stmt->bind_param('ssss', $username, $hash, $email, $role);
+                if ($stmt->execute()) {
+                    $_SESSION['username'] = $username;
+                    $_SESSION['role'] = $role;
+                    header('Location: ?page=Home');
+                    exit;
+                } else {
+                    $register_error = 'Database error: could not create user.';
                 }
                 $stmt->close();
                 $conn->close();
             } else {
-                $login_error = 'Databasefout.';
+                $register_error = 'Database connection error.';
             }
         }
         break;
+
 
     case 'logout':
         $_SESSION = [];
@@ -61,7 +118,7 @@ switch ($action) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_admin()) {
                 http_response_code(403);
-                die('Verboden: alleen admins mogen pagina\'s wijzigen.');
+                die('Forbidden: only admins can modify pages.');
             }
             $save_page = $_POST['page'] ?? 'Home';
             $save_content = $_POST['content'] ?? '';
@@ -95,11 +152,11 @@ switch ($action) {
     case 'delete':
         if (!is_admin()) {
             http_response_code(403);
-            die('Verboden: alleen admins mogen verwijderen.');
+            die('Forbidden: only admins can delete pages.');
         }
         $del_page = $_GET['page'] ?? '';
         if ($del_page === 'Home') {
-            echo "<script>alert('De startpagina kan niet worden verwijderd.'); window.location='?page=Home';</script>";
+            echo "<script>alert('The Home page cannot be deleted.'); window.location='?page=Home';</script>";
             exit;
         }
         $conn = db_connect();

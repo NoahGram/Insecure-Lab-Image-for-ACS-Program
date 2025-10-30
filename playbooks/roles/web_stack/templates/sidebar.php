@@ -1,6 +1,6 @@
 <aside class="card">
   <section class="toc">
-    <h4>Inhoud</h4>
+    <h4>Content</h4>
     <ul class="small muted">
       <li><a href="?page=Home">Home</a></li>
       <li><a href="?page=Getting-Started">Getting Started</a></li>
