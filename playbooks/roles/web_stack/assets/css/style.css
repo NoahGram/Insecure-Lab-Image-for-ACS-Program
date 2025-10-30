@@ -21,7 +21,7 @@ main.card{background:var(--panel);padding:18px;border-radius:var(--radius);box-s
 aside.card{background:var(--panel);padding:14px;border-radius:var(--radius);box-shadow:0 6px 18px rgba(2,6,23,0.03);border:1px solid rgba(2,6,23,0.02)}
 .muted{color:var(--muted)}
 label{display:block;font-weight:700;margin-bottom:6px}
-input[type="text"], input[type="password"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:#fff}
+input[type="text"], input[type="email"], input[type="password"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;background:#fff}
 .btn {
     display:inline-flex;
     align-items:center;
@@ -55,6 +55,7 @@ pre.results{background:#0b1220;color:#e6eef6;padding:12px;border-radius:8px;whit
 .login-box{border:1px solid #e6e9ee;padding:12px;border-radius:8px}
 footer{grid-column:1 / span 2;text-align:center;color:var(--muted);margin-top:14px}
 .login-box input[type="text"],
+.login-box input[type="email"],
 .login-box input[type="password"] {
   width: 100%;
   box-sizing: border-box; 

@@ -28,22 +28,21 @@ switch ($action) {
                         session_regenerate_id(true);
                         $_SESSION['username'] = $row['username'];
                         $_SESSION['role'] = $row['role'] ?? 'user';
-                        header('Location: ?page=' . rawurlencode($page)); // only redirect on success
+                        header('Location: ?page=' . rawurlencode($page));
                         exit;
                     } else {
-                        $login_error = 'Invalid username or password.'; // display error
+                        $login_error = 'Invalid username or password.';
                     }
                 } else {
-                    $login_error = 'Invalid username or password.'; // display error
+                    $login_error = 'Invalid username or password.';
                 }
 
                 $stmt->close();
                 $conn->close();
             } else {
-                $login_error = 'Database error.'; // display error
+                $login_error = 'Database error.';
             }
         }
-        // IMPORTANT: do NOT redirect here
         break;
 
 
@@ -65,6 +64,29 @@ switch ($action) {
                 break;
             }
 
+            $password_errors = [];
+
+            if (strlen($password) < 8) {
+                $password_errors[] = 'Password must be at least 8 characters long.';
+            }
+            if (!preg_match('/[A-Z]/', $password)) {
+                $password_errors[] = 'Password must contain at least one uppercase letter.';
+            }
+            if (!preg_match('/[a-z]/', $password)) {
+                $password_errors[] = 'Password must contain at least one lowercase letter.';
+            }
+            if (!preg_match('/[0-9]/', $password)) {
+                $password_errors[] = 'Password must contain at least one number.';
+            }
+            if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+                $password_errors[] = 'Password must contain at least one special character.';
+            }
+
+            if (!empty($password_errors)) {
+                $register_error = implode(' ', $password_errors);
+                break;
+            }
+
             $conn = db_connect();
             if ($conn) {
                 $stmt = $conn->prepare('SELECT id FROM users WHERE username=? LIMIT 1');
@@ -82,7 +104,7 @@ switch ($action) {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
 
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
-                $role = 'user'; 
+                $role = 'user';
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
                 if ($stmt->execute()) {
                     $_SESSION['username'] = $username;
@@ -99,6 +121,7 @@ switch ($action) {
             }
         }
         break;
+
 
 
     case 'logout':

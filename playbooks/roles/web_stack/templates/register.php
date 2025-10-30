@@ -1,5 +1,7 @@
 <h2 class="page-title">Register</h2>
 <div class="login-box">
+<script src="assets/js/register.js" defer></script>
+
   <?php if (!empty($register_error)) : ?>
     <div class="muted" style="color:#a33;margin-bottom:8px"><?= h($register_error) ?></div>
   <?php endif; ?>
@@ -8,7 +10,7 @@
     <div class="muted" style="color:green;margin-bottom:8px"><?= h($register_success) ?></div>
   <?php endif; ?>
 
-  <form method="POST" action="?action=register">
+  <form id="registerForm" method="POST" action="?action=register">
     <label for="username">Username</label>
     <input id="username" name="username" type="text" required>
 
@@ -19,7 +21,7 @@
     <input id="password_confirm" name="password_confirm" type="password" required>
 
     <label for="email" style="margin-top:8px">Email</label>
-    <input id="email" name="email" type="text" required>
+    <input id="email" name="email" type="email" required>
 
     <div style="margin-top:8px">
       <button class="btn" type="submit">Register</button>
