@@ -7,8 +7,9 @@ Write-Host "Reverting VM to snapshot '00 - Clean Base Image'..."
 # NOTE: Replace 'YourVMName' with the actual name of your VirtualBox VM
 # VBoxManage snapshot "YourVMName" restore "00 - Clean Base Image"
 
-Write-Host "Running Ansible Playbook: 01_clean_image_base.yml"
+Write-Host "Running Ansible Playbook: site_clean.yml (Role-Based)"
 docker run --rm `
   -v D:\ansible-control-node:/ansible `
+  -e ANSIBLE_ROLES_PATH=/ansible/playbooks/roles `
   ansible-control-node `
-  ansible-playbook /ansible/playbooks/01_clean_image_base.yml -i /ansible/inventory.ini
+  ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini

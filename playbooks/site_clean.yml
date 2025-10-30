@@ -1,0 +1,82 @@
+---
+- name: Deploy Clean Base Lab Environment (Role-Based)
+  hosts: vps_lab
+  gather_facts: yes
+  vars:
+    # Default vulnerability profile - can be overridden via extra-vars
+    default_vulnerability_profile: "secure_profile"
+    
+  vars_files:
+    - ../vulnerability-profiles.yml
+  
+  # Set version variables based on selected profile
+  pre_tasks:
+    - name: Set current vulnerability profile
+      set_fact:
+        current_profile: "{{ vulnerability_profile | default(default_vulnerability_profile) }}"
+        
+    - name: Load profile-specific versions
+      set_fact:
+        apache_version: "{{ vars[current_profile]['apache_version'] | default('latest') }}"
+        php_version: "{{ vars[current_profile]['php_version'] | default('latest') }}"
+        mysql_version: "{{ vars[current_profile]['mysql_version'] | default('latest') }}"
+        gitea_version: "{{ vars[current_profile]['gitea_version'] | default('1.15.0') }}"
+        dokuwiki_version: "{{ vars[current_profile]['dokuwiki_version'] | default('stable') }}"
+        mantisbt_version: "{{ vars[current_profile]['mantisbt_version'] | default('2.25.8') }}"
+        wazuh_version: "{{ vars[current_profile]['wazuh_version'] | default('4.7.0') }}"
+        cockpit_version: "{{ vars[current_profile]['cockpit_version'] | default('latest') }}"
+        postfix_version: "{{ vars[current_profile]['postfix_version'] | default('latest') }}"
+        
+    - name: Display selected vulnerability profile
+      debug:
+        msg:
+          - "Selected vulnerability profile: {{ current_profile }}"
+          - "Apache version: {{ apache_version }}"
+          - "PHP version: {{ php_version }}"
+          - "MySQL version: {{ mysql_version }}"
+
+  roles:
+    - role: base_system
+      tags: base_system
+    - role: web_stack
+      tags: web_stack
+    - role: database
+      tags: database
+    - role: applications
+      tags: applications
+    - role: system_services
+      tags: system_services
+    
+  post_tasks:
+    # Final system verification
+    - name: Create info file with service URLs
+      copy:
+        content: |
+          ==============================================
+          LAB ENVIRONMENT - INSTALLED SERVICES
+          ==============================================
+          Profile: {{ current_profile }}
+          
+          Web Services: http://{{ ansible_default_ipv4.address }}
+          Gitea Git Server: http://{{ ansible_default_ipv4.address }}:3000
+          Cockpit: https://{{ ansible_default_ipv4.address }}:9090
+          
+          Database:
+          - MariaDB: localhost:3306 (root/{{ mysql_root_password }})
+          
+          SSH Access: ssh -p 2222 noah@localhost
+          
+          ==============================================
+          SETUP COMPLETED SUCCESSFULLY!
+          ==============================================
+        dest: /root/lab-services-info.txt
+        mode: '0644'
+        
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "=== DEPLOYMENT SUMMARY ==="
+          - "Clean lab environment deployed successfully!"
+          - "Profile: {{ current_profile }}"
+          - "Check /root/lab-services-info.txt for service details"
+          - "Web interface: http://localhost:8080 (from host machine)"

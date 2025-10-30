@@ -2,8 +2,8 @@
 #
 # Run Ansible Playbook to introduce all vulnerabilities
 
-Write-Host "Running Ansible Playbook: 02_introduce_vulnerabilities.yml"
+Write-Host "Running Ansible Playbook: site_vulnerable.yml (Role-Based)"
 docker run --rm `
   -v D:\ansible-control-node:/ansible `
   ansible-control-node `
-  ansible-playbook /ansible/playbooks/02_introduce_vulnerabilities.yml -i /ansible/inventory.ini
+  ansible-playbook /ansible/playbooks/site_vulnerable.yml -i /ansible/inventory.ini

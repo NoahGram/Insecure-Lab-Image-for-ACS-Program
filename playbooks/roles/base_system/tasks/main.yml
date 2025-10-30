@@ -1,0 +1,92 @@
+---
+# Base System Role - System preparation and base package installation
+- name: Check for broken packages before update
+  shell: dpkg --audit
+  register: dpkg_audit_pre
+  changed_when: false
+  ignore_errors: yes
+
+- name: Fix broken packages if any exist
+  shell: apt-get -f install -y
+  when: dpkg_audit_pre.stdout != ""
+  ignore_errors: yes
+
+- name: Hold problematic packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - wazuh-manager
+    - wazuh-agent
+  ignore_errors: yes
+
+- name: Ensure the system is updated
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+    autoremove: yes
+  register: system_update
+  ignore_errors: yes
+
+- name: Check for remaining broken packages after update
+  shell: dpkg --audit
+  register: dpkg_audit_post
+  changed_when: false
+  ignore_errors: yes
+
+- name: Display update status
+  debug:
+    msg: 
+      - "System update: {{ 'SUCCESS' if system_update is succeeded else 'FAILED' }}"
+      - "Broken packages: {{ 'None' if dpkg_audit_post.stdout == '' else 'Found issues' }}"
+      - "{{ dpkg_audit_post.stdout_lines if dpkg_audit_post.stdout != '' else '' }}"
+
+- name: Install base required packages
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - wget
+      - unzip
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - python3-apt
+      - python3-pip
+      - python3-pymysql
+    state: present
+
+# Version checking tasks
+- name: Check currently installed Apache version
+  shell: apache2 -v 2>/dev/null | head -1 | awk '{print $3}' || echo "not_installed"
+  register: current_apache_version
+  changed_when: false
+  ignore_errors: yes
+
+- name: Check currently installed PHP version  
+  shell: php -v 2>/dev/null | head -1 | awk '{print $2}' || echo "not_installed"
+  register: current_php_version
+  changed_when: false
+  ignore_errors: yes
+
+- name: Check currently installed MariaDB version
+  shell: mariadb --version 2>/dev/null | awk '{print $5}' | sed 's/,//' || echo "not_installed"
+  register: current_mysql_version
+  changed_when: false
+  ignore_errors: yes
+
+- name: Check currently installed Gitea version
+  shell: /usr/local/bin/gitea --version 2>/dev/null | head -1 | awk '{print $3}' || echo "not_installed"
+  register: current_gitea_version
+  changed_when: false
+  ignore_errors: yes
+
+- name: Display current software versions
+  debug:
+    msg:
+      - "Apache: {{ current_apache_version.stdout }}"
+      - "PHP: {{ current_php_version.stdout }}"
+      - "MariaDB: {{ current_mysql_version.stdout }}"
+      - "Gitea: {{ current_gitea_version.stdout }}"

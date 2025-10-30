@@ -1,0 +1,127 @@
+---
+# Vulnerabilities Role - Introduce controlled vulnerabilities
+- name: Create vulnerable web pages for testing
+  copy:
+    content: |
+      <?php
+      // VULNERABLE PHP SCRIPT - FOR TESTING ONLY
+      // This script contains intentional vulnerabilities
+      echo "<h1>Vulnerable Test Page</h1>";
+      // SQL Injection
+      if (isset($_GET['id'])) { $id = $_GET['id']; $query = "SELECT * FROM users WHERE id = " . $id; echo "<p>Query: " . $query . "</p>"; }
+      // XSS
+      if (isset($_GET['name'])) { echo "<p>Hello " . $_GET['name'] . "</p>"; }
+      // Command injection
+      if (isset($_POST['ping'])) { $host = $_POST['host']; $output = shell_exec('ping -c 1 ' . $host); echo "<pre>" . $output . "</pre>"; }
+      // File inclusion
+      if (isset($_GET['page'])) { include($_GET['page']); }
+      ?>
+      <h2>Test Forms</h2>
+      <form method="GET">
+          <label>Test XSS: <input type="text" name="name"></label>
+          <input type="submit" value="Submit">
+      </form>
+      <form method="POST">
+          <label>Test Command Injection: <input type="text" name="host" value="127.0.0.1"></label>
+          <input type="hidden" name="ping" value="1">
+          <input type="submit" value="Ping">
+      </form>
+    dest: /var/www/html/vulnerable.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Create vulnerable upload directory
+  file:
+    path: /var/www/html/uploads
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0777'
+
+- name: Create vulnerable file upload script
+  copy:
+    content: |
+      <?php
+      if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+          $target_dir = "uploads/";
+          $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+          if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+              echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
+          } else {
+              echo "Sorry, there was an error uploading your file.";
+          }
+      }
+      ?>
+      <h2>Vulnerable File Upload</h2>
+      <form action="" method="post" enctype="multipart/form-data">
+          <label>Select file to upload:</label>
+          <input type="file" name="fileToUpload" required>
+          <input type="submit" value="Upload File" name="submit">
+      </form>
+      <h3>Uploaded Files:</h3>
+      <?php $files = scandir('uploads/'); foreach($files as $file) { if($file != "." && $file != "..") { echo "<a href='uploads/$file'>$file</a><br>"; } } ?>
+    dest: /var/www/html/upload.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Create test users with weak passwords
+  user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+  loop:
+    - { name: "admin", password: "admin" }
+    - { name: "test", password: "test" }
+    - { name: "guest", password: "guest" }
+    - { name: "user", password: "password" }
+
+- name: Add weak sudo privileges
+  lineinfile:
+    path: /etc/sudoers
+    line: "{{ item }}"
+    validate: 'visudo -cf %s'
+  loop:
+    - "admin ALL=(ALL) NOPASSWD:ALL"
+    - "test ALL=(ALL) ALL"
+
+- name: Configure Apache with vulnerable settings
+  lineinfile:
+    path: /etc/apache2/apache2.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: "^ServerTokens", line: "ServerTokens Full" }
+    - { regexp: "^ServerSignature", line: "ServerSignature On" }
+  notify: restart apache
+
+- name: Enable Apache server-info and server-status
+  copy:
+    content: |
+      <Location "/server-info">
+          SetHandler server-info
+          Require all granted
+      </Location>
+      <Location "/server-status">
+          SetHandler server-status
+          Require all granted
+      </Location>
+    dest: /etc/apache2/conf-available/server-info.conf
+
+- name: Enable server-info configuration
+  command: a2enconf server-info
+  notify: restart apache
+
+- name: Create vulnerability assessment guide
+  copy:
+    content: |
+      ==============================================
+      VULNERABILITY ASSESSMENT LAB GUIDE
+      ==============================================
+      This system has been configured with intentional vulnerabilities for educational and testing purposes.
+      ⚠️  WARNING: This system should NEVER be exposed to the internet!
+      See /var/www/html for vulnerable endpoints.
+    dest: /root/vulnerability-guide.txt
+    mode: '0644'
