@@ -14,8 +14,8 @@ require_once __DIR__ . '/includes/actions.php';
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <?php if(!empty($_SESSION['username'])): ?>
-          <div class="small muted">Ingelogd als <strong><?= h($_SESSION['username']); ?></strong> (<?= h($_SESSION['role'] ?? 'user'); ?>)</div>
-          <a class="btn" href="?action=logout">Log uit</a>
+          <div class="small muted">Logged in as <strong><?= h($_SESSION['username']); ?></strong> (<?= h($_SESSION['role'] ?? 'user'); ?>)</div>
+          <a class="btn" href="?action=logout">Log out</a>
         <?php else: ?>
           <a class="btn" href="?action=login">Log in</a>
           <a class="btn" href="?action=register">Register</a>
@@ -27,17 +27,23 @@ require_once __DIR__ . '/includes/actions.php';
 
   <main class="card">
     <?php
-      if ($action !== 'login' && $action !== 'register') {
-          include 'templates/toolbar.php';
-      }
-      
-      if ($action === 'login') include 'templates/login.php';
-      elseif ($action === 'register') include 'templates/register.php';
-      elseif ($action === 'view') include 'templates/view.php';
-      elseif (in_array($action, ['edit','create'])) include 'templates/edit.php';
-      elseif ($action === 'search') include 'templates/search.php';
+    if (empty($_SESSION['username']) && !in_array($action, ['login','register','view']) || ($action === 'view' && $page !== 'Home')) {
+        echo "<div class='small muted'>Please log in to view pages.</div>";
+        $action = 'view';
+        $page = 'Home';
+    }
+
+    if (!empty($_SESSION['username']) && $action !== 'login' && $action !== 'register') {
+        include 'templates/toolbar.php';
+    }
+
+    if ($action === 'login') include 'templates/login.php';
+    elseif ($action === 'register') include 'templates/register.php';
+    elseif ($action === 'view') include 'templates/view.php';
+    elseif (in_array($action, ['edit','create'])) include 'templates/edit.php';
+    elseif ($action === 'search') include 'templates/search.php';
     ?>
-  </main>
+</main>
 
   <?php include 'templates/sidebar.php'; ?>
   <?php include 'templates/footer.php'; ?>

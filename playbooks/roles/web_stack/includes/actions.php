@@ -13,7 +13,7 @@ switch ($action) {
             $password = $_POST['password'] ?? '';
 
             $conn = db_connect();
-            if ($conn && $stmt = $conn->prepare('SELECT id, username, password, role FROM users WHERE username=? LIMIT 1')) {
+            if ($conn && $stmt = $conn->prepare('SELECT id, username, password, email, role FROM users WHERE username=? LIMIT 1')) {
                 $stmt->bind_param('s', $username);
                 $stmt->execute();
                 $res = $stmt->get_result();
@@ -27,6 +27,7 @@ switch ($action) {
                     if ($ok) {
                         session_regenerate_id(true);
                         $_SESSION['username'] = $row['username'];
+                        $_SESSION['email'] = $row['email'];
                         $_SESSION['role'] = $row['role'] ?? 'user';
                         header('Location: ?page=' . rawurlencode($page));
                         exit;
