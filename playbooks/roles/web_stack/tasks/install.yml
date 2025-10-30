@@ -1,0 +1,36 @@
+---
+- name: Deploy LabSys Wiki
+  hosts: vps_lab
+  become: true
+  vars:
+    app_dir: /var/www/labsys-wiki
+  tasks:
+
+    - name: Ensure destination directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Copy application files to remote server
+      copy:
+        src: "{{ playbook_dir }}/roles/web_stack/"
+        dest: "{{ app_dir }}/"
+        owner: www-data
+        group: www-data
+        mode: preserve
+      notify: Restart web service
+
+    - name: Ensure Apache is running
+      service:
+        name: apache2
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Restart web service
+      service:
+        name: apache2
+        state: restarted

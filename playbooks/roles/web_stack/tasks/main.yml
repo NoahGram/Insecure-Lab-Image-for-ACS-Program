@@ -1,0 +1,13 @@
+---
+# Master task list for LabSys Wiki role
+- name: Install required packages
+  import_tasks: install.yml
+
+- name: Deploy LabSys Wiki portal
+  import_tasks: deploy.yml
+
+- name: Configure and seed database
+  import_tasks: database.yml
+
+- name: Create local system test users
+  import_tasks: users.yml
