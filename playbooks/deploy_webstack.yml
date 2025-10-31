@@ -35,8 +35,14 @@
         - { regexp: '^ServerSignature', line: 'ServerSignature On' }
       notify: Restart web service
 
+    - name: Check if info config exists
+      stat:
+        path: /etc/apache2/conf-available/info.conf
+      register: info_conf
+
     - name: Enable info config
       command: a2enconf info
+      when: info_conf.stat.exists
       notify: Restart web service
 
     # Ensure Apache is running

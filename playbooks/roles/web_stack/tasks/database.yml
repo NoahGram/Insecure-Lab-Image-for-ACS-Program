@@ -1,4 +1,11 @@
 ---
+- name: Ensure testdb database exists
+  mysql_db:
+    name: testdb
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+
 - name: Create users table
   mysql_query:
     login_user: root
