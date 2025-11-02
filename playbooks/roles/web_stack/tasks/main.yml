@@ -1,20 +1,7 @@
 ---
 # Web Stack Role - Apache, PHP installation and LabSys Wiki configuration
 
-# First install Apache and PHP if not already done
-- name: Stop and disable Nginx (if running) to free port 80
-  systemd:
-    name: nginx
-    state: stopped
-    enabled: no
-  ignore_errors: yes
-
-- name: Remove Nginx package to avoid conflicts
-  ansible.builtin.apt:
-    name: nginx
-    state: absent
-  ignore_errors: yes
-
+# Install Apache and PHP
 - name: Install Apache HTTP Server and PHP modules
   ansible.builtin.apt:
     name:

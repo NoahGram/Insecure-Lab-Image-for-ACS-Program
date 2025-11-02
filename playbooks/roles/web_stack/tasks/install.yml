@@ -7,18 +7,92 @@
     group: www-data
     mode: '0755'
 
-- name: Copy web application files to remote server
+- name: Clean up any existing duplicate directories
+  file:
+    path: "{{ app_dir }}/{{ item }}"
+    state: absent
+  loop:
+    - css
+    - js
+  when: labsys_wiki_enabled | default(true)
+
+- name: Copy web application index file
   copy:
-    src: "{{ item }}"
-    dest: "{{ app_dir }}/"
+    src: "{{ role_path }}/index.php"
+    dest: "{{ app_dir }}/index.php"
     owner: www-data
     group: www-data
     mode: preserve
-  loop:
-    - "{{ role_path }}/index.php"
-    - "{{ role_path }}/assets/"
-    - "{{ role_path }}/includes/"
   notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
+
+- name: Copy includes directory with proper structure
+  copy:
+    src: "{{ role_path }}/includes/"
+    dest: "{{ app_dir }}/includes/"
+    owner: www-data
+    group: www-data
+    mode: preserve
+    directory_mode: '0755'
+  notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
+
+- name: Copy templates directory with proper structure
+  copy:
+    src: "{{ role_path }}/templates/"
+    dest: "{{ app_dir }}/templates/"
+    owner: www-data
+    group: www-data
+    mode: preserve
+    directory_mode: '0755'
+  notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
+
+- name: Copy assets directory with proper structure
+  copy:
+    src: "{{ role_path }}/assets/"
+    dest: "{{ app_dir }}/assets/"
+    owner: www-data
+    group: www-data
+    mode: preserve
+    directory_mode: '0755'
+  notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
+
+- name: Ensure proper file permissions for web files
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+    recurse: yes
+  when: labsys_wiki_enabled | default(true)
+
+- name: Remove default Apache index page
+  file:
+    path: /var/www/html/index.html
+    state: absent
+  when: labsys_wiki_enabled | default(true)
+
+- name: Create landing page redirect to LabSys Wiki
+  copy:
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>Lab Environment</title>
+          <meta http-equiv="refresh" content="0;url=/labsys-wiki/">
+      </head>
+      <body>
+          <h1>Lab Environment</h1>
+          <p>Redirecting to <a href="/labsys-wiki/">LabSys Wiki</a>...</p>
+      </body>
+      </html>
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
   when: labsys_wiki_enabled | default(true)
 
 - name: Ensure Apache is running
