@@ -1,0 +1,10 @@
+---
+- name: Create test system users
+  user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    shell: /bin/bash
+  loop:
+    - { name: "sysadmin", password: "admin" }
+    - { name: "guest", password: "guest" }
+    - { name: "backup", password: "backup123" }
