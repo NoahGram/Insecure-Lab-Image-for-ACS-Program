@@ -7,14 +7,19 @@
     group: www-data
     mode: '0755'
 
-- name: Copy application files to remote server
+- name: Copy web application files to remote server
   copy:
-    src: "{{ playbook_dir }}/roles/web_stack/"
+    src: "{{ item }}"
     dest: "{{ app_dir }}/"
     owner: www-data
     group: www-data
     mode: preserve
+  loop:
+    - "{{ role_path }}/index.php"
+    - "{{ role_path }}/assets/"
+    - "{{ role_path }}/includes/"
   notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
 
 - name: Ensure Apache is running
   service:

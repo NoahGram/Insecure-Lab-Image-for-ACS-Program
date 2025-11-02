@@ -1,0 +1,15 @@
+---
+# Default variables for applications role
+
+# Application versions
+gitea_version: "1.21.0"
+dokuwiki_version: "stable"  
+mantisbt_version: "2.25.8"
+
+# Gitea configuration
+gitea_user: "gitea"
+gitea_db_name: "gitea"
+gitea_db_user: "gitea" 
+gitea_db_password: "GiteaDBPassword123!"
+gitea_port: 3000
+gitea_domain: "localhost"

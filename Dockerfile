@@ -6,8 +6,8 @@ RUN apt-get update && \
     apt-get install -y openssh-client git && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Ansible using pip, which is the official method
-RUN pip install --no-cache-dir ansible
+# Install Ansible and required Python libraries
+RUN pip install --no-cache-dir ansible passlib
 
 # Set the working directory inside the container to mount your project files
 WORKDIR /ansible
