@@ -69,7 +69,7 @@ PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/si
 | **LabSys Wiki** | `http://localhost:8080/labsys-wiki/` | Main wiki portal with database |
 | **Landing Page** | `http://localhost:8080/` | Auto-redirects to wiki |
 | **Gitea** | `http://localhost:3000/` | Git repository server |
-| **SSH Access** | `ssh -i Keys/vps_key -p 2222 noah@host.docker.internal` | VM shell access |
+| **SSH Access** | `ssh -i Keys/vps_key -p 2222 user@host.docker.internal` | VM shell access |
 
 
 ## 🏗️ Architecture
