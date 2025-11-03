@@ -303,7 +303,7 @@ php --version                         # Check PHP version
 #### 3. **SSH Key Authentication Issues**
 **Problem**: "Permission denied (publickey,password)" Error
 **Solutions**:
-- Remove passphrase from SSH key: `ssh-keygen -p -f C:\Users\noah\ansible-control-node\Keys\vps_key -m PEM`
+- Remove passphrase from SSH key: `ssh-keygen -p -f C:\Users\{user}\ansible-control-node\Keys\vps_key -m PEM`
 - Verify key permissions are 600
 - Ensure public key is in Ubuntu VM: `~/.ssh/authorized_keys`
 - Test manual SSH: `ssh -i .\Keys\vps_key -p 2222 user@localhost`
@@ -385,7 +385,7 @@ mysql -u root -p -e "SHOW DATABASES;"
 .\run_vulnerable.ps1
 
 # Test SSH connectivity
-ssh -p 2222 noah@localhost
+ssh -p 2222 user@localhost
 
 # Test web server
 curl http://localhost:8080
@@ -424,7 +424,7 @@ ansible-playbook playbook.yml -i inventory.ini --start-at-task="Task Name"
 ### VirtualBox VM Commands
 ```bash
 # SSH into Ubuntu VM
-ssh -p 2222 noah@localhost
+ssh -p 2222 user@localhost
 
 # Check running services
 sudo systemctl status apache2 mariadb gitea cockpit

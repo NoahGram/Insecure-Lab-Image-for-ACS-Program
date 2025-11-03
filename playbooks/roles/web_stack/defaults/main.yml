@@ -1,0 +1,15 @@
+---
+# Web Stack Role Default Variables
+
+# Application settings
+app_dir: /var/www/html/labsys-wiki
+
+# Database settings  
+mysql_root_password: "CleanLabPassword123!"
+
+# Apache settings
+apache_version: "2.4"
+php_version: "8.3"
+
+# Web application settings
+labsys_wiki_enabled: true

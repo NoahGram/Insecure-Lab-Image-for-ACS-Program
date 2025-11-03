@@ -18,6 +18,96 @@
   loop:
     - /var/lib/gitea
     - /etc/gitea
+    - /var/lib/gitea/custom
+    - /var/lib/gitea/data
+    - /var/lib/gitea/log
+
+- name: Download Gitea binary
+  get_url:
+    url: "https://dl.gitea.io/gitea/{{ gitea_version }}/gitea-{{ gitea_version }}-linux-amd64"
+    dest: /usr/local/bin/gitea
+    mode: '0755'
+    owner: root
+    group: root
+    timeout: 60
+  retries: 3
+
+- name: Create Gitea configuration file
+  copy:
+    content: |
+      APP_NAME = Gitea: Git with a cup of tea
+      RUN_MODE = prod
+      RUN_USER = gitea
+
+      [database]
+      DB_TYPE  = mysql
+      HOST     = localhost:3306
+      NAME     = gitea
+      USER     = gitea
+      PASSWD   = GiteaDBPassword123!
+
+      [repository]
+      ROOT = /var/lib/gitea/data/gitea-repositories
+
+      [server]
+      HTTP_PORT = 3000
+      DOMAIN = localhost
+      ROOT_URL = http://localhost:3000/
+
+      [session]
+      PROVIDER = file
+
+      [log]
+      MODE = file
+      LEVEL = Info
+      ROOT_PATH = /var/lib/gitea/log
+
+      [security]
+      INSTALL_LOCK = true
+      SECRET_KEY = gitea-secret-key-change-this-in-production
+    dest: /etc/gitea/app.ini
+    owner: gitea
+    group: gitea
+    mode: '0644'
+
+- name: Create Gitea systemd service
+  copy:
+    content: |
+      [Unit]
+      Description=Gitea (Git with a cup of tea)
+      After=syslog.target
+      After=network.target
+      After=mysql.service
+
+      [Service]
+      RestartSec=2s
+      Type=simple
+      User=gitea
+      Group=gitea
+      WorkingDirectory=/var/lib/gitea/
+      ExecStart=/usr/local/bin/gitea web --config /etc/gitea/app.ini
+      Restart=always
+      Environment=USER=gitea HOME=/home/gitea GITEA_WORK_DIR=/var/lib/gitea
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/gitea.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start Gitea service
+  systemd:
+    name: gitea
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Wait for Gitea to be ready
+  wait_for:
+    port: 3000
+    host: localhost
+    timeout: 60
 
 - name: Download DokuWiki (stable version)
   get_url:

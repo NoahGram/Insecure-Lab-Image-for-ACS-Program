@@ -18,7 +18,11 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Ignore Key folder
+keys/
+
 # Ignore sensitive files
+.env
 #*.pem
 #*.key
 #!vps_key

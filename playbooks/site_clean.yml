@@ -38,10 +38,10 @@
   roles:
     - role: base_system
       tags: base_system
-    - role: web_stack
-      tags: web_stack
     - role: database
       tags: database
+    - role: web_stack
+      tags: web_stack
     - role: applications
       tags: applications
     - role: system_services

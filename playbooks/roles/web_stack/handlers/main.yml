@@ -1,6 +1,10 @@
 ---
-# Web Stack Role - Handlers
 - name: restart apache
   systemd:
+    name: apache2
+    state: restarted
+
+- name: Restart web service
+  service:
     name: apache2
     state: restarted

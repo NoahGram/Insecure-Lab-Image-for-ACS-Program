@@ -4,3 +4,8 @@
   systemd:
     name: apache2
     state: restarted
+
+- name: restart gitea
+  systemd:
+    name: gitea
+    state: restarted
