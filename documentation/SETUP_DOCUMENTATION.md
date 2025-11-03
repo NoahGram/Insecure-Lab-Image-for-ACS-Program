@@ -77,6 +77,7 @@ This documentation describes the complete setup and operation of a vulnerable la
      - **Apache**: Name="Apache", Protocol=TCP, Host Port=8080, Guest Port=80
      - **Gitea**: Name="Gitea", Protocol=TCP, Host Port=3000, Guest Port=3000
      - **Cockpit**: Name="Cockpit", Protocol=TCP, Host Port=9090, Guest Port=9090
+     ![alt text](images/VM_Portforwarding.png)
 
    - Image: Ubuntu Server 24.04.3 LTS:
       - Modify user name (Default: **vboxuser**)
@@ -143,8 +144,12 @@ sudo systemctl start ssh
    ```
 
 
-#### 2.5 Set Sudo Password
-Remember the password you set for the `user` during Ubuntu installation. This will be used as the sudo password in the Ansible configuration.
+#### 2.5 Create Snapshot
+1. Go to the Virtualbox and select your VM
+2. Go to the Snapshot Tab and "Take a Snapshot"
+3. Snapshit Name: base
+4. At the VM Name right to it, (base) should exist
+![alt text](images/VM_snapshot.png)
 
 ## Configuration Files
 
@@ -172,7 +177,7 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no' # Skip SSH host verificati
 ## 1.2 Change Username & Password
 ```ini
 [vps_lab]
-ansible_user=noah #Change to YOUR username
+ansible_user=user #Change to YOUR username
 
 [all:vars]       
 ansible_become_password=password # Change to YOUR password

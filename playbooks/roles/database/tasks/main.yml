@@ -1,15 +1,19 @@
 ---
 # Database Role - MariaDB installation and configuration
 - name: Check if MariaDB is already installed
-  command: dpkg -l mariadb-server
+  shell: dpkg -l mariadb-server 2>/dev/null | grep -E '^ii' || echo "not_installed"
   register: mariadb_installed
   failed_when: false
   changed_when: false
 
+- name: Set MariaDB installation status
+  set_fact:
+    mariadb_is_installed: "{{ 'not_installed' not in mariadb_installed.stdout }}"
+
 - name: Display MariaDB version information if already installed
   debug:
     msg: "MariaDB is already installed: {{ mariadb_installed.stdout_lines | select('match', '.*mariadb-server.*') | list | first | default('Version info not found') }}"
-  when: mariadb_installed.rc == 0
+  when: mariadb_is_installed
 
 - name: Add MariaDB repository for specific versions (if not latest and not already installed)
   block:
@@ -24,7 +28,7 @@
     - name: Update apt cache for MariaDB
       apt:
         update_cache: yes
-  when: mysql_version != "latest" and mariadb_installed.rc != 0
+  when: mysql_version != "latest" and not mariadb_is_installed
 
 - name: Install MariaDB Server and client
   ansible.builtin.apt:
@@ -34,7 +38,7 @@
       - python3-pymysql
     state: present
     update_cache: yes
-  when: mariadb_installed.rc != 0
+  when: not mariadb_is_installed
 
 - name: Start and enable MariaDB service
   systemd:

@@ -4,6 +4,7 @@
 *.vmdk
 *.vdi
 *.qcow2
+inventory.ini
 
 # Ignore temporary files
 *.tmp
@@ -19,11 +20,11 @@ Thumbs.db
 .idea/
 
 # Ignore Key folder
-keys/
+/Keys
 
 # Ignore sensitive files
 .env
 #*.pem
 #*.key
-#!vps_key
-#!vps_key.pub
+/Keys/vps_key
+/Keys/vps_key.pub
