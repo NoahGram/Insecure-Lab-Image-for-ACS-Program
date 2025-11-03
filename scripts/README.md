@@ -6,10 +6,6 @@ This directory contains all PowerShell scripts for managing the Ansible lab envi
 
 ### `run_clean.ps1`
 **Purpose**: Deploy clean base lab environment with all services
-- Installs Apache, PHP, MariaDB
-- Deploys LabSys Wiki with proper styling
-- Installs Gitea, MantisBT, and other applications
-- Configures secure baseline
 
 **Usage**:
 ```powershell
@@ -18,9 +14,6 @@ This directory contains all PowerShell scripts for managing the Ansible lab envi
 
 ### `run_vulnerable.ps1` 
 **Purpose**: Deploy lab environment with vulnerabilities for security testing
-- Applies all vulnerability configurations
-- Used for penetration testing practice
-- Creates intentionally insecure environment
 
 **Usage**:
 ```powershell
@@ -29,9 +22,6 @@ This directory contains all PowerShell scripts for managing the Ansible lab envi
 
 ### `run_vulnerability_profile.ps1`
 **Purpose**: Deploy with specific vulnerability profiles (secure, vulnerable, highly vulnerable)
-- Flexible deployment with profile selection
-- Can run clean deployment first
-- Supports different vulnerability levels
 
 **Usage**:
 ```powershell
@@ -46,18 +36,11 @@ This directory contains all PowerShell scripts for managing the Ansible lab envi
 ```
 
 **Available Profiles**:
-- `secure_profile`: Secure baseline configuration
-- `vulnerable_profile`: Moderate vulnerabilities for training
-- `highly_vulnerable_profile`: Maximum vulnerabilities for advanced testing
 
 ## 🔄 Testing & Reset Scripts
 
 ### `fresh_install_test.ps1`
 **Purpose**: Reset environment and perform fresh deployment test
-- Resets current deployment
-- Runs clean deployment
-- Tests all automated fixes
-- Perfect for validating deployment automation
 
 **Usage**:
 ```powershell
@@ -66,9 +49,6 @@ This directory contains all PowerShell scripts for managing the Ansible lab envi
 
 ### `reset_vm_complete.ps1`
 **Purpose**: Complete VirtualBox VM reset commands
-- Contains VBoxManage commands for VM snapshots
-- Used for complete VM state reset
-- Requires VirtualBox CLI tools
 
 **Usage**: 
 Edit the script and run individual commands as needed.
@@ -76,10 +56,6 @@ Edit the script and run individual commands as needed.
 ## 📋 Script Structure
 
 All scripts follow these conventions:
-- **Path Management**: Scripts automatically change to project root directory
-- **Color Coding**: Green for success, Red for errors, Yellow for info, Cyan for highlights  
-- **Error Handling**: Proper exit code checking and user feedback
-- **Docker Integration**: All use containerized Ansible execution
 
 ## 🎯 Quick Reference
 
@@ -93,10 +69,6 @@ All scripts follow these conventions:
 ## 🌐 Expected Results
 
 After successful deployment:
-- **Main Portal**: `http://localhost:8080/` (auto-redirects to LabSys Wiki)
-- **LabSys Wiki**: `http://localhost:8080/labsys-wiki/` (with full styling)
-- **Gitea**: `http://localhost:3000/`
-- **SSH Access**: `ssh -i Keys/vps_key -p 2222 noah@host.docker.internal`
 
 ## ⚠️ Prerequisites
 
@@ -107,7 +79,48 @@ After successful deployment:
 
 ## 🔧 Troubleshooting
 
-- **Permission Errors**: Ensure SSH keys have correct permissions
-- **Connection Issues**: Verify VM is running and SSH is accessible
-- **Docker Errors**: Check Docker Desktop is running
-- **Path Issues**: Always run scripts from project root directory
+
+## New wrapper scripts
+
+Two small wrappers help run the Dockerized Ansible environment without editing your local path:
+
+- `run_playbook.ps1` — PowerShell wrapper (Windows). Automatically detects the repo root and mounts it into the container.
+- `run_playbook.sh` — POSIX wrapper (Linux/macOS/WSL/git-bash). Automatically detects the repo root and mounts it into the container.
+
+Both wrappers support two optional environment variables:
+
+- `DOCKER_IMAGE` — override the docker image name (default: `ansible-control-node`).
+- `DOCKER_MOUNT` — override the path that will be mounted into the container (useful if your repo is on a different drive).
+
+Examples:
+
+PowerShell (Windows):
+
+```powershell
+# default run (playbooks/site_clean.yml)
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1
+
+# override mount and image
+$env:DOCKER_MOUNT = 'D:\repos\ansible-control-node'
+$env:DOCKER_IMAGE = 'my-ansible-image'
+.\scripts\run_playbook.ps1
+```
+
+POSIX (Linux/macOS/WSL):
+
+```bash
+chmod +x ./scripts/run_playbook.sh
+./scripts/run_playbook.sh
+
+# override mount and image
+export DOCKER_MOUNT="/mnt/d/repos/ansible-control-node"
+export DOCKER_IMAGE="my-ansible-image"
+./scripts/run_playbook.sh
+```
+
+## Notes & caveats
+
+- Docker Desktop on Windows may use different backends (Hyper-V, WSL2). The wrappers attempt to normalize paths by converting backslashes to forward slashes. If you encounter mount errors, try running from WSL or ensure the drive is shared in Docker Desktop settings.
+- Windows file-permission semantics can make `chmod` inside the container ineffective. If SSH key permission errors occur, run the wrapper from WSL or copy the key to a Linux filesystem first.
+
+If you want, I can add a small `scripts/validate_env.ps1` to detect problematic Windows/Docker setups and print recommended remediation steps.

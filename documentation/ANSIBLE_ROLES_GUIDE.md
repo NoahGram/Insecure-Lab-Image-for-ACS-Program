@@ -203,75 +203,145 @@ The main playbook (`site_clean.yml`) manages all roles:
 
 ### Basic Usage Commands
 
-**⚠️ Important**: Since this project uses a containerized Ansible environment, you must run all commands through Docker.
+**⚠️ Important**: This project uses a centralized `.env` configuration file. All paths and credentials are automatically loaded from `.env` - no manual editing of commands required!
+
+#### Prerequisites
+1. Create and configure your `.env` file (see main README.md)
+2. Test connection: `.\scripts\test_connection.ps1` (Windows) or `./scripts/test_connection.sh` (Linux/Mac)
 
 #### 1. **Deploy All Roles** (Complete Environment)
+
+**Windows:**
 ```powershell
-# Deploy complete environment with all roles
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini"
+# Using convenience script
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_clean.ps1
+
+# Or using generic playbook runner
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml
+```
+
+**Linux/Mac:**
+```bash
+# Using generic playbook runner
+./scripts/run_playbook.sh playbooks/site_clean.yml
 ```
 
 #### 2. **Deploy Specific Roles Only**
+
+**Windows:**
 ```powershell
-# Deploy only web infrastructure
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'base_system,web_stack'"
+# Deploy only web infrastructure (base_system + web_stack)
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "base_system,web_stack"
 
 # Deploy only applications (assumes web_stack already deployed)
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'applications'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "applications"
+```
+
+**Linux/Mac:**
+```bash
+# Deploy only web infrastructure
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "base_system,web_stack"
+
+# Deploy only applications
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "applications"
 ```
 
 #### 3. **Skip Certain Roles**
+
+**Windows:**
 ```powershell
 # Deploy everything except vulnerabilities
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --skip-tags 'vulnerabilities'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --skip-tags "vulnerabilities"
 
 # Skip system services (monitoring)
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --skip-tags 'system_services'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --skip-tags "system_services"
+```
+
+**Linux/Mac:**
+```bash
+# Deploy everything except vulnerabilities
+./scripts/run_playbook.sh playbooks/site_clean.yml --skip-tags "vulnerabilities"
 ```
 
 #### 4. **Test Individual Roles**
+
+**Windows:**
 ```powershell
 # Test only the database role (dry run)
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'database' --check --diff"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "database" --check --diff
+```
+
+**Linux/Mac:**
+```bash
+# Test only the database role (dry run)
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "database" --check --diff
 ```
 
 #### 5. **Deploy with Custom Variables**
+
+**Windows:**
 ```powershell
 # Override default variables
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --extra-vars 'mysql_root_password=CustomPass123 apache_version=2.4.50'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --extra-vars "mysql_root_password=CustomPass123 apache_version=2.4.50"
 ```
+
+**Linux/Mac:**
+```bash
+# Override default variables
+./scripts/run_playbook.sh playbooks/site_clean.yml --extra-vars "mysql_root_password=CustomPass123 apache_version=2.4.50"
+```
+
+> **💡 Pro Tip**: All scripts automatically load your `.env` configuration, so you never need to edit paths or credentials in commands!
 
 ### Role Dependencies in Practice
 
 **Safe execution order** (respects dependencies):
+
+**Windows:**
 ```powershell
 # These can run independently after base_system:
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'base_system,web_stack'"
-
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'base_system,database'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "base_system,web_stack"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "base_system,database"
 
 # This requires both web_stack AND database:
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'base_system,web_stack,database,applications'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "base_system,web_stack,database,applications"
+```
+
+**Linux/Mac:**
+```bash
+# These can run independently after base_system:
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "base_system,web_stack"
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "base_system,database"
+
+# This requires both web_stack AND database:
+./scripts/run_playbook.sh playbooks/site_clean.yml --tags "base_system,web_stack,database,applications"
 ```
 
 **Unsafe execution** (will fail due to missing dependencies):
+
+**Windows:**
 ```powershell
 # ❌ FAILS: applications needs web_stack + database
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'applications'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "applications"
 
 # ❌ FAILS: web_stack needs base_system packages  
-docker run --rm -v D:\ansible-control-node:/ansible ansible-control-node sh -c "chmod 600 /ansible/Keys/vps_key && ansible-playbook /ansible/playbooks/site_clean.yml -i /ansible/inventory.ini --tags 'web_stack'"
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/site_clean.yml --tags "web_stack"
 ```
 
-### Alternative: PowerShell Scripts
+### Quick Deployment Shortcuts
 
-For convenience, you can also use the pre-configured PowerShell scripts:
+For common deployments, use these convenience scripts:
+
+**Windows:**
 ```powershell
-# Simple deployment (if available)
-.\run_clean.ps1
+# Deploy clean environment (all roles, no vulnerabilities)
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_clean.ps1
 
-# Custom deployment with PowerShell wrapper
-.\run_vulnerability_profile.ps1 -Profile "secure_profile"
+# Deploy vulnerable environment (includes vulnerability role)
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_vulnerable.ps1
+
+# Deploy with specific vulnerability profile
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run_vulnerability_profile.ps1 -Profile "secure_profile"
 ```
 
 ## Adding New Roles
