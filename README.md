@@ -61,17 +61,7 @@ PowerShell -ExecutionPolicy Bypass -File .\scripts\run_playbook.ps1 playbooks/si
 - **[SINGLE_SOURCE_CONFIG.md](SINGLE_SOURCE_CONFIG.md)** - Complete setup guide
 - **[scripts/README.md](scripts/README.md)** - Deployment scripts documentation
 - **[.env.example](.env.example)** - Configuration template with all options
-
-
-## 🎯 What Makes This Easy
-
-**No more manual editing!** Edit `.env` once, and:
-- ✅ All scripts automatically use YOUR repository path
-- ✅ All scripts automatically use YOUR VM credentials  
-- ✅ No more `C:\Users\{username}` placeholders
-- ✅ No more manual command editing
-- ✅ Works on any drive (C:, D:, etc.)
-- ✅ Team-friendly (each person has their own `.env`)
+- 
 
 | Service | URL | Purpose |
 |---------|-----|---------|
