@@ -23,19 +23,49 @@ if ($LASTEXITCODE -ne 0) {
 $envScript = $envScript -join "`n"
 Invoke-Expression $envScript
 
-Write-Host "Target Configuration:" -ForegroundColor Yellow
-Write-Host "  Host: $env:VM1_HOSTNAME" -ForegroundColor Gray
-Write-Host "  User: $env:VM1_USERNAME" -ForegroundColor Gray
-Write-Host "  Port: $env:VM1_SSH_PORT" -ForegroundColor Gray
+Write-Host "Target Configuration (raw):" -ForegroundColor Yellow
+Write-Host "  VM_PLATFORM: $env:VM_PLATFORM" -ForegroundColor Gray
+Write-Host "  Host (raw): $env:VM1_HOSTNAME" -ForegroundColor Gray
+Write-Host "  User (raw): $env:VM1_USERNAME" -ForegroundColor Gray
+Write-Host "  Port (raw): $env:VM1_SSH_PORT" -ForegroundColor Gray
+Write-Host ""
+
+# Derive effective SSH connection parameters depending on platform
+$sshUser = $env:VM1_USERNAME
+$sshHost = $env:VM1_HOSTNAME
+$sshPort = $env:VM1_SSH_PORT
+$sshKey = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps_key' }
+
+if ($env:VM_PLATFORM -and $env:VM_PLATFORM -eq 'vagrant') {
+    # Vagrant VMs use the 'vagrant' user and host port forwarded to the host (use host.docker.internal)
+    $sshUser = 'vagrant'
+    # Inside Docker, use host.docker.internal to reach the host's forwarded ports
+    if ($env:VM1_HOSTNAME) {
+        # prefer the configured host if it's host.docker.internal already
+        $sshHost = $env:VM1_HOSTNAME
+    } else {
+        $sshHost = 'host.docker.internal'
+    }
+    # default Vagrant forwarded SSH port is 2222 if not set
+    if (-not $sshPort) { $sshPort = '2222' }
+    # Use configured key path if present; provisioner installs public key into vagrant/root
+    $sshKey = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps_key' }
+}
+
+Write-Host "Effective SSH connection:" -ForegroundColor Yellow
+Write-Host "  Host: $sshHost" -ForegroundColor Gray
+Write-Host "  User: $sshUser" -ForegroundColor Gray
+Write-Host "  Port: $sshPort" -ForegroundColor Gray
+Write-Host "  Key: $sshKey" -ForegroundColor Gray
 Write-Host ""
 
 # Normalize path for Docker
 $repoPath = $env:ANSIBLE_CONTROL_NODE_PATH -replace '\\','/'
 $mountPoint = if ($env:DOCKER_MOUNT_POINT) { $env:DOCKER_MOUNT_POINT } else { '/ansible' }
-$keyPath = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps_key' }
 $dockerImage = if ($env:DOCKER_IMAGE_NAME) { $env:DOCKER_IMAGE_NAME } else { 'ansible-control-node' }
 
-$dockerCmd = "docker run --rm -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"chmod 600 $mountPoint/$keyPath && ssh -o StrictHostKeyChecking=no -i $mountPoint/$keyPath -p $env:VM1_SSH_PORT $env:VM1_USERNAME@$env:VM1_HOSTNAME 'echo Connection successful'`""
+# Use the derived effective SSH values when building the docker ssh command
+$dockerCmd = "docker run --rm -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"chmod 600 $mountPoint/$sshKey && ssh -o StrictHostKeyChecking=no -i $mountPoint/$sshKey -p $sshPort $sshUser@$sshHost 'echo Connection successful'`""
 
 Write-Host "Executing test connection..." -ForegroundColor Yellow
 Write-Host $dockerCmd -ForegroundColor Gray

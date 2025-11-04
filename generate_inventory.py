@@ -44,10 +44,20 @@ def load_env_file(env_path='.env'):
 
 def generate_inventory(env_vars):
     """Generate inventory.ini content from environment variables"""
-    
+    # If using Vagrant, provide sensible defaults unless overridden in .env
+    vm_platform = env_vars.get('VM_PLATFORM', '').lower()
+    if vm_platform == 'vagrant':
+        env_vars.setdefault('VM1_USERNAME', 'vagrant')
+        env_vars.setdefault('VM1_HOSTNAME', 'host.docker.internal')
+        env_vars.setdefault('VM1_SSH_PORT', '2222')
+        env_vars.setdefault('VM1_SSH_KEY_PATH', 'Keys/vps_key')
+
     # Get values with defaults
     vm1_host = env_vars.get('VM1_HOSTNAME', 'host.docker.internal')
     vm1_user = env_vars.get('VM1_USERNAME', 'noah')
+    # If using Vagrant, force the user to 'vagrant' to match the box provisioning
+    if vm_platform == 'vagrant':
+        vm1_user = 'vagrant'
     vm1_port = env_vars.get('VM1_SSH_PORT', '2222')
     vm1_password = env_vars.get('VM1_PASSWORD', 'ColdBrew')
     vm1_key = env_vars.get('VM1_SSH_KEY_PATH', 'Keys/vps_key')

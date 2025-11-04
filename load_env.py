@@ -66,6 +66,17 @@ def main():
     
     env_vars = load_env_file(env_path)
     
+    # Provide sensible defaults when using Vagrant to avoid manual .env edits
+    # These defaults can be overridden by explicit entries in .env
+    vm_platform = env_vars.get('VM_PLATFORM', '').lower()
+    if vm_platform == 'vagrant':
+        # If VM1 values are not set, set them to Vagrant-friendly defaults
+        env_vars.setdefault('VM1_USERNAME', 'vagrant')
+        # For Docker containers connecting to host-forwarded ports, prefer host.docker.internal
+        env_vars.setdefault('VM1_HOSTNAME', 'host.docker.internal')
+        env_vars.setdefault('VM1_SSH_PORT', '2222')
+        env_vars.setdefault('VM1_SSH_KEY_PATH', 'Keys/vps_key')
+    
     if shell.lower() in ['powershell', 'ps', 'pwsh']:
         output_powershell(env_vars)
     elif shell.lower() in ['bash', 'sh', 'zsh']:
