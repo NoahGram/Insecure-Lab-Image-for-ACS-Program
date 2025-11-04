@@ -30,7 +30,6 @@ require_once __DIR__ . '/includes/actions.php';
     if (empty($_SESSION['username']) && !in_array($action, ['login','register','view']) || ($action === 'view' && $page !== 'Home')) {
         echo "<div class='small muted'>Please log in to view pages.</div>";
         $action = 'view';
-        $page = 'Home';
     }
 
     if (!empty($_SESSION['username']) && $action !== 'login' && $action !== 'register') {
