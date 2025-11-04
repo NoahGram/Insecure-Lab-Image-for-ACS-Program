@@ -27,3 +27,4 @@ keys/
 #*.key
 #!vps_key
 #!vps_key.pub
+inventory.ini
