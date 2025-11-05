@@ -83,6 +83,8 @@
       MODIFY COLUMN password VARCHAR(255) NOT NULL,
       MODIFY COLUMN email VARCHAR(150),
       ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user',
+      ADD COLUMN IF NOT EXISTS failed_attempts INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS last_failed TIMESTAMP NULL DEFAULT NULL,
       ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
   when: mysql_service is defined
 

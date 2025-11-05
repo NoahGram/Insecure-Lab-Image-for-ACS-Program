@@ -8,23 +8,41 @@ $page   = $_REQUEST['page'] ?? 'Home';
 switch ($action) {
 
     case 'login':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $password = $_POST['password'] ?? '';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
 
-            $conn = db_connect();
-            if ($conn && $stmt = $conn->prepare('SELECT id, username, password, email, role FROM users WHERE username=? LIMIT 1')) {
-                $stmt->bind_param('s', $username);
-                $stmt->execute();
-                $res = $stmt->get_result();
+        $conn = db_connect();
 
-                if ($row = $res->fetch_assoc()) {
-                    $stored = $row['password'];
+        if ($conn && $stmt = $conn->prepare('SELECT id, username, password, email, role, failed_attempts, last_failed FROM users WHERE username=? LIMIT 1')) {
+            $stmt->bind_param('s', $username);
+            $stmt->execute();
+            $res = $stmt->get_result();
+
+            if ($row = $res->fetch_assoc()) {
+                $stored = $row['password'];
+                $failed_attempts = (int)$row['failed_attempts'];
+                $last_failed = $row['last_failed'] ? strtotime($row['last_failed']) : 0;
+
+                $lockout_time = 15 * 60; // 15 minutes lockout
+                $max_attempts = 5;
+
+                // Check if account is temporarily locked
+                if ($failed_attempts >= $max_attempts && (time() - $last_failed) < $lockout_time) {
+                    $login_error = 'Account temporarily locked due to multiple failed login attempts. Try again later.';
+                } else {
+                    // Verify password
                     $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
-                            ? password_verify($password, $stored)
-                            : hash_equals((string)$stored, (string)$password);
+                        ? password_verify($password, $stored)
+                        : hash_equals((string)$stored, (string)$password);
 
                     if ($ok) {
+                        // Reset failed attempts on successful login
+                        $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');
+                        $stmt2->bind_param('i', $row['id']);
+                        $stmt2->execute();
+                        $stmt2->close();
+
                         session_regenerate_id(true);
                         $_SESSION['username'] = $row['username'];
                         $_SESSION['email'] = $row['email'];
@@ -32,19 +50,27 @@ switch ($action) {
                         header('Location: ?page=' . rawurlencode($page));
                         exit;
                     } else {
+                        // Increment failed attempts
+                        $failed_attempts++;
+                        $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=?, last_failed=NOW() WHERE id=?');
+                        $stmt2->bind_param('ii', $failed_attempts, $row['id']);
+                        $stmt2->execute();
+                        $stmt2->close();
+
                         $login_error = 'Invalid username or password.';
                     }
-                } else {
-                    $login_error = 'Invalid username or password.';
                 }
-
-                $stmt->close();
-                $conn->close();
             } else {
-                $login_error = 'Database error.';
+                $login_error = 'Invalid username or password.';
             }
+
+            $stmt->close();
+            $conn->close();
+        } else {
+            $login_error = 'Database error.';
         }
-        break;
+    }
+    break;
 
 
 
