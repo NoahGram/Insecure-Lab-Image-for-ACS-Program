@@ -113,7 +113,7 @@ Vagrant.configure("2") do |config|
   # Use a unique VM name to avoid conflicts with any existing manual VMs named 'ACS-VM'
   # Use a numeric suffix to reduce chance of collision with existing VMs
   vb.name = "ansible-control-node-acs-001"
-    vb.memory = "2048"  # 2GB RAM
+    vb.memory = "4096"  # 4GB RAM, 2048MB minimum for Ansible Control Node
     vb.cpus = 2         # 2 CPU cores
     
     # Performance optimizations
@@ -127,14 +127,14 @@ Vagrant.configure("2") do |config|
   # VMware Provider Configuration (optional)
   config.vm.provider "vmware_desktop" do |vmware|
   vmware.vmx["displayName"] = "ansible-control-node-acs-001"
-    vmware.vmx["memsize"] = "2048"
+    vmware.vmx["memsize"] = "4096"
     vmware.vmx["numvcpus"] = "2"
   end
   
   # Hyper-V Provider Configuration (optional)
   config.vm.provider "hyperv" do |hv|
   hv.vmname = "ansible-control-node-acs-001"
-    hv.memory = 2048
+    hv.memory = 4096
     hv.cpus = 2
     hv.enable_virtualization_extensions = true
   end

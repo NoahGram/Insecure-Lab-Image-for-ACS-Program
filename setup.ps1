@@ -1,7 +1,8 @@
-# Setup Script for Ansible Control Node
+﻿# Setup Script for Ansible Control Node
 # Run this first to configure your environment
 
 Write-Host "Setting up Ansible Control Node Environment..." -ForegroundColor Cyan
+Write-Host ""
 
 # Check PowerShell execution policy
 $currentPolicy = Get-ExecutionPolicy
@@ -18,40 +19,126 @@ if ($currentPolicy -eq "Restricted" -or $currentPolicy -eq "AllSigned") {
     Read-Host "Press Enter to continue with environment checks"
 }
 
+Write-Host ""
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host " Environment Checks" -ForegroundColor Cyan
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host ""
+
 # Check Docker
 Write-Host "Checking Docker..." -ForegroundColor Yellow
 try {
     $dockerVersion = docker --version
-    Write-Host "Docker found: $dockerVersion" -ForegroundColor Green
+    Write-Host "[OK] Docker found: $dockerVersion" -ForegroundColor Green
 } catch {
-    Write-Host "Docker not found or not running" -ForegroundColor Red
-    Write-Host "Please install Docker Desktop and ensure it's running" -ForegroundColor Yellow
+    Write-Host "[ERROR] Docker not found or not running" -ForegroundColor Red
+    Write-Host "  Please install Docker Desktop and ensure it is running" -ForegroundColor Yellow
+    Write-Host "  Download: https://www.docker.com/products/docker-desktop" -ForegroundColor Yellow
+}
+
+# Check Vagrant
+Write-Host "Checking Vagrant..." -ForegroundColor Yellow
+try {
+    $vagrantVersion = vagrant --version
+    Write-Host "[OK] Vagrant found: $vagrantVersion" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] Vagrant not found" -ForegroundColor Red
+    Write-Host "  Please install Vagrant for VM automation" -ForegroundColor Yellow
+    Write-Host "  Download: https://www.vagrantup.com/downloads" -ForegroundColor Yellow
 }
 
 # Check VirtualBox
 Write-Host "Checking VirtualBox..." -ForegroundColor Yellow
 $vboxPath = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
 if (Test-Path $vboxPath) {
-    Write-Host "VirtualBox found" -ForegroundColor Green
+    try {
+        $vboxVersion = & $vboxPath --version
+        Write-Host "[OK] VirtualBox found: $vboxVersion" -ForegroundColor Green
+    } catch {
+        Write-Host "[OK] VirtualBox found" -ForegroundColor Green
+    }
 } else {
-    Write-Host "VirtualBox not found at expected location" -ForegroundColor Red
-    Write-Host "Please install VirtualBox or update the path in scripts" -ForegroundColor Yellow
+    Write-Host "[ERROR] VirtualBox not found at expected location" -ForegroundColor Red
+    Write-Host "  Please install VirtualBox" -ForegroundColor Yellow
+    Write-Host "  Download: https://www.virtualbox.org/wiki/Downloads" -ForegroundColor Yellow
 }
 
 # Check SSH keys
 Write-Host "Checking SSH keys..." -ForegroundColor Yellow
 if (Test-Path "Keys\vps_key") {
-    Write-Host "SSH private key found" -ForegroundColor Green
+    Write-Host "[OK] SSH private key found" -ForegroundColor Green
 } else {
-    Write-Host "SSH private key not found in Keys\vps_key" -ForegroundColor Red
-    Write-Host "Please ensure SSH keys are properly configured" -ForegroundColor Yellow
+    Write-Host "[WARN] SSH private key not found in Keys\vps_key" -ForegroundColor Yellow
+    Write-Host "  Keys will be installed automatically by Vagrant" -ForegroundColor Gray
+}
+
+# Check .env file
+Write-Host "Checking .env configuration..." -ForegroundColor Yellow
+if (Test-Path ".env") {
+    Write-Host "[OK] .env file found" -ForegroundColor Green
+} else {
+    Write-Host "[ERROR] .env file not found" -ForegroundColor Red
+    Write-Host "  Please create .env from .env.example:" -ForegroundColor Yellow
+    Write-Host "  Copy-Item .env.example .env" -ForegroundColor Cyan
 }
 
 Write-Host ""
-Write-Host "Setup Complete! Available commands:" -ForegroundColor Cyan
-Write-Host "Clean deployment: .\scripts\run_clean.ps1" -ForegroundColor White
-Write-Host "Vulnerable deployment: .\scripts\run_vulnerable.ps1" -ForegroundColor White  
-Write-Host "Fresh install test: .\scripts\fresh_install_test.ps1" -ForegroundColor White
-Write-Host "Profile deployment: .\scripts\run_vulnerability_profile.ps1" -ForegroundColor White
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host " Building Ansible Control Node" -ForegroundColor Cyan
+Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "See scripts\README.md for detailed documentation" -ForegroundColor Yellow
+
+# Check if Dockerfile exists
+if (!(Test-Path "Dockerfile")) {
+    Write-Host "[ERROR] Dockerfile not found!" -ForegroundColor Red
+    Write-Host "  Cannot build Docker image without Dockerfile" -ForegroundColor Yellow
+    exit 1
+}
+
+# Build Docker image
+Write-Host "Building Docker image ansible-control-node..." -ForegroundColor Yellow
+Write-Host "This may take a few minutes..." -ForegroundColor Gray
+Write-Host ""
+
+try {
+    docker build -t ansible-control-node .
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host ""
+        Write-Host "[SUCCESS] Docker image built successfully!" -ForegroundColor Green
+    } else {
+        Write-Host ""
+        Write-Host "[ERROR] Docker build failed!" -ForegroundColor Red
+        exit 1
+    }
+} catch {
+    Write-Host ""
+    Write-Host "[ERROR] Docker build failed: $_" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host " Setup Complete!" -ForegroundColor Green
+Write-Host "============================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Next Steps:" -ForegroundColor Cyan
+Write-Host "1. Create/edit .env file: Copy-Item .env.example .env" -ForegroundColor White
+Write-Host "2. Set VM_PLATFORM=vagrant in .env" -ForegroundColor White
+Write-Host "3. Create VM: vagrant up" -ForegroundColor White
+Write-Host "4. Create snapshot: vagrant snapshot save base" -ForegroundColor White
+Write-Host "5. Deploy lab: .\scripts\run_clean.ps1" -ForegroundColor White
+Write-Host ""
+Write-Host "Available Commands:" -ForegroundColor Cyan
+Write-Host "  .\scripts\run_clean.ps1                       - Deploy clean lab" -ForegroundColor White
+Write-Host "  .\scripts\run_vulnerable.ps1                  - Deploy vulnerable lab" -ForegroundColor White
+Write-Host "  .\scripts\reset_vm.ps1                        - Reset VM to snapshot" -ForegroundColor White
+Write-Host "  .\scripts\test_connection.ps1                 - Test SSH connectivity" -ForegroundColor White
+Write-Host "  .\scripts\fresh_install_test.ps1              - Reset and Deploy" -ForegroundColor White
+Write-Host "  .\scripts\run_vulnerability_profile.ps1       - Deploy specific profile" -ForegroundColor White
+Write-Host ""
+Write-Host "Documentation:" -ForegroundColor Cyan
+Write-Host "  documentation\Quick_Start.md                  - New user guide" -ForegroundColor White
+Write-Host "  documentation\Vagrant.md                      - Vagrant guide" -ForegroundColor White
+Write-Host "  documentation\Ansible_Guide.md                - Ansible and roles guide" -ForegroundColor White
+Write-Host ""

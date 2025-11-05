@@ -36,6 +36,13 @@ Write-Host ""
 
 # Normalize path for Docker
 $repoPath = $env:ANSIBLE_CONTROL_NODE_PATH -replace '\\','/'
+# Regenerate inventory from .env so the inventory always matches .env edits
+Write-Host "Generating Ansible inventory from .env..." -ForegroundColor Gray
+python generate_inventory.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Failed to generate inventory.ini from .env" -ForegroundColor Red
+    exit 1
+}
 $mountPoint = if ($env:DOCKER_MOUNT_POINT) { $env:DOCKER_MOUNT_POINT } else { '/ansible' }
 $inventoryFile = if ($env:ANSIBLE_INVENTORY_FILE) { $env:ANSIBLE_INVENTORY_FILE } else { 'inventory.ini' }
 $keyPath = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps_key' }

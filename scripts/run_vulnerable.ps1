@@ -24,6 +24,16 @@ Write-Host "⚠️ Starting Vulnerable Lab Deployment..." -ForegroundColor Red
 Write-Host "📋 Running Ansible Playbook: site_vulnerable.yml (Role-Based)" -ForegroundColor Yellow
 
 # Build docker command using .env variables
+$
+# Regenerate inventory from .env so users only need to edit .env
+Write-Host "Generating Ansible inventory from .env..." -ForegroundColor Gray
+python generate_inventory.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Failed to generate inventory.ini from .env" -ForegroundColor Red
+    exit 1
+}
+
+$
 $repoPath = $env:ANSIBLE_CONTROL_NODE_PATH -replace '\\','/'
 $mountPoint = if ($env:DOCKER_MOUNT_POINT) { $env:DOCKER_MOUNT_POINT } else { '/ansible' }
 $dockerImage = if ($env:DOCKER_IMAGE_NAME) { $env:DOCKER_IMAGE_NAME } else { 'ansible-control-node' }
