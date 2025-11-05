@@ -4,12 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordConfirmInput = document.getElementById("password_confirm");
   const emailInput = document.getElementById("email");
 
+  const commonPasswords = [
+    "password","123456","12345678","qwerty","abc123","Password123!","letmein","admin","welcome"
+  ];
+
   [passwordInput, passwordConfirmInput, emailInput].forEach(input => {
     input.addEventListener("input", () => input.setCustomValidity(""));
   });
 
   form.addEventListener("submit", (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
 
     passwordInput.setCustomValidity("");
     passwordConfirmInput.setCustomValidity("");
@@ -18,26 +22,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = passwordInput.value;
     const passwordConfirm = passwordConfirmInput.value;
 
+    const errors = [];
+
     if (password.length < 8) {
-      passwordInput.setCustomValidity("Password must be at least 8 characters long.");
-    } else if (!/[A-Z]/.test(password)) {
-      passwordInput.setCustomValidity("Password must contain at least one uppercase letter.");
-    } else if (!/[a-z]/.test(password)) {
-      passwordInput.setCustomValidity("Password must contain at least one lowercase letter.");
-    } else if (!/[0-9]/.test(password)) {
-      passwordInput.setCustomValidity("Password must contain at least one number.");
-    } else if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
-      passwordInput.setCustomValidity("Password must contain at least one special character.");
+      errors.push("Password must be at least 8 characters long.");
     }
-
+    if (!/[A-Z]/.test(password)) {
+      errors.push("Password must contain at least one uppercase letter.");
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("Password must contain at least one lowercase letter.");
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push("Password must contain at least one number.");
+    }
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+      errors.push("Password must contain at least one special character.");
+    }
+    if (commonPasswords.includes(password)) {
+      errors.push("Password is too common. Please choose a stronger password.");
+    }
     if (password !== passwordConfirm) {
-      passwordConfirmInput.setCustomValidity("Passwords do not match.");
+      errors.push("Passwords do not match.");
     }
 
-    if (form.checkValidity()) {
-      form.submit(); 
+    if (errors.length > 0) {
+      const msg = errors.join(" ");
+      passwordInput.setCustomValidity(msg); 
+      passwordInput.reportValidity();
     } else {
-      form.reportValidity(); 
+      form.submit();
     }
   });
 });

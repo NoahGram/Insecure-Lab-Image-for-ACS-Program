@@ -75,79 +75,94 @@ switch ($action) {
 
 
     case 'register':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = trim($_POST['username'] ?? '');
-            $password = trim($_POST['password'] ?? '');
-            $password_confirm = trim($_POST['password_confirm'] ?? '');
-            $email    = trim($_POST['email'] ?? '');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = trim($_POST['username'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+        $password_confirm = trim($_POST['password_confirm'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
 
-            if (!$username || !$password || !$password_confirm || !$email) {
-                $register_error = 'All fields are required.';
-                break;
-            }
+        if (!$username || !$password || !$password_confirm || !$email) {
+            $register_error = 'All fields are required.';
+            break;
+        }
 
-            if ($password !== $password_confirm) {
-                $register_error = 'Passwords do not match.';
-                break;
-            }
+        if ($password !== $password_confirm) {
+            $register_error = 'Passwords do not match.';
+            break;
+        }
 
-            $password_errors = [];
+        // --- Password validation ---
+        $password_errors = [];
 
-            if (strlen($password) < 8) {
-                $password_errors[] = 'Password must be at least 8 characters long.';
-            }
-            if (!preg_match('/[A-Z]/', $password)) {
-                $password_errors[] = 'Password must contain at least one uppercase letter.';
-            }
-            if (!preg_match('/[a-z]/', $password)) {
-                $password_errors[] = 'Password must contain at least one lowercase letter.';
-            }
-            if (!preg_match('/[0-9]/', $password)) {
-                $password_errors[] = 'Password must contain at least one number.';
-            }
-            if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
-                $password_errors[] = 'Password must contain at least one special character.';
-            }
+        if (strlen($password) < 8) {
+            $password_errors[] = 'Password must be at least 8 characters long.';
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            $password_errors[] = 'Password must contain at least one uppercase letter.';
+        }
+        if (!preg_match('/[a-z]/', $password)) {
+            $password_errors[] = 'Password must contain at least one lowercase letter.';
+        }
+        if (!preg_match('/[0-9]/', $password)) {
+            $password_errors[] = 'Password must contain at least one number.';
+        }
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+            $password_errors[] = 'Password must contain at least one special character.';
+        }
 
-            if (!empty($password_errors)) {
-                $register_error = implode(' ', $password_errors);
-                break;
-            }
+        // --- Common passwords check ---
+        $common_passwords = [
+            'password', '123456', '12345678', 'qwerty', 'abc123', 'Password123!', 'letmein', 'admin', 'welcome'
+        ];
 
-            $conn = db_connect();
-            if ($conn) {
-                $stmt = $conn->prepare('SELECT id FROM users WHERE username=? LIMIT 1');
-                $stmt->bind_param('s', $username);
-                $stmt->execute();
-                $stmt->store_result();
-                if ($stmt->num_rows > 0) {
-                    $register_error = 'Username already exists.';
-                    $stmt->close();
-                    $conn->close();
-                    break;
-                }
-                $stmt->close();
+        if (in_array($password, $common_passwords, true)) {
+            $password_errors[] = 'Password is too common. Please choose a stronger password.';
+        }
 
-                $hash = password_hash($password, PASSWORD_DEFAULT);
+        if (!empty($password_errors)) {
+            $register_error = implode(' ', $password_errors);
+            break;
+        }
 
-                $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
-                $role = 'user';
-                $stmt->bind_param('ssss', $username, $hash, $email, $role);
-                if ($stmt->execute()) {
-                    $_SESSION['username'] = $username;
-                    $_SESSION['role'] = $role;
-                    header('Location: ?page=Home');
-                    exit;
-                } else {
-                    $register_error = 'Database error: could not create user.';
-                }
+        // --- Database ---
+        $conn = db_connect();
+        if ($conn) {
+            // Check if username exists
+            $stmt = $conn->prepare('SELECT id FROM users WHERE username=? LIMIT 1');
+            $stmt->bind_param('s', $username);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows > 0) {
+                $register_error = 'Username already exists.';
                 $stmt->close();
                 $conn->close();
-            } else {
-                $register_error = 'Database connection error.';
+                break;
             }
+            $stmt->close();
+
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+
+            $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
+            $role = 'user';
+            $stmt->bind_param('ssss', $username, $hash, $email, $role);
+
+            if ($stmt->execute()) {
+                $_SESSION['username'] = $username;
+                $_SESSION['role'] = $role;
+                header('Location: ?page=Home');
+                exit;
+            } else {
+                $register_error = 'Database error: could not create user.';
+            }
+
+            $stmt->close();
+            $conn->close();
+        } else {
+            $register_error = 'Database connection error.';
         }
-        break;
+    }
+    break;
+
 
 
 
