@@ -8,8 +8,11 @@ Automated deployment system for cybersecurity lab environments using Ansible wit
 
 **Create your `.env` file:**
 ```powershell
-# Windows
+# Windows (Powershell)
 Copy-Item .env.example .env
+
+# Windows (CMD)
+copy .env.example .env
 
 # Linux/macOS/WSL  
 cp .env.example .env
