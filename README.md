@@ -1,10 +1,13 @@
 # Ansible Control Node - Lab Environment
 
-Automated deployment system for cybersecurity lab environments using Ansible with Docker containers and VirtualBox VMs.
+This repository provides an Ansible-based control node designed for teachers and lab administrators to automate the setup, configuration, and provisioning of cybersecurity training environments. It streamlines the deployment of both secure (clean) and intentionally vulnerable Ubuntu-based virtual machines used in the Applied Computer Science curriculum of The Hague University Of Applied Sciences.
 
-## � Quick Start
+## Quick Start
 
 ### Step 1: Configure Your Environment
+
+Before continuing, you need to create your personal .env configuration file.
+This file stores your environment-specific settings (such as VM credentials and paths) and is required for all scripts to work correctly.
 
 **Create your `.env` file:**
 ```powershell
@@ -17,6 +20,10 @@ copy .env.example .env
 # Linux/macOS/WSL  
 cp .env.example .env
 ```
+
+### Step 1.1 Install Ubuntu & Virtual Machine
+Make sure that you install the latest version of [Ubuntu version 24.04](https://ubuntu.com/download/server/thank-you?version=24.04.3&architecture=amd64&lts=true). Go through the regular [install process](https://ubuntu.com/tutorials/install-ubuntu-server), and make sure you put your VM user credentials in the .env file we just created. With that you also need VirtualBox for this, for a more details on the configuration read [SETUP_DOCUMENTATION.md]().
+
 
 **Edit `.env` with YOUR settings:**
 ```bash
