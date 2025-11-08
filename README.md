@@ -1,5 +1,6 @@
 # Ansible Control Node - Lab Environment
 
+
 Automated deployment system for cybersecurity lab environments using Ansible with Docker containers and Vagrant-managed VMs.
 
 ## 🚀 Quick Start
