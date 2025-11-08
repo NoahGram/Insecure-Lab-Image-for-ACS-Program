@@ -20,6 +20,14 @@ if ($LASTEXITCODE -ne 0) {
 $envScript = $envScript -join "`n"
 Invoke-Expression $envScript
 
+# Regenerate inventory from .env so users only need to edit .env
+Write-Host "Generating Ansible inventory from .env..." -ForegroundColor Gray
+python generate_inventory.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Failed to generate inventory.ini from .env" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Starting Clean Lab Deployment..." -ForegroundColor Cyan
 Write-Host "Running Ansible Playbook: site_clean.yml" -ForegroundColor Yellow
 Write-Host ""

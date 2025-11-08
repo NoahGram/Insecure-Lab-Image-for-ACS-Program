@@ -64,7 +64,7 @@
           Database:
           - MariaDB: localhost:3306 (root/{{ mysql_root_password }})
           
-          SSH Access: ssh -p 2222 noah@localhost
+          SSH Access: ssh -p {{ ansible_port }} {{ ansible_user }}@{{ ansible_host }}
           
           ==============================================
           SETUP COMPLETED SUCCESSFULLY!
