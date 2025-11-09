@@ -13,3 +13,18 @@ gitea_db_user: "gitea"
 gitea_db_password: "GiteaDBPassword123!"
 gitea_port: 3000
 gitea_domain: "localhost"
+
+# MantisBT configuration
+mantisbt_db_name: "mantisbt"
+mantisbt_db_user: "mantisbt"
+mantisbt_db_password: "MantisBTDBPassword123!"
+mantisbt_admin_user: "administrator"
+mantisbt_admin_password: "admin"
+mantisbt_admin_email: "admin@mantisbt.local"
+
+# MantisBT test users (created automatically after installation)
+mantisbt_test_users:
+  - { username: 'manager', password: 'manager', realname: 'Project Manager', email: 'manager@mantisbt.local', access_level: 70 }  # MANAGER
+  - { username: 'developer', password: 'developer', realname: 'Dev User', email: 'developer@mantisbt.local', access_level: 55 }  # DEVELOPER
+  - { username: 'reporter', password: 'reporter', realname: 'Bug Reporter', email: 'reporter@mantisbt.local', access_level: 25 }  # REPORTER
+  - { username: 'viewer', password: 'viewer', realname: 'Guest Viewer', email: 'viewer@mantisbt.local', access_level: 10 }  # VIEWER
