@@ -259,7 +259,6 @@ switch ($action) {
         // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION - phpinfo exposed to anyone
         phpinfo();
         exit;
-    }
     
     case 'debug':
         // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION - Debug info exposed to anyone

@@ -19,8 +19,48 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "Platform: $env:VM_PLATFORM | VM: $env:VM_NAME | Snapshot: $env:VM_SNAPSHOT_BASE" -ForegroundColor Yellow
 Write-Host ""
 
+# Vagrant
+if ($env:VM_PLATFORM -eq "vagrant") {
+    Write-Host "Vagrant Platform Detected" -ForegroundColor Green
+    
+    # Check if vagrant is installed
+    $vagrantCmd = Get-Command vagrant -ErrorAction SilentlyContinue
+    if (-not $vagrantCmd) {
+        Write-Host "ERROR: Vagrant not installed or not in PATH" -ForegroundColor Red
+        Write-Host "Install from: https://www.vagrantup.com/downloads" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    # Set working directory if specified
+    if ($env:VAGRANT_CWD) {
+        Set-Location $env:VAGRANT_CWD
+    }
+    
+    Write-Host "Restoring Vagrant snapshot: $env:VM_SNAPSHOT_BASE" -ForegroundColor Yellow
+    # Ensure VM is halted before restoring to avoid VirtualBox storage mismatches
+    try {
+        Write-Host "Halting VM (if running) before restore..." -ForegroundColor Gray
+        & vagrant halt 2>$null
+    } catch {
+        Write-Host "Warning: vagrant halt returned an error or VM already halted. Proceeding to restore..." -ForegroundColor Yellow
+    }
+
+    & vagrant snapshot restore $env:VM_SNAPSHOT_BASE --no-provision
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Failed to restore Vagrant snapshot" -ForegroundColor Red
+        exit 1
+    }
+
+    # Start VM after restore
+    Write-Host "Starting VM after snapshot restore..." -ForegroundColor Gray
+    & vagrant up --no-provision
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Failed to start VM after snapshot restore" -ForegroundColor Red
+        exit 1
+    }
+}
 # VirtualBox
-if ($env:VM_PLATFORM -eq "virtualbox") {
+elseif ($env:VM_PLATFORM -eq "virtualbox") {
     $vbox = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
     if (-not (Test-Path $vbox)) {
         Write-Host "ERROR: VBoxManage.exe not found" -ForegroundColor Red

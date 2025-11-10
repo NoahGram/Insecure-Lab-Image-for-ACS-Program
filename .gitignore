@@ -6,6 +6,9 @@
 *.qcow2
 inventory.ini
 
+# Ignore Vagrant runtime files
+.vagrant/
+
 # Ignore temporary files
 *.tmp
 *.temp

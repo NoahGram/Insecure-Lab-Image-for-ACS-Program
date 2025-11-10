@@ -169,6 +169,189 @@
     fi
   ignore_errors: yes
 
+- name: Create MantisBT config_inc.php
+  copy:
+    content: |
+      <?php
+      # MantisBT - Web based bug tracking system
+      # Database Configuration
+      $g_hostname = 'localhost';
+      $g_db_username = '{{ mantisbt_db_user }}';
+      $g_db_password = '{{ mantisbt_db_password }}';
+      $g_database_name = '{{ mantisbt_db_name }}';
+      $g_db_type = 'mysqli';
+      
+      # Crypto Master Salt (randomly generated)
+      $g_crypto_master_salt = '{{ lookup("password", "/dev/null chars=ascii_letters,digits length=64") }}';
+      
+      # MantisBT Check
+      $g_check_mx_record = OFF;
+      
+      # Email Configuration (disabled for lab)
+      $g_enable_email_notification = OFF;
+      $g_phpMailer_method = PHPMAILER_METHOD_MAIL;
+      $g_smtp_host = 'localhost';
+      $g_administrator_email = '{{ mantisbt_admin_email }}';
+      $g_webmaster_email = '{{ mantisbt_admin_email }}';
+      $g_from_email = '{{ mantisbt_admin_email }}';
+      $g_return_path_email = '{{ mantisbt_admin_email }}';
+      
+      # Anonymous Access
+      $g_allow_anonymous_login = OFF;
+      $g_anonymous_account = '';
+      
+      # Signup Settings
+      $g_allow_signup = ON;
+      $g_send_reset_password = ON;
+      
+      # Display Settings
+      $g_default_language = 'english';
+      $g_default_timezone = 'UTC';
+      
+      # Security Settings
+      $g_reauthentication = OFF;
+      $g_reauthentication_expiry = TOKEN_EXPIRY_AUTHENTICATED;
+    dest: /var/www/mantisbt/config/config_inc.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Check if MantisBT database is initialized
+  command: >
+    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
+    -h localhost {{ mantisbt_db_name }} 
+    -e "SELECT COUNT(*) FROM mantis_config_table" 2>/dev/null
+  register: mantisbt_db_check
+  failed_when: false
+  changed_when: false
+
+- name: Wait for Apache to be ready
+  wait_for:
+    port: 80
+    host: localhost
+    timeout: 30
+  when: mantisbt_db_check.rc != 0
+
+- name: Create MantisBT config table for unattended installation
+  mysql_query:
+    login_user: "{{ mantisbt_db_user }}"
+    login_password: "{{ mantisbt_db_password }}"
+    login_host: localhost
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      CREATE TABLE IF NOT EXISTS mantis_config_table (
+        config_id varchar(64) NOT NULL,
+        project_id int(10) unsigned NOT NULL DEFAULT '0',
+        user_id int(10) unsigned NOT NULL DEFAULT '0',
+        access_reqd int(11) DEFAULT '0',
+        type int(11) DEFAULT '90',
+        value text NOT NULL,
+        PRIMARY KEY (config_id, project_id, user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  when: mantisbt_db_check.rc != 0
+  ignore_errors: yes
+
+- name: Initialize database_version for MantisBT unattended installation
+  mysql_query:
+    login_user: "{{ mantisbt_db_user }}"
+    login_password: "{{ mantisbt_db_password }}"
+    login_host: localhost
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      INSERT INTO mantis_config_table (config_id, project_id, user_id, value, type) 
+      VALUES ('database_version', 0, 0, '0', 1)
+      ON DUPLICATE KEY UPDATE value='0';
+  when: mantisbt_db_check.rc != 0
+  ignore_errors: yes
+
+- name: Run MantisBT unattended upgrade to create full schema
+  shell: sudo -u www-data php /var/www/mantisbt/admin/upgrade_unattended.php
+  register: mantisbt_install
+  when: mantisbt_db_check.rc != 0
+  changed_when: "'schema upgrades executed' in mantisbt_install.stdout"
+  failed_when: mantisbt_install.rc != 0 and 
+               "'Upgrade from the current installed MantisBT version is no longer supported' not in mantisbt_install.stderr"
+
+- name: Display MantisBT installation output
+  debug:
+    var: mantisbt_install.stdout_lines
+  when: mantisbt_db_check.rc != 0 and mantisbt_install is defined
+
+- name: Create MantisBT administrator account
+  mysql_query:
+    login_user: "{{ mantisbt_db_user }}"
+    login_password: "{{ mantisbt_db_password }}"
+    login_host: localhost
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
+      VALUES ('{{ mantisbt_admin_user }}', '', '{{ mantisbt_admin_email }}', MD5('{{ mantisbt_admin_password }}'), 1, 1, 90, MD5(CONCAT('{{ mantisbt_admin_user }}', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
+      ON DUPLICATE KEY UPDATE username=username;
+  when: mantisbt_db_check.rc != 0
+  ignore_errors: yes
+
+- name: Verify MantisBT installation succeeded
+  command: >
+    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
+    -h localhost {{ mantisbt_db_name }} 
+    -e "SELECT COUNT(*) FROM mantis_user_table" 2>/dev/null
+  register: mantisbt_verify
+  failed_when: false
+  changed_when: false
+  when: mantisbt_db_check.rc != 0
+
+- name: Check if MantisBT users already exist
+  shell: |
+    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
+    -h localhost {{ mantisbt_db_name }} 
+    -e "SELECT COUNT(*) FROM mantis_user_table WHERE username IN ('manager', 'developer', 'reporter', 'viewer')" 2>/dev/null | tail -1
+  register: mantisbt_users_check
+  failed_when: false
+  changed_when: false
+  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+
+- name: Create MantisBT test users
+  mysql_query:
+    login_user: "{{ mantisbt_db_user }}"
+    login_password: "{{ mantisbt_db_password }}"
+    login_host: localhost
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
+      VALUES 
+        ('manager', 'Project Manager', 'manager@mantisbt.local', MD5('manager'), 1, 0, 70, MD5(CONCAT('manager', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('developer', 'Dev User', 'developer@mantisbt.local', MD5('developer'), 1, 0, 55, MD5(CONCAT('developer', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('reporter', 'Bug Reporter', 'reporter@mantisbt.local', MD5('reporter'), 1, 0, 25, MD5(CONCAT('reporter', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('viewer', 'Guest Viewer', 'viewer@mantisbt.local', MD5('viewer'), 1, 0, 10, MD5(CONCAT('viewer', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
+      ON DUPLICATE KEY UPDATE username=username;
+  when: mantisbt_users_check is defined and mantisbt_users_check.stdout | default('0') | int == 0
+  ignore_errors: yes
+
+- name: Remove MantisBT admin directory for security
+  file:
+    path: /var/www/mantisbt/admin
+    state: absent
+  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+
+- name: Display MantisBT installation complete message
+  debug:
+    msg:
+      - "═══════════════════════════════════════════════════════════"
+      - "  ✓ MantisBT Fully Automated Installation Complete!"
+      - "═══════════════════════════════════════════════════════════"
+      - ""
+      - "Access MantisBT at: http://localhost:8080/mantisbt/"
+      - ""
+      - "User Accounts:"
+      - "  Administrator: {{ mantisbt_admin_user }} / {{ mantisbt_admin_password }} (Level 90)"
+      - "  Manager:       manager / manager (Level 70)"
+      - "  Developer:     developer / developer (Level 55)"
+      - "  Reporter:      reporter / reporter (Level 25)"
+      - "  Viewer:        viewer / viewer (Level 10)"
+      - ""
+      - "═══════════════════════════════════════════════════════════"
+  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+
 - name: Create MantisBT Apache configuration  
   copy:
     content: |
@@ -176,6 +359,13 @@
       <Directory /var/www/mantisbt>
           AllowOverride All
           Require all granted
+          Options -Indexes +FollowSymLinks
+          
+          <IfModule mod_php.c>
+              php_flag display_errors Off
+              php_value upload_max_filesize 5M
+              php_value post_max_size 5M
+          </IfModule>
       </Directory>
     dest: /etc/apache2/conf-available/mantisbt.conf
 
