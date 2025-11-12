@@ -66,6 +66,15 @@
     group: www-data
     mode: '0644'
 
+- name: Deploy vulnerable actions.php to web app (replace clean actions)
+  copy:
+    src: "{{ playbook_dir }}/roles/vulnerabilities/web_stack/actions_vulnerable.php"
+    dest: "{{ app_dir }}/includes/actions.php"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  notify: restart apache
+
 - name: Create test users with weak passwords
   user:
     name: "{{ item.name }}"

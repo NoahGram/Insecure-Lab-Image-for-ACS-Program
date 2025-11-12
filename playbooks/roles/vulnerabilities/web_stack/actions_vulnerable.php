@@ -272,4 +272,50 @@ switch ($action) {
         exit;
     }
     break;
+
+    case 'fetch_resource':
+        // VULNERABILITY: SSRF - Server-Side Request Forgery
+        // No URL validation, whitelist, or domain restrictions
+        // Allows attackers to make requests to internal resources
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['url'])) {
+            $url = $_POST['url'] ?? $_GET['url'] ?? '';
+            
+            if (empty($url)) {
+                echo json_encode(['error' => 'No URL provided']);
+                exit;
+            }
+
+            // VULNERABILITY: No validation of URL scheme, domain, or IP address
+            // Attackers can use: file://, http://localhost, http://127.0.0.1, http://169.254.169.254
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // VULNERABILITY: Follows redirects
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // VULNERABILITY: Disabled SSL verification
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                echo json_encode([
+                    'error' => $error,
+                    'url' => $url
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => true,
+                    'url' => $url,
+                    'http_code' => $http_code,
+                    'content' => $response,
+                    'length' => strlen($response)
+                ]);
+            }
+            exit;
+        }
+        break;
 }

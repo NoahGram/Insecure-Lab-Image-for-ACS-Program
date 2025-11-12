@@ -268,9 +268,12 @@
   shell: sudo -u www-data php /var/www/mantisbt/admin/upgrade_unattended.php
   register: mantisbt_install
   when: mantisbt_db_check.rc != 0
-  changed_when: "'schema upgrades executed' in mantisbt_install.stdout"
-  failed_when: mantisbt_install.rc != 0 and 
-               "'Upgrade from the current installed MantisBT version is no longer supported' not in mantisbt_install.stderr"
+  changed_when: "'schema upgrades executed' in (mantisbt_install.stdout | default(''))"
+  failed_when: 
+    - mantisbt_install.rc != 0
+    - "'Duplicate key name' not in (mantisbt_install.stderr | default(''))"
+    - "'Upgrade from the current installed MantisBT version is no longer supported' not in (mantisbt_install.stderr | default(''))"
+  ignore_errors: yes
 
 - name: Display MantisBT installation output
   debug:

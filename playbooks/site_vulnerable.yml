@@ -4,7 +4,7 @@
   gather_facts: yes
   vars:
     # Default to vulnerable profile
-    vulnerability_profile: "{{ vulnerability_profile | default('vulnerable_profile') }}"
+    vulnerability_profile: "vulnerable_profile"
     
   vars_files:
     - ../vulnerability-profiles.yml
@@ -72,6 +72,13 @@
             email VARCHAR(100),
             role VARCHAR(20)
           );
+
+    - name: Insert sample vulnerable data
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
           INSERT IGNORE INTO users (id, username, password, email, role) VALUES
           (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
           (2, 'john', 'password', 'john@lab.local', 'user'),
