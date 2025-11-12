@@ -19,7 +19,6 @@
         gitea_version: "{{ vars[vulnerability_profile]['gitea_version'] | default('1.15.0') }}"
         dokuwiki_version: "{{ vars[vulnerability_profile]['dokuwiki_version'] | default('stable') }}"
         mantisbt_version: "{{ vars[vulnerability_profile]['mantisbt_version'] | default('2.25.8') }}"
-        wazuh_version: "{{ vars[vulnerability_profile]['wazuh_version'] | default('4.7.0') }}"
         cockpit_version: "{{ vars[vulnerability_profile]['cockpit_version'] | default('latest') }}"
         postfix_version: "{{ vars[vulnerability_profile]['postfix_version'] | default('latest') }}"
         vulnerable_mode: "{{ vars[vulnerability_profile]['vulnerable_mode'] | default(true) }}"

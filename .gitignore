@@ -8,6 +8,9 @@ inventory.ini
 
 # Ignore Vagrant runtime files
 .vagrant/
+/.vagrant
+/.vagrant/machines/
+
 
 # Ignore temporary files
 *.tmp
