@@ -36,14 +36,22 @@ if ($conn && $edit_page && $stmt = $conn->prepare('SELECT content FROM pages WHE
 }
 ?>
 <h2 class="page-title"><?= h($edit_page) ?></h2>
+
+<!-- EDIT / CREATE FORM -->
 <form method="POST" action="?action=save">
+  <?= csrf_field() ?>
   <input type="hidden" name="page" value="<?= h($edit_page) ?>">
   <label for="content">Content</label>
   <textarea id="content" name="content" rows="12" style="width:98%; resize:vertical;"><?= h($content) ?></textarea>
   <div style="margin-top:8px">
     <button class="btn" type="submit"><?= $content ? 'Save' : 'Create' ?></button>
-    <?php if ($action === 'edit' && $edit_page !== 'Home'): ?>
-      <a href="?action=delete&page=<?= rawurlencode($edit_page) ?>" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this page?')">Delete</a>
-    <?php endif; ?>
-  </div>
 </form>
+
+<!-- DELETE FORM -->
+<?php if ($action === 'edit' && $edit_page !== 'Home'): ?>
+<form method="POST" action="?action=delete" style="display:inline" onsubmit="return confirm('Are you sure you want to delete this page?')">
+  <?= csrf_field() ?>
+  <input type="hidden" name="page" value="<?= h($edit_page) ?>">
+  <button type="submit" class="btn btn-delete">Delete</button>
+</form>
+<?php endif; ?>
