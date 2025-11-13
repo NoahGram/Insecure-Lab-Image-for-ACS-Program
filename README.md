@@ -41,6 +41,7 @@ vagrant snapshot save base
 ### 📚 Essential Guides
 - **[Quick Start Guide](documentation/Quick_Start.md)** - **START HERE!** Complete onboarding for new users
 - **[Vagrant Guide](documentation/Vagrant.md)** - VM automation, snapshots, and management
+	- (Optional) **[Vagrant Vmware](documentation/VMware_Vagrant_Install.md)** - Add VMware support to this project.
 - **[Ansible Guide](documentation/Ansible_Guide.md)** - Understanding roles, playbooks, and configuration
 
 ### 🔧 Reference
@@ -215,6 +216,7 @@ ansible-control-node/
 
 ### Intermediate
 1. 📖 Read **[Vagrant Guide](documentation/Vagrant.md)**
+	- (Optional)📖 Read **[Vagrant Guide](documentation/VMware_Vagrant_Install.md)**
 2. 📖 Read **[Ansible Guide](documentation/Ansible_Guide.md)**
 3. 🔧 Modify `.env` settings and redeploy
 4. 🔧 Explore role files in `playbooks/roles/`

@@ -142,7 +142,7 @@ Write-Host "2. Set VM_PLATFORM=vagrant in .env" -ForegroundColor White
 Write-Host "3. Create VM: vagrant up" -ForegroundColor White
 Write-Host "    This will automatically use VirtualBox as VM provider." -ForegroundColor White
 Write-Host "    If you want to use another provider, specify it with --provider flag. Like 'vagrant up --provider vmware_desktop'" -ForegroundColor White
-Write-Host "    Make sure to install Vmware Vagrant Plugin: vagrant plugin install vagrant-vmware-desktop" -ForegroundColor White
+Write-Host "    Make sure to install Vmware Vagrant Plugin: Read more in the documentation/VMware_Vagrant_Install.md" -ForegroundColor White
 Write-Host "4. Create snapshot: vagrant snapshot save base" -ForegroundColor White
 Write-Host "5. Deploy lab: .\scripts\run_clean.ps1" -ForegroundColor White
 Write-Host ""
