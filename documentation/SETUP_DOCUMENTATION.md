@@ -264,7 +264,6 @@ sudo systemctl status apache2
 sudo systemctl status mariadb
 sudo systemctl status gitea
 sudo systemctl status cockpit
-sudo systemctl status wazuh-agent
 
 # Check web application directories
 ls -la /var/www/
@@ -455,7 +454,6 @@ sudo journalctl -u gitea -f
 /usr/local/bin/gitea        # Gitea binary
 /etc/gitea/app.ini          # Gitea configuration
 /var/lib/gitea/             # Gitea data directory
-/var/ossec/                 # Wazuh agent directory
 /var/log/apache2/           # Apache log files
 ```
 
