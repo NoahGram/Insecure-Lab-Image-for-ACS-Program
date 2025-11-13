@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
+$no_login_lock = '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php';
+if (is_readable($no_login_lock)) {
+    require_once $no_login_lock;
+}
 
 $action = $_REQUEST['action'] ?? 'view';
 $page   = $_REQUEST['page'] ?? 'Home';
@@ -33,6 +37,14 @@ function verify_csrf(): bool {
     return is_string($sent) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$sent);
 }
 
+if (!function_exists('is_account_locked')) {
+    function is_account_locked(int $failed_attempts, ?int $last_failed): bool {
+        $lockout_time = 15 * 60;
+        $max_attempts = 5;
+        return $failed_attempts >= $max_attempts && (time() - ($last_failed ?? 0)) < $lockout_time;
+    }
+}
+
 // --- ACTIONS ---
 switch ($action) {
 
@@ -53,10 +65,7 @@ switch ($action) {
                     $failed_attempts = (int)$row['failed_attempts'];
                     $last_failed = $row['last_failed'] ? strtotime($row['last_failed']) : 0;
 
-                    $lockout_time = 15 * 60; // 15 minutes
-                    $max_attempts = 5;
-
-                    if ($failed_attempts >= $max_attempts && (time() - $last_failed) < $lockout_time) {
+                    if (is_account_locked($failed_attempts, $last_failed)) {
                         $login_error = 'Account temporarily locked. Try again later.';
                     } else {
                         $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
@@ -103,7 +112,7 @@ switch ($action) {
 
     case 'register':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            
+
             if (!verify_csrf()) {
                 http_response_code(400);
                 die('CSRF verification failed.');
