@@ -3,8 +3,8 @@
   hosts: vps_lab
   gather_facts: yes
   vars:
-    # Default to vulnerable profile
-    vulnerability_profile: "{{ vulnerability_profile | default('vulnerable_profile') }}"
+    # Default profile name if not provided via command line
+    profile_name: "{{ vulnerability_profile | default('vulnerable_profile') }}"
     
   vars_files:
     - ../vulnerability-profiles.yml
@@ -13,20 +13,22 @@
   pre_tasks:
     - name: Load profile-specific versions
       set_fact:
-        apache_version: "{{ vars[vulnerability_profile]['apache_version'] | default('latest') }}"
-        php_version: "{{ vars[vulnerability_profile]['php_version'] | default('latest') }}"
-        mysql_version: "{{ vars[vulnerability_profile]['mysql_version'] | default('latest') }}"
-        gitea_version: "{{ vars[vulnerability_profile]['gitea_version'] | default('1.15.0') }}"
-        dokuwiki_version: "{{ vars[vulnerability_profile]['dokuwiki_version'] | default('stable') }}"
-        mantisbt_version: "{{ vars[vulnerability_profile]['mantisbt_version'] | default('2.25.8') }}"
-        cockpit_version: "{{ vars[vulnerability_profile]['cockpit_version'] | default('latest') }}"
-        postfix_version: "{{ vars[vulnerability_profile]['postfix_version'] | default('latest') }}"
-        vulnerable_mode: "{{ vars[vulnerability_profile]['vulnerable_mode'] | default(true) }}"
+        apache_version: "{{ vars[profile_name]['versions']['apache_version'] | default('latest') }}"
+        php_version: "{{ vars[profile_name]['versions']['php_version'] | default('latest') }}"
+        mysql_version: "{{ vars[profile_name]['versions']['mysql_version'] | default('latest') }}"
+        gitea_version: "{{ vars[profile_name]['versions']['gitea_version'] | default('1.15.0') }}"
+        dokuwiki_version: "{{ vars[profile_name]['versions']['dokuwiki_version'] | default('stable') }}"
+        mantisbt_version: "{{ vars[profile_name]['versions']['mantisbt_version'] | default('2.25.8') }}"
+        cockpit_version: "{{ vars[profile_name]['versions']['cockpit_version'] | default('latest') }}"
+        postfix_version: "{{ vars[profile_name]['versions']['postfix_version'] | default('latest') }}"
+        # Load vulnerability controls
+        vulnerability_config: "{{ vars[profile_name]['vulnerabilities'] | default({}) }}"
+        vulnerable_mode: true
         
     - name: Display selected vulnerability profile
       debug:
         msg:
-          - "Selected vulnerability profile: {{ vulnerability_profile }}"
+          - "Selected vulnerability profile: {{ profile_name }}"
           - "Vulnerable mode: {{ vulnerable_mode }}"
           - "Apache version: {{ apache_version }}"
           - "PHP version: {{ php_version }}"
@@ -58,7 +60,7 @@
         login_user: root
         login_password: "{{ mysql_root_password }}"
 
-    - name: Create vulnerable database table with sample data
+    - name: Create vulnerable database table
       mysql_query:
         login_user: root
         login_password: "{{ mysql_root_password }}"
@@ -71,6 +73,13 @@
             email VARCHAR(100),
             role VARCHAR(20)
           );
+          
+    - name: Insert sample vulnerable data
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
           INSERT IGNORE INTO users (id, username, password, email, role) VALUES
           (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
           (2, 'john', 'password', 'john@lab.local', 'user'),
@@ -83,7 +92,7 @@
           ==============================================
           VULNERABILITY ASSESSMENT LAB GUIDE
           ==============================================
-          Profile: {{ vulnerability_profile }}
+          Profile: {{ profile_name }}
           
           This system contains intentional vulnerabilities for educational testing.
           ⚠️  WARNING: NEVER expose this system to the internet!
@@ -111,7 +120,7 @@
       debug:
         msg:
           - "=== VULNERABLE LAB DEPLOYMENT COMPLETE ==="
-          - "Profile: {{ vulnerability_profile }}"  
+          - "Profile: {{ profile_name }}"  
           - "Vulnerable endpoints available at http://localhost:8080"
           - "See /root/vulnerability-guide.txt for testing instructions"
           - "⚠️  WARNING: Contains intentional vulnerabilities!"

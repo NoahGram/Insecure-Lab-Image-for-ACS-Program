@@ -1,35 +1,62 @@
 ---
-# Vulnerabilities Role - Introduce controlled vulnerabilities
-- name: Create vulnerable web pages for testing
+# Vulnerabilities Role - Granular vulnerability controls based on profile configuration
+# Each vulnerability type can be individually enabled/disabled using profile settings
+
+# ===========================================
+# WEB VULNERABILITIES
+# ===========================================
+
+- name: Create SQL injection vulnerable page
   copy:
     content: |
       <?php
-      // VULNERABLE PHP SCRIPT - FOR TESTING ONLY
-      // This script contains intentional vulnerabilities
-      echo "<h1>Vulnerable Test Page</h1>";
-      // SQL Injection
-      if (isset($_GET['id'])) { $id = $_GET['id']; $query = "SELECT * FROM users WHERE id = " . $id; echo "<p>Query: " . $query . "</p>"; }
-      // XSS
-      if (isset($_GET['name'])) { echo "<p>Hello " . $_GET['name'] . "</p>"; }
-      // Command injection
-      if (isset($_POST['ping'])) { $host = $_POST['host']; $output = shell_exec('ping -c 1 ' . $host); echo "<pre>" . $output . "</pre>"; }
-      // File inclusion
-      if (isset($_GET['page'])) { include($_GET['page']); }
+      // SQL Injection Vulnerability - TESTING ONLY
+      echo "<h1>SQL Injection Test Page</h1>";
+      if (isset($_GET['id'])) { 
+          $id = $_GET['id']; 
+          $query = "SELECT * FROM users WHERE id = " . $id; 
+          echo "<p>Query: " . htmlspecialchars($query) . "</p>"; 
+      }
       ?>
-      <h2>Test Forms</h2>
+      <h2>Test SQL Injection</h2>
       <form method="GET">
-          <label>Test XSS: <input type="text" name="name"></label>
-          <input type="submit" value="Submit">
+          <label>User ID: <input type="text" name="id" placeholder="1"></label>
+          <input type="submit" value="Search">
       </form>
-      <form method="POST">
-          <label>Test Command Injection: <input type="text" name="host" value="127.0.0.1"></label>
-          <input type="hidden" name="ping" value="1">
-          <input type="submit" value="Ping">
-      </form>
-    dest: /var/www/html/vulnerable.php
+      <p>Try: <code>1' OR '1'='1</code></p>
+    dest: /var/www/html/sql_injection.php
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.sql_injection | default(false)
+  tags:
+    - web_vulnerabilities
+    - sql_injection
+
+- name: Create XSS vulnerable page
+  copy:
+    content: |
+      <?php
+      // XSS Vulnerability - TESTING ONLY
+      echo "<h1>XSS Test Page</h1>";
+      if (isset($_GET['name'])) { 
+          echo "<p>Hello " . $_GET['name'] . "</p>"; // Unescaped output
+      }
+      ?>
+      <h2>Test XSS</h2>
+      <form method="GET">
+          <label>Name: <input type="text" name="name"></label>
+          <input type="submit" value="Submit">
+      </form>
+      <p>Try: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code></p>
+    dest: /var/www/html/xss_test.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
+  tags:
+    - web_vulnerabilities
+    - xss
 
 - name: Create vulnerable upload directory
   file:
@@ -38,66 +65,54 @@
     owner: www-data
     group: www-data
     mode: '0777'
+  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
+  tags:
+    - web_vulnerabilities
+    - file_upload
 
-- name: Create vulnerable file upload script
+- name: Create file upload bypass vulnerable page
   copy:
     content: |
       <?php
+      // File Upload Vulnerability - TESTING ONLY
+      echo "<h1>File Upload Test</h1>";
       if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           $target_dir = "uploads/";
           $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+          // NO FILE TYPE VALIDATION - VULNERABILITY
           if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-              echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
+              echo "File uploaded: " . htmlspecialchars(basename($_FILES["fileToUpload"]["name"]));
           } else {
-              echo "Sorry, there was an error uploading your file.";
+              echo "Upload failed";
           }
       }
       ?>
-      <h2>Vulnerable File Upload</h2>
+      <h2>Upload Any File</h2>
       <form action="" method="post" enctype="multipart/form-data">
-          <label>Select file to upload:</label>
           <input type="file" name="fileToUpload" required>
-          <input type="submit" value="Upload File" name="submit">
+          <input type="submit" value="Upload" name="submit">
       </form>
       <h3>Uploaded Files:</h3>
-      <?php $files = scandir('uploads/'); foreach($files as $file) { if($file != "." && $file != "..") { echo "<a href='uploads/$file'>$file</a><br>"; } } ?>
-    dest: /var/www/html/upload.php
+      <?php 
+      if (is_dir('uploads/')) {
+          $files = scandir('uploads/'); 
+          foreach($files as $file) { 
+              if($file != "." && $file != "..") { 
+                  echo "<a href='uploads/$file'>$file</a><br>"; 
+              } 
+          } 
+      }
+      ?>
+    dest: /var/www/html/file_upload.php
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
+  tags:
+    - web_vulnerabilities
+    - file_upload
 
-- name: Create test users with weak passwords
-  user:
-    name: "{{ item.name }}"
-    password: "{{ item.password | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-  loop:
-    - { name: "admin", password: "admin" }
-    - { name: "test", password: "test" }
-    - { name: "guest", password: "guest" }
-    - { name: "user", password: "password" }
-
-- name: Add weak sudo privileges
-  lineinfile:
-    path: /etc/sudoers
-    line: "{{ item }}"
-    validate: 'visudo -cf %s'
-  loop:
-    - "admin ALL=(ALL) NOPASSWD:ALL"
-    - "test ALL=(ALL) ALL"
-
-- name: Configure Apache with vulnerable settings
-  lineinfile:
-    path: /etc/apache2/apache2.conf
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-  loop:
-    - { regexp: "^ServerTokens", line: "ServerTokens Full" }
-    - { regexp: "^ServerSignature", line: "ServerSignature On" }
-  notify: restart apache
-
-- name: Enable Apache server-info and server-status
+- name: Enable Apache server-info and server-status (info disclosure)
   copy:
     content: |
       <Location "/server-info">
@@ -109,19 +124,382 @@
           Require all granted
       </Location>
     dest: /etc/apache2/conf-available/server-info.conf
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
 
 - name: Enable server-info configuration
   command: a2enconf server-info
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
   notify: restart apache
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
 
-- name: Create vulnerability assessment guide
+- name: Create phpinfo disclosure page
   copy:
     content: |
-      ==============================================
-      VULNERABILITY ASSESSMENT LAB GUIDE
-      ==============================================
-      This system has been configured with intentional vulnerabilities for educational and testing purposes.
-      ⚠️  WARNING: This system should NEVER be exposed to the internet!
-      See /var/www/html for vulnerable endpoints.
-    dest: /root/vulnerability-guide.txt
+      <?php
+      // Information Disclosure - TESTING ONLY
+      echo "<h1>System Information</h1>";
+      phpinfo();
+      ?>
+    dest: /var/www/html/info.php
+    owner: www-data
+    group: www-data
     mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
+
+- name: Create command injection vulnerable page
+  copy:
+    content: |
+      <?php
+      // Command Injection Vulnerability - TESTING ONLY
+      echo "<h1>Command Injection Test</h1>";
+      if (isset($_POST['host'])) {
+          $host = $_POST['host'];
+          // VULNERABLE: No input validation
+          $output = shell_exec('ping -c 1 ' . $host);
+          echo "<pre>" . htmlspecialchars($output) . "</pre>";
+      }
+      ?>
+      <h2>Network Ping Tool</h2>
+      <form method="POST">
+          <label>Host: <input type="text" name="host" value="127.0.0.1"></label>
+          <input type="submit" value="Ping">
+      </form>
+      <p>Try: <code>127.0.0.1; ls -la</code></p>
+    dest: /var/www/html/command_injection.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.command_injection | default(false)
+  tags:
+    - web_vulnerabilities
+    - command_injection
+
+- name: Create path traversal vulnerable page
+  copy:
+    content: |
+      <?php
+      // Path Traversal Vulnerability - TESTING ONLY
+      echo "<h1>File Viewer</h1>";
+      if (isset($_GET['file'])) {
+          $file = $_GET['file'];
+          // VULNERABLE: No path validation
+          if (file_exists($file)) {
+              echo "<pre>" . htmlspecialchars(file_get_contents($file)) . "</pre>";
+          } else {
+              echo "File not found";
+          }
+      }
+      ?>
+      <h2>View File</h2>
+      <form method="GET">
+          <label>File: <input type="text" name="file" value="info.php"></label>
+          <input type="submit" value="View">
+      </form>
+      <p>Try: <code>../../../etc/passwd</code></p>
+    dest: /var/www/html/path_traversal.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.path_traversal | default(false)
+  tags:
+    - web_vulnerabilities
+    - path_traversal
+
+# ===========================================
+# SYSTEM VULNERABILITIES
+# ===========================================
+
+- name: Create weak user accounts
+  user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+    comment: "Vulnerable test account"
+  loop:
+    - { name: "admin", password: "admin" }
+    - { name: "test", password: "test" }
+    - { name: "guest", password: "guest" }
+    - { name: "demo", password: "demo" }
+  when: vulnerability_config.system_vulnerabilities.weak_user_accounts | default(false)
+  tags:
+    - system_vulnerabilities
+    - weak_accounts
+
+- name: Add dangerous sudo privileges
+  lineinfile:
+    path: /etc/sudoers
+    line: "{{ item }}"
+    validate: 'visudo -cf %s'
+  loop:
+    - "admin ALL=(ALL) NOPASSWD:ALL"
+    - "test ALL=(ALL) ALL"
+  when: vulnerability_config.system_vulnerabilities.sudo_misconfiguration | default(false)
+  tags:
+    - system_vulnerabilities
+    - sudo_misconfiguration
+
+- name: Configure Apache with verbose server information
+  lineinfile:
+    path: /etc/apache2/apache2.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: "^ServerTokens", line: "ServerTokens Full" }
+    - { regexp: "^ServerSignature", line: "ServerSignature On" }
+  when: vulnerability_config.system_vulnerabilities.service_information_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - system_vulnerabilities
+    - service_disclosure
+
+- name: Create world-writable test files
+  file:
+    path: "{{ item }}"
+    state: touch
+    mode: '0666'
+    owner: www-data
+    group: www-data
+  loop:
+    - /var/www/html/writable_file.txt
+    - /tmp/weak_permissions.log
+  when: vulnerability_config.system_vulnerabilities.weak_file_permissions | default(false)
+  tags:
+    - system_vulnerabilities
+    - weak_permissions
+
+# ===========================================
+# DATABASE VULNERABILITIES
+# ===========================================
+
+- name: Create weak database user
+  mysql_user:
+    name: testuser
+    password: "testpass"
+    priv: "*.*:ALL"
+    host: "%"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: vulnerability_config.database_vulnerabilities.weak_database_credentials | default(false)
+  tags:
+    - database_vulnerabilities
+    - weak_credentials
+
+- name: Create sample vulnerable database and data
+  mysql_db:
+    name: testdb
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+- name: Create vulnerable database table with sample data
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50),
+        password VARCHAR(50),
+        email VARCHAR(100),
+        role VARCHAR(20)
+      );
+      INSERT IGNORE INTO users (id, username, password, email, role) VALUES
+      (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
+      (2, 'john', 'password', 'john@lab.local', 'user'),
+      (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
+      (4, 'test', 'test123', 'test@lab.local', 'user');
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+# ===========================================
+# APPLICATION VULNERABILITIES
+# ===========================================
+
+- name: Deploy comprehensive vulnerable web application
+  copy:
+    src: "{{ role_path }}/web_stack/actions_vulnerable.php"
+    dest: /var/www/html/actions_vulnerable.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.application_vulnerabilities.vulnerable_web_apps | default(false)
+  tags:
+    - application_vulnerabilities
+    - vulnerable_apps
+
+# ===========================================
+# SYSTEM VULNERABILITIES - EXPOSED LOG FILES
+# ===========================================
+
+- name: Create exposed log directory
+  file:
+    path: /tmp/log
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create application log with embedded credentials
+  copy:
+    content: |
+      [2025-11-15 09:15:23] INFO: Application startup initiated
+      [2025-11-15 09:15:24] DEBUG: Database connection mysql://dbadmin:SecretDB_Pass2023@localhost:3306/proddb
+      [2025-11-15 09:15:25] INFO: User authentication module loaded
+      [2025-11-15 09:15:26] WARN: Failed login attempt for user: admin
+      [2025-11-15 09:15:27] DEBUG: Admin credentials: admin / AdminPass123!
+      [2025-11-15 09:15:28] INFO: SSH key backup: /home/backup/.ssh/id_rsa (password: backup_key_2023)
+      [2025-11-15 09:15:29] ERROR: Failed to connect to LDAP server ldaps://ldap.corp.local
+      [2025-11-15 09:15:30] DEBUG: LDAP bind: CN=svc-ldap,OU=Service,DC=corp,DC=local password: LDAPsvc_P@ss
+      [2025-11-15 09:15:31] INFO: Application ready to serve requests
+      [2025-11-15 09:20:45] WARN: Database backup started with credentials root:MySuperSecretRootPass
+      [2025-11-15 09:21:12] INFO: Backup completed to /var/backups/db_backup_20251115.sql
+      [2025-11-15 09:25:33] DEBUG: API key for external service: 7f8d9e2a-4b6c-1234-9876-abcdef012345
+      [2025-11-15 09:30:15] ERROR: Permission denied accessing /etc/shadow (using sudo password: SudoPass456)
+    dest: /tmp/log/application.log
+    mode: '0644'
+    owner: www-data
+    group: www-data
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create SSH session log with authentication details
+  copy:
+    content: |
+      Nov 15 08:45:12 lab-server sshd[12345]: Accepted password for admin from 192.168.1.100 port 54321 ssh2
+      Nov 15 08:45:13 lab-server sshd[12345]: pam_unix(sshd:session): session opened for user admin by (uid=0)
+      Nov 15 08:46:22 lab-server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/bin/bash
+      Nov 15 08:46:23 lab-server sudo: pam_unix(sudo:session): session opened for user root by admin(uid=1000)
+      Nov 15 08:47:15 lab-server systemd-logind[567]: New session 15 of user admin.
+      Nov 15 08:50:33 lab-server su: pam_unix(su:auth): authentication failure; logname=admin uid=1000 euid=0 tty=pts/0 ruser=admin rhost=  user=root
+      Nov 15 08:50:35 lab-server su: (to root) admin on pts/0
+      Nov 15 08:50:35 lab-server su: pam_unix(su:session): session opened for user root by admin(uid=1000)
+      Nov 15 09:15:42 lab-server cron[8901]: (root) CMD (mysqldump -u root -pMySuperSecretRootPass --all-databases > /var/backups/daily_backup.sql)
+      Nov 15 09:16:01 lab-server systemd[1]: Started Daily apt download activities.
+    dest: /tmp/log/auth.log
+    mode: '0640'
+    owner: syslog
+    group: adm
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create backup script log with plaintext passwords
+  copy:
+    content: |
+      #!/bin/bash
+      # Backup script execution log
+      echo "[$(date)] Starting backup process..."
+      
+      # Database credentials (TODO: move to secure vault)
+      DB_USER="root"
+      DB_PASS="MySuperSecretRootPass"
+      BACKUP_USER="backup_admin"
+      BACKUP_PASS="BackupAdmin2023!"
+      
+      echo "[$(date)] Connecting to database with user: $DB_USER"
+      mysqldump -u $DB_USER -p$DB_PASS --all-databases > /tmp/db_full_backup.sql
+      
+      echo "[$(date)] Uploading to backup server..."
+      echo "Using credentials: $BACKUP_USER / $BACKUP_PASS"
+      
+      # SSH key backup (weak permissions)
+      echo "[$(date)] Backing up SSH keys..."
+      cp /root/.ssh/id_rsa /tmp/log/root_ssh_key_backup
+      chmod 644 /tmp/log/root_ssh_key_backup
+      
+      echo "[$(date)] Backup process completed"
+    dest: /tmp/log/backup_script.log
+    mode: '0644'
+    owner: backup
+    group: backup
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create network service configuration with credentials
+  copy:
+    content: |
+      # Network service configuration backup
+      # WARNING: Contains sensitive information
+      
+      [database_servers]
+      prod_db = mysql://dbadmin:ProdDB_Secret123@db1.internal:3306/production
+      test_db = mysql://testuser:TestPass456@db2.internal:3306/testing
+      dev_db = mysql://developer:DevPassword789@localhost:3306/development
+      
+      [web_services]
+      api_endpoint = https://api.example.com/v1/
+      api_key = sk-1234567890abcdef1234567890abcdef
+      webhook_secret = whsec_abcd1234efgh5678ijkl9012mnop
+      
+      [ssh_access]
+      production_server = ssh://admin:AdminSSH2023@prod.internal
+      staging_server = ssh://deploy:DeployKey456@staging.internal
+      
+      [external_apis]
+      payment_gateway = pk_live_abcdef123456789
+      email_service = smtp://emailuser:EmailPass123@mail.provider.com:587
+      
+      [backup_locations]
+      primary_backup = sftp://backup_user:BackupSecure789@backup1.internal/backups/
+      secondary_backup = s3://backup-bucket?access_key=AKIA1234567890&secret=wJalrXUt+SecretKey123
+    dest: /tmp/log/service_config_backup.conf
+    mode: '0600'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create old rotated log with historical credentials
+  copy:
+    content: |
+      [2025-11-01 10:30:15] INFO: Legacy system migration started
+      [2025-11-01 10:30:16] DEBUG: Old database: mysql://legacy_admin:OldSystemPass2022@legacy.internal:3306/legacy_db
+      [2025-11-01 10:30:17] WARN: Using deprecated authentication method
+      [2025-11-01 10:30:18] DEBUG: Service account: legacy_svc / LegacyService123
+      [2025-11-01 10:30:19] INFO: Migrating user accounts...
+      [2025-11-01 10:30:20] DEBUG: Admin account migration: admin -> newadmin (temp pass: TempAdminPass456)
+      [2025-11-01 10:30:21] DEBUG: Service migration: legacy_api_key -> ak_legacy_789456123
+      [2025-11-01 10:30:22] INFO: Migration completed successfully
+      [2025-11-01 10:30:23] NOTE: Remember to update firewall rules for new server 192.168.100.50
+      [2025-11-01 10:30:24] NOTE: Emergency access: ssh root@192.168.100.50 (password: Emergency2025!)
+    dest: /tmp/log/migration.log.old
+    mode: '0644'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+# ===========================================
+# VULNERABILITY SUMMARY
+# ===========================================

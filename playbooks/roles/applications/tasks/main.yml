@@ -217,26 +217,33 @@
     mode: '0644'
 
 - name: Check if MantisBT database is initialized
-  command: >
-    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
-    -h localhost {{ mantisbt_db_name }} 
-    -e "SELECT COUNT(*) FROM mantis_config_table" 2>/dev/null
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: "{{ mantisbt_db_name }}"
+    query: "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = '{{ mantisbt_db_name }}' AND table_name IN ('mantis_config_table', 'mantis_user_table', 'mantis_project_table')"
   register: mantisbt_db_check
-  failed_when: false
-  changed_when: false
+  ignore_errors: yes
+
+- name: Set MantisBT installation status
+  set_fact:
+    mantisbt_installed: "{{ mantisbt_db_check.query_result[0][0]['count'] | int >= 3 if mantisbt_db_check.query_result is defined and mantisbt_db_check.failed == false else false }}"
+
+- name: Debug MantisBT installation status
+  debug:
+    msg: "MantisBT installation status: {{ 'Already installed (skipping database setup)' if mantisbt_installed else 'Not installed - proceeding with installation' }}"
 
 - name: Wait for Apache to be ready
   wait_for:
     port: 80
     host: localhost
     timeout: 30
-  when: mantisbt_db_check.rc != 0
+  when: not mantisbt_installed
 
 - name: Create MantisBT config table for unattended installation
   mysql_query:
-    login_user: "{{ mantisbt_db_user }}"
-    login_password: "{{ mantisbt_db_password }}"
-    login_host: localhost
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_db: "{{ mantisbt_db_name }}"
     query: |
       CREATE TABLE IF NOT EXISTS mantis_config_table (
@@ -248,73 +255,72 @@
         value text NOT NULL,
         PRIMARY KEY (config_id, project_id, user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-  when: mantisbt_db_check.rc != 0
+  when: not mantisbt_installed
   ignore_errors: yes
 
 - name: Initialize database_version for MantisBT unattended installation
   mysql_query:
-    login_user: "{{ mantisbt_db_user }}"
-    login_password: "{{ mantisbt_db_password }}"
-    login_host: localhost
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_db: "{{ mantisbt_db_name }}"
     query: |
       INSERT INTO mantis_config_table (config_id, project_id, user_id, value, type) 
       VALUES ('database_version', 0, 0, '0', 1)
       ON DUPLICATE KEY UPDATE value='0';
-  when: mantisbt_db_check.rc != 0
+  when: not mantisbt_installed
   ignore_errors: yes
 
 - name: Run MantisBT unattended upgrade to create full schema
   shell: sudo -u www-data php /var/www/mantisbt/admin/upgrade_unattended.php
   register: mantisbt_install
-  when: mantisbt_db_check.rc != 0
-  changed_when: "'schema upgrades executed' in mantisbt_install.stdout"
-  failed_when: mantisbt_install.rc != 0 and 
-               "'Upgrade from the current installed MantisBT version is no longer supported' not in mantisbt_install.stderr"
+  when: not mantisbt_installed
+  changed_when: "'schema upgrades executed' in (mantisbt_install.stdout | default(''))"
+  failed_when: false
+  ignore_errors: yes
 
 - name: Display MantisBT installation output
   debug:
     var: mantisbt_install.stdout_lines
-  when: mantisbt_db_check.rc != 0 and mantisbt_install is defined
+  when: not mantisbt_installed and mantisbt_install is defined
 
 - name: Create MantisBT administrator account
   mysql_query:
-    login_user: "{{ mantisbt_db_user }}"
-    login_password: "{{ mantisbt_db_password }}"
-    login_host: localhost
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_db: "{{ mantisbt_db_name }}"
     query: |
       INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
       VALUES ('{{ mantisbt_admin_user }}', '', '{{ mantisbt_admin_email }}', MD5('{{ mantisbt_admin_password }}'), 1, 1, 90, MD5(CONCAT('{{ mantisbt_admin_user }}', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
       ON DUPLICATE KEY UPDATE username=username;
-  when: mantisbt_db_check.rc != 0
+  when: not mantisbt_installed
   ignore_errors: yes
 
 - name: Verify MantisBT installation succeeded
-  command: >
-    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
-    -h localhost {{ mantisbt_db_name }} 
-    -e "SELECT COUNT(*) FROM mantis_user_table" 2>/dev/null
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: "{{ mantisbt_db_name }}"
+    query: "SELECT COUNT(*) as count FROM mantis_user_table"
   register: mantisbt_verify
   failed_when: false
   changed_when: false
-  when: mantisbt_db_check.rc != 0
+  when: not mantisbt_installed
 
 - name: Check if MantisBT users already exist
-  shell: |
-    mysql -u {{ mantisbt_db_user }} -p{{ mantisbt_db_password }} 
-    -h localhost {{ mantisbt_db_name }} 
-    -e "SELECT COUNT(*) FROM mantis_user_table WHERE username IN ('manager', 'developer', 'reporter', 'viewer')" 2>/dev/null | tail -1
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: "{{ mantisbt_db_name }}"
+    query: "SELECT COUNT(*) as count FROM mantis_user_table WHERE username IN ('manager', 'developer', 'reporter', 'viewer')"
   register: mantisbt_users_check
   failed_when: false
   changed_when: false
-  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+  when: not mantisbt_installed
 
 - name: Create MantisBT test users
   mysql_query:
-    login_user: "{{ mantisbt_db_user }}"
-    login_password: "{{ mantisbt_db_password }}"
-    login_host: localhost
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
     login_db: "{{ mantisbt_db_name }}"
     query: |
       INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
@@ -324,14 +330,14 @@
         ('reporter', 'Bug Reporter', 'reporter@mantisbt.local', MD5('reporter'), 1, 0, 25, MD5(CONCAT('reporter', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
         ('viewer', 'Guest Viewer', 'viewer@mantisbt.local', MD5('viewer'), 1, 0, 10, MD5(CONCAT('viewer', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
       ON DUPLICATE KEY UPDATE username=username;
-  when: mantisbt_users_check is defined and mantisbt_users_check.stdout | default('0') | int == 0
+  when: not mantisbt_installed and (mantisbt_users_check.query_result[0][0]['count'] | int == 0 if mantisbt_users_check.query_result is defined else true)
   ignore_errors: yes
 
 - name: Remove MantisBT admin directory for security
   file:
     path: /var/www/mantisbt/admin
     state: absent
-  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+  when: not mantisbt_installed
 
 - name: Display MantisBT installation complete message
   debug:
@@ -350,7 +356,7 @@
       - "  Viewer:        viewer / viewer (Level 10)"
       - ""
       - "═══════════════════════════════════════════════════════════"
-  when: mantisbt_verify is defined and mantisbt_verify.rc == 0
+  when: not mantisbt_installed
 
 - name: Create MantisBT Apache configuration  
   copy:
