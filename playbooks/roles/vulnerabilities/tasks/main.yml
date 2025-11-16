@@ -306,7 +306,7 @@
     - database_vulnerabilities
     - sample_data
 
-- name: Create vulnerable database table with sample data
+- name: Create vulnerable database table
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -319,6 +319,17 @@
         email VARCHAR(100),
         role VARCHAR(20)
       );
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+- name: Insert sample vulnerable data into database
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
       INSERT IGNORE INTO users (id, username, password, email, role) VALUES
       (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
       (2, 'john', 'password', 'john@lab.local', 'user'),
@@ -373,9 +384,11 @@
       [2025-11-15 09:15:29] ERROR: Failed to connect to LDAP server ldaps://ldap.corp.local
       [2025-11-15 09:15:30] DEBUG: LDAP bind: CN=svc-ldap,OU=Service,DC=corp,DC=local password: LDAPsvc_P@ss
       [2025-11-15 09:15:31] INFO: Application ready to serve requests
-      [2025-11-15 09:20:45] WARN: Database backup started with credentials root:MySuperSecretRootPass
+      [2025-11-15 09:20:45] WARN: Database backup started with credentials root:maria
       [2025-11-15 09:21:12] INFO: Backup completed to /var/backups/db_backup_20251115.sql
       [2025-11-15 09:25:33] DEBUG: API key for external service: 7f8d9e2a-4b6c-1234-9876-abcdef012345
+      [2025-11-15 09:25:34] DEBUG: Gitea database: mysql://gitea:cup_of_tea@localhost:3306/gitea
+      [2025-11-15 09:25:35] DEBUG: MantisBT database: mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
       [2025-11-15 09:30:15] ERROR: Permission denied accessing /etc/shadow (using sudo password: SudoPass456)
     dest: /tmp/log/application.log
     mode: '0644'
@@ -397,7 +410,7 @@
       Nov 15 08:50:33 lab-server su: pam_unix(su:auth): authentication failure; logname=admin uid=1000 euid=0 tty=pts/0 ruser=admin rhost=  user=root
       Nov 15 08:50:35 lab-server su: (to root) admin on pts/0
       Nov 15 08:50:35 lab-server su: pam_unix(su:session): session opened for user root by admin(uid=1000)
-      Nov 15 09:15:42 lab-server cron[8901]: (root) CMD (mysqldump -u root -pMySuperSecretRootPass --all-databases > /var/backups/daily_backup.sql)
+      Nov 15 09:15:42 lab-server cron[8901]: (root) CMD (mysqldump -u root -pmaria --all-databases > /var/backups/daily_backup.sql)
       Nov 15 09:16:01 lab-server systemd[1]: Started Daily apt download activities.
     dest: /tmp/log/auth.log
     mode: '0640'
@@ -417,7 +430,7 @@
       
       # Database credentials (TODO: move to secure vault)
       DB_USER="root"
-      DB_PASS="MySuperSecretRootPass"
+      DB_PASS="maria"
       BACKUP_USER="backup_admin"
       BACKUP_PASS="BackupAdmin2023!"
       
@@ -449,8 +462,10 @@
       # WARNING: Contains sensitive information
       
       [database_servers]
-      prod_db = mysql://dbadmin:ProdDB_Secret123@db1.internal:3306/production
-      test_db = mysql://testuser:TestPass456@db2.internal:3306/testing
+      prod_db = mysql://root:maria@localhost:3306/production
+      gitea_db = mysql://gitea:cup_of_tea@localhost:3306/gitea
+      mantisbt_db = mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
+      test_db = mysql://testuser:testpass@localhost:3306/testdb
       dev_db = mysql://developer:DevPassword789@localhost:3306/development
       
       [web_services]
