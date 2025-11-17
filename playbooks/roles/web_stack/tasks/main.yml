@@ -1,6 +1,14 @@
 ---
 # Web Stack Role - Apache, PHP installation and LabSys Wiki configuration
 
+# Add PHP repository for older versions (required for Ubuntu 24.04)
+- name: Add Ondrej Sury PHP repository
+  ansible.builtin.apt_repository:
+    repo: "ppa:ondrej/php"
+    state: present
+    update_cache: yes
+  when: php_version != "latest" and php_version is version("8.0", "<")
+
 # Install Apache and PHP
 - name: Install Apache HTTP Server and PHP modules
   ansible.builtin.apt:

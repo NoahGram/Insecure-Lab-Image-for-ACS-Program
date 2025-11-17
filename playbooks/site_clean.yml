@@ -23,7 +23,6 @@
         gitea_version: "{{ vars[current_profile]['gitea_version'] | default('1.15.0') }}"
         dokuwiki_version: "{{ vars[current_profile]['dokuwiki_version'] | default('stable') }}"
         mantisbt_version: "{{ vars[current_profile]['mantisbt_version'] | default('2.25.8') }}"
-        wazuh_version: "{{ vars[current_profile]['wazuh_version'] | default('4.7.0') }}"
         cockpit_version: "{{ vars[current_profile]['cockpit_version'] | default('latest') }}"
         postfix_version: "{{ vars[current_profile]['postfix_version'] | default('latest') }}"
         
@@ -46,8 +45,8 @@
       tags: applications
     - role: system_services
       tags: system_services
-    - role: vulnerabilities
-      tags: vulnerabilities
+    #- role: vulnerabilities
+    #  tags: vulnerabilities
     
   post_tasks:
     # Final system verification
