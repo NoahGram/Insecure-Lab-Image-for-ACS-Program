@@ -141,3 +141,19 @@
     owner: www-data
     group: www-data
     mode: '0644'
+
+- name: Deploy no password validation vulnerability override
+  copy:
+    src: files/no_password_validation.php
+    dest: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy no client-side password validation vulnerability override
+  copy:
+    src: files/no_client_side_password_validation.php
+    dest: /var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php
+    owner: www-data
+    group: www-data
+    mode: '0644'

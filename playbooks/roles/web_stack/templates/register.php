@@ -1,6 +1,10 @@
 <h2 class="page-title">Register</h2>
 <div class="login-box">
-<script src="assets/js/register.js" defer></script>
+<?php
+// Check if client-side validation should be disabled
+$disable_client_validation = is_readable('/var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php');
+?>
+<script src="assets/js/register.js" defer data-disable-validation="<?= $disable_client_validation ? 'true' : 'false' ?>"></script>
 
   <?php if (!empty($register_error)) : ?>
     <div class="muted" style="color:#a33;margin-bottom:8px"><?= h($register_error) ?></div>

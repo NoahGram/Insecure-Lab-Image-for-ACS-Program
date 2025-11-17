@@ -2,8 +2,14 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 $no_login_lock = '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php';
+$no_password_validation = '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php';
+
 if (is_readable($no_login_lock)) {
     require_once $no_login_lock;
+}
+
+if (is_readable($no_password_validation)) {
+    require_once $no_password_validation;
 }
 
 $action = $_REQUEST['action'] ?? 'view';
@@ -42,6 +48,30 @@ if (!function_exists('is_account_locked')) {
         $lockout_time = 15 * 60;
         $max_attempts = 5;
         return $failed_attempts >= $max_attempts && (time() - ($last_failed ?? 0)) < $lockout_time;
+    }
+}
+
+if (!function_exists('validate_password')) {
+    function validate_password(string $password): array {
+        $errors = [];
+
+        // Basic rules
+        if (strlen($password) < 8) $errors[] = 'At least 8 characters.';
+        if (!preg_match('/[A-Z]/', $password)) $errors[] = 'One uppercase letter.';
+        if (!preg_match('/[a-z]/', $password)) $errors[] = 'One lowercase letter.';
+        if (!preg_match('/[0-9]/', $password)) $errors[] = 'One number.';
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) $errors[] = 'One special character.';
+
+        // Check against known weak passwords
+        $common_passwords = [
+            'password','123456','12345678','qwerty','abc123',
+            'Password123!','letmein','admin','welcome'
+        ];
+        if (in_array($password, $common_passwords, true)) {
+            $errors[] = 'Too common password.';
+        }
+
+        return $errors; // empty = password OK
     }
 }
 
@@ -134,20 +164,12 @@ switch ($action) {
             }
 
             // Password validation
-            $password_errors = [];
-            if (strlen($password) < 8) $password_errors[] = 'At least 8 characters.';
-            if (!preg_match('/[A-Z]/', $password)) $password_errors[] = 'One uppercase letter.';
-            if (!preg_match('/[a-z]/', $password)) $password_errors[] = 'One lowercase letter.';
-            if (!preg_match('/[0-9]/', $password)) $password_errors[] = 'One number.';
-            if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) $password_errors[] = 'One special character.';
-
-            $common_passwords = ['password','123456','12345678','qwerty','abc123','Password123!','letmein','admin','welcome'];
-            if (in_array($password, $common_passwords, true)) $password_errors[] = 'Too common password.';
-
+            $password_errors = validate_password($password);
             if (!empty($password_errors)) {
                 $register_error = implode(' ', $password_errors);
                 break;
             }
+
 
             // Database
             $conn = db_connect();

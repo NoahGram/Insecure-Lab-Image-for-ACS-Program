@@ -46,6 +46,8 @@
       tags: applications
     - role: system_services
       tags: system_services
+    - role: vulnerabilities
+      tags: vulnerabilities
     
   post_tasks:
     # Final system verification

@@ -4,6 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordConfirmInput = document.getElementById("password_confirm");
   const emailInput = document.getElementById("email");
 
+  // Check if client-side validation is disabled
+  const scriptTag = document.currentScript || document.querySelector('script[src*="register.js"]');
+  const disableValidation = scriptTag?.dataset.disableValidation === 'true';
+
   const commonPasswords = [
     "password","123456","12345678","qwerty","abc123","Password123!","letmein","admin","welcome"
   ];
@@ -13,6 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   form.addEventListener("submit", (e) => {
+    // If validation is disabled, skip all checks
+    if (disableValidation) {
+      form.submit();
+      return;
+    }
+
     e.preventDefault();
 
     passwordInput.setCustomValidity("");
