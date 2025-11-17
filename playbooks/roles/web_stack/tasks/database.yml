@@ -88,7 +88,28 @@
       ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
   when: mysql_service is defined
 
-- name: Insert or update sample users with roles
+- name: Check if vulnerable password validation override exists
+  stat:
+    path: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
+  register: vulnerability_file
+
+- name: Set weak passwords for vulnerable deployment
+  set_fact:
+    account_passwords:
+      - { id: 1, username: 'admin', password: 'admin', email: 'admin@portal.local', role: 'admin' }
+      - { id: 2, username: 'jane', password: 'jane', email: 'jane@portal.local', role: 'user' }
+      - { id: 3, username: 'guest', password: 'guest', email: 'guest@portal.local', role: 'user' }
+  when: vulnerability_file.stat.exists
+
+- name: Set strong passwords for secure deployment
+  set_fact:
+    account_passwords:
+      - { id: 1, username: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local', role: 'admin' }
+      - { id: 2, username: 'jane', password: 'Jane@Secure456!', email: 'jane@portal.local', role: 'user' }
+      - { id: 3, username: 'guest', password: 'Guest@Secure789!', email: 'guest@portal.local', role: 'user' }
+  when: not vulnerability_file.stat.exists
+
+- name: Insert or update sample users with roles and conditional passwords
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -96,11 +117,10 @@
     query: |
       INSERT INTO users (id, username, password, email, role)
       VALUES
-        (1, 'admin', 'admin123', 'admin@portal.local', 'admin'),
-        (2, 'jane', 'password', 'jane@portal.local', 'user'),
-        (3, 'guest', 'guest', 'guest@portal.local', 'user')
+        ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}')
       ON DUPLICATE KEY UPDATE
         password=VALUES(password),
         email=VALUES(email),
         role=VALUES(role);
+  loop: "{{ account_passwords }}"
   when: mysql_service is defined
