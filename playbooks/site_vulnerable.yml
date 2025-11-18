@@ -35,8 +35,8 @@
 
   roles:
     - base_system
-    - web_stack  
     - database
+    - web_stack
     - applications
     - system_services
     - vulnerabilities  # Add vulnerabilities role
