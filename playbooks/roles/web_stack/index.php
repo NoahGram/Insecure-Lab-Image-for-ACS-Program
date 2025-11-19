@@ -15,7 +15,10 @@ require_once __DIR__ . '/includes/actions.php';
       <div style="display:flex;gap:8px;align-items:center">
         <?php if(!empty($_SESSION['username'])): ?>
           <div class="small muted">Logged in as <strong><?= h($_SESSION['username']); ?></strong> (<?= h($_SESSION['role'] ?? 'user'); ?>)</div>
-          <a class="btn" href="?action=logout">Log out</a>
+          <form method="POST" action="?action=logout" style="display:inline; margin:0;">
+            <?= csrf_field() ?>
+            <button class="btn" type="submit">Log out</button>
+          </form>
         <?php else: ?>
           <a class="btn" href="?action=login">Log in</a>
           <a class="btn" href="?action=register">Register</a>
@@ -30,7 +33,6 @@ require_once __DIR__ . '/includes/actions.php';
     if (empty($_SESSION['username']) && !in_array($action, ['login','register','view']) || ($action === 'view' && $page !== 'Home')) {
         echo "<div class='small muted'>Please log in to view pages.</div>";
         $action = 'view';
-        $page = 'Home';
     }
 
     if (!empty($_SESSION['username']) && $action !== 'login' && $action !== 'register') {

@@ -326,6 +326,56 @@
     - system_vulnerabilities
     - exposed_logs
 
-# ===========================================
-# VULNERABILITY SUMMARY
-# ===========================================
+- name: Create vulnerabilities web_stack directory on target
+  file:
+    path: /var/www/roles/vulnerabilities/web_stack
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Deploy no login lock vulnerability override
+  copy:
+    src: files/no_login_lock.php
+    dest: /var/www/roles/vulnerabilities/web_stack/no_login_lock.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy disable CSRF vulnerability override
+  copy:
+    src: files/disable_csrf.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_csrf.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy disable session cookies vulnerability override
+  copy:
+    src: files/disable_session_cookies.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy disable session regenerate vulnerability override
+  copy:
+    src: files/disable_session_regenerate.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Set insecure passwords in database for vulnerable deployment
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      UPDATE users SET password = '{{ item.password }}'
+      WHERE username = '{{ item.username }}';
+  loop:
+    - { username: 'admin', password: 'admin' }
+    - { username: 'jane', password: 'jane' }
+    - { username: 'guest', password: 'guest' }
+  ignore_errors: yes
