@@ -158,6 +158,14 @@
     group: www-data
     mode: '0644'
 
+- name: Deploy disable session regenerate vulnerability override
+  copy:
+    src: files/disable_session_regenerate.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
     login_user: root
