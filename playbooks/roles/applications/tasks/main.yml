@@ -44,7 +44,7 @@
       HOST     = localhost:3306
       NAME     = gitea
       USER     = gitea
-      PASSWD   = GiteaDBPassword123!
+      PASSWD   = cup_of_tea
 
       [repository]
       ROOT = /var/lib/gitea/data/gitea-repositories

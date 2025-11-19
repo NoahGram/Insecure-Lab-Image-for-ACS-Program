@@ -39,7 +39,8 @@
     - database
     - applications
     - system_services
-    - vulnerabilities  # Add vulnerabilities role
+    - vulnerabilities
+    - user_environment
     
   post_tasks:
     # Create vulnerable database entries

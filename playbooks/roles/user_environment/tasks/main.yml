@@ -1,0 +1,167 @@
+---
+# User Environment Setup Tasks
+# Creates realistic user home directories with appropriate files
+# Note: Users should already exist (created by vulnerabilities role)
+
+- name: Ensure user home directories exist
+  file:
+    path: "/home/{{ item }}"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0755'
+  loop:
+    - admin
+    - test
+    - guest
+    - demo
+    - sysadmin
+    - backup
+  tags:
+    - user_environment
+
+- name: Create user-specific subdirectories
+  file:
+    path: "/home/{{ item.user }}/{{ item.dir }}"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+    mode: '0755'
+  loop:
+    - { user: "demo", dir: "demo_files" }
+    - { user: "test", dir: "projects" }
+    - { user: "test", dir: "scripts" }
+    - { user: "test", dir: "temp" }
+    - { user: "test", dir: "logs" }
+    - { user: "sysadmin", dir: "docs" }
+    - { user: "sysadmin", dir: "runbooks" }
+    - { user: "sysadmin", dir: "configs" }
+    - { user: "backup", dir: "backup_configs" }
+  tags:
+    - user_environment
+
+- name: Copy user bashrc files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/{{ item }}/.bashrc"
+    dest: "/home/{{ item }}/.bashrc"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0644'
+  loop:
+    - admin
+    - test
+    - guest
+    - demo
+    - sysadmin
+    - backup
+  tags:
+    - user_environment
+
+- name: Copy admin user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/admin/{{ item.src }}"
+    dest: "/home/admin/{{ item.dest }}"
+    owner: admin
+    group: admin
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "backup_script.sh", dest: "backup_script.sh", mode: "0755" }
+    - { src: "admin_notes.txt", dest: "admin_notes.txt", mode: "0644" }
+    - { src: "credentials.txt", dest: "credentials.txt", mode: "0600" }
+  tags:
+    - user_environment
+    - admin_files
+
+- name: Copy test user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/test/{{ item.src }}"
+    dest: "/home/test/{{ item.dest }}"
+    owner: test
+    group: test
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "setup_test_env.sh", dest: "scripts/setup_test_env.sh", mode: "0755" }
+    - { src: "test_plan.txt", dest: "test_plan.txt", mode: "0644" }
+  tags:
+    - user_environment
+    - test_files
+
+- name: Copy guest user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/guest/{{ item }}"
+    dest: "/home/guest/{{ item }}"
+    owner: guest
+    group: guest
+    mode: '0644'
+  loop:
+    - welcome.txt
+    - linux_commands.txt
+  tags:
+    - user_environment
+    - guest_files
+
+- name: Copy demo user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/demo/{{ item.src }}"
+    dest: "/home/demo/{{ item.dest }}"
+    owner: demo
+    group: demo
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "demo_script.txt", dest: "demo_script.txt", mode: "0644" }
+    - { src: "demo_files/run_demo.sh", dest: "demo_files/run_demo.sh", mode: "0755" }
+  tags:
+    - user_environment
+    - demo_files
+
+- name: Copy sysadmin user files  
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/sysadmin/{{ item.src }}"
+    dest: "/home/sysadmin/{{ item.dest }}"
+    owner: sysadmin
+    group: sysadmin
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "system_health.sh", dest: "system_health.sh", mode: "0755" }
+    - { src: "daily_log.txt", dest: "daily_log.txt", mode: "0644" }
+  tags:
+    - user_environment
+    - sysadmin_files
+
+- name: Copy backup user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/{{ item.src }}"
+    dest: "/home/backup/{{ item.dest }}"
+    owner: backup  
+    group: backup
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "automated_backup.sh", dest: "automated_backup.sh", mode: "0755" }
+    - { src: "backup_config.txt", dest: "backup_configs/backup_config.txt", mode: "0600" }
+  tags:
+    - user_environment
+    - backup_files
+
+- name: Create backup directory structure
+  file:
+    path: /backup
+    state: directory
+    owner: backup
+    group: backup
+    mode: '0755'
+  tags:
+    - user_environment
+    - backup_files
+
+- name: Set executable permissions on scripts
+  file:
+    path: "{{ item }}"
+    mode: '0755'
+  loop:
+    - /home/admin/backup_script.sh
+    - /home/test/scripts/setup_test_env.sh
+    - /home/demo/demo_files/run_demo.sh
+    - /home/sysadmin/system_health.sh
+    - /home/backup/automated_backup.sh
+  tags:
+    - user_environment

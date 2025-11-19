@@ -1,0 +1,19 @@
+---
+- name: Deploy User Environment and Vulnerabilities Only
+  hosts: vps_lab
+  gather_facts: yes
+  vars:
+    profile_name: "{{ vulnerability_profile | default('vulnerable_profile') }}"
+    
+  vars_files:
+    - ../vulnerability-profiles.yml
+  
+  pre_tasks:
+    - name: Load profile-specific versions
+      set_fact:
+        vulnerability_config: "{{ vars[profile_name]['vulnerabilities'] | default({}) }}"
+        vulnerable_mode: true
+        
+  roles:
+    - user_environment
+    - vulnerabilities
