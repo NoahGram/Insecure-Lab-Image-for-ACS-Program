@@ -45,7 +45,6 @@ if (function_exists('session_set_cookie_params_override')) {
 } else {
     session_set_cookie_params($cookie_params);
 }
-session_start();
 
 // --- CSRF helpers ---
 if (!function_exists('csrf_token')) {
@@ -149,7 +148,7 @@ switch ($action) {
                             }
                             $_SESSION['username'] = $row['username'];
                             $_SESSION['email'] = $row['email'];
-                            $_SESSION['role'] = $row['role'] ?? 'user';
+                            $_SESSION['role'] = $row['role'];
 
                             header('Location: ?page=' . rawurlencode($page));
                             exit;
