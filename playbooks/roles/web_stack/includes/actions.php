@@ -3,6 +3,8 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 $no_login_lock = '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php';
 $no_password_validation = '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php';
+$disable_session_regenerate = '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php';
+$no_csrf = '/var/www/roles/vulnerabilities/web_stack/no_csrf.php';
 
 if (is_readable($no_login_lock)) {
     require_once $no_login_lock;
@@ -10,6 +12,14 @@ if (is_readable($no_login_lock)) {
 
 if (is_readable($no_password_validation)) {
     require_once $no_password_validation;
+}
+
+if (is_readable($disable_session_regenerate)) {
+    require_once $disable_session_regenerate;
+}
+
+if (is_readable($no_csrf)) {
+    require_once $no_csrf;
 }
 
 $action = $_REQUEST['action'] ?? 'view';
@@ -27,20 +37,26 @@ session_set_cookie_params([
 session_start();
 
 // --- CSRF helpers ---
-function csrf_token(): string {
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+if (!function_exists('csrf_token')) {
+    function csrf_token(): string {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
     }
-    return $_SESSION['csrf_token'];
 }
 
-function csrf_field(): string {
-    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+if (!function_exists('csrf_field')) {
+    function csrf_field(): string {
+        return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+    }
 }
 
-function verify_csrf(): bool {
-    $sent = $_REQUEST['csrf_token'] ?? '';
-    return is_string($sent) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$sent);
+if (!function_exists('verify_csrf')) {
+    function verify_csrf(): bool {
+        $sent = $_REQUEST['csrf_token'] ?? '';
+        return is_string($sent) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$sent);
+    }
 }
 
 if (!function_exists('is_account_locked')) {
@@ -80,6 +96,11 @@ switch ($action) {
 
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf()) {
+                http_response_code(400);
+                die('CSRF verification failed.');
+            }
+
             $username = $_POST['username'] ?? '';
             $password = $_POST['password'] ?? '';
 
@@ -110,7 +131,11 @@ switch ($action) {
                             $stmt2->close();
 
                             // --- SESSION FIXATION PROTECTION ---
-                            session_regenerate_id(true);
+                            if (function_exists('session_regenerate_id_override')) {
+                                session_regenerate_id_override();
+                            } else {
+                                session_regenerate_id(true);
+                            }
                             $_SESSION['username'] = $row['username'];
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'] ?? 'user';
@@ -193,7 +218,11 @@ switch ($action) {
 
                 if ($stmt->execute()) {
                     // --- SESSION FIXATION PROTECTION ---
-                    session_regenerate_id(true);
+                    if (function_exists('session_regenerate_id_override')) {
+                        session_regenerate_id_override();
+                    } else {
+                        session_regenerate_id(true);
+                    }
                     $_SESSION['username'] = $username;
                     $_SESSION['role'] = $role;
 
@@ -212,6 +241,10 @@ switch ($action) {
         break;
 
     case 'logout':
+        if (!verify_csrf()) {
+            http_response_code(400);
+            die('CSRF verification failed.');
+        }
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();

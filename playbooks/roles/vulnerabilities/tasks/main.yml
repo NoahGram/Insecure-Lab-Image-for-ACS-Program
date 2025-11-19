@@ -142,18 +142,16 @@
     group: www-data
     mode: '0644'
 
-- name: Deploy no password validation vulnerability override
-  copy:
-    src: files/no_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-
-- name: Deploy no client-side password validation vulnerability override
-  copy:
-    src: files/no_client_side_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
+- name: Set insecure passwords in database for vulnerable deployment
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      UPDATE users SET password = '{{ item.password }}'
+      WHERE username = '{{ item.username }}';
+  loop:
+    - { username: 'admin', password: 'admin' }
+    - { username: 'jane', password: 'jane' }
+    - { username: 'guest', password: 'guest' }
+  ignore_errors: yes

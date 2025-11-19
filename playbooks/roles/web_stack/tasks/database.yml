@@ -43,9 +43,9 @@
     query: "INSERT IGNORE INTO users (id, username, password, email)
             VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}');"
   loop:
-    - { id: 1, username: 'admin', password: 'admin123', email: 'admin@portal.local' }
-    - { id: 2, username: 'jane',  password: 'password',  email: 'jane@portal.local' }
-    - { id: 3, username: 'guest', password: 'guest',     email: 'guest@portal.local' }
+    - { id: 1, username: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local' }
+    - { id: 2, username: 'jane',  password: 'Jane@Secure456!',  email: 'jane@portal.local' }
+    - { id: 3, username: 'guest', password: 'Guest@Secure789!',     email: 'guest@portal.local' }
   when: mysql_service is defined
 
 - name: Create pages table
@@ -86,41 +86,4 @@
       ADD COLUMN IF NOT EXISTS failed_attempts INT DEFAULT 0,
       ADD COLUMN IF NOT EXISTS last_failed TIMESTAMP NULL DEFAULT NULL,
       ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
-  when: mysql_service is defined
-
-- name: Check if vulnerable password validation override exists
-  stat:
-    path: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
-  register: vulnerability_file
-
-- name: Set weak passwords for vulnerable deployment
-  set_fact:
-    account_passwords:
-      - { id: 1, username: 'admin', password: 'admin', email: 'admin@portal.local', role: 'admin' }
-      - { id: 2, username: 'jane', password: 'jane', email: 'jane@portal.local', role: 'user' }
-      - { id: 3, username: 'guest', password: 'guest', email: 'guest@portal.local', role: 'user' }
-  when: vulnerability_file.stat.exists
-
-- name: Set strong passwords for secure deployment
-  set_fact:
-    account_passwords:
-      - { id: 1, username: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local', role: 'admin' }
-      - { id: 2, username: 'jane', password: 'Jane@Secure456!', email: 'jane@portal.local', role: 'user' }
-      - { id: 3, username: 'guest', password: 'Guest@Secure789!', email: 'guest@portal.local', role: 'user' }
-  when: not vulnerability_file.stat.exists
-
-- name: Insert or update sample users with roles and conditional passwords
-  mysql_query:
-    login_user: root
-    login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
-    query: |
-      INSERT INTO users (id, username, password, email, role)
-      VALUES
-        ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}')
-      ON DUPLICATE KEY UPDATE
-        password=VALUES(password),
-        email=VALUES(email),
-        role=VALUES(role);
-  loop: "{{ account_passwords }}"
   when: mysql_service is defined

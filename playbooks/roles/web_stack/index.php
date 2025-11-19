@@ -15,7 +15,10 @@ require_once __DIR__ . '/includes/actions.php';
       <div style="display:flex;gap:8px;align-items:center">
         <?php if(!empty($_SESSION['username'])): ?>
           <div class="small muted">Logged in as <strong><?= h($_SESSION['username']); ?></strong> (<?= h($_SESSION['role'] ?? 'user'); ?>)</div>
-          <a class="btn" href="?action=logout">Log out</a>
+          <form method="POST" action="?action=logout" style="display:inline; margin:0;">
+            <?= csrf_field() ?>
+            <button class="btn" type="submit">Log out</button>
+          </form>
         <?php else: ?>
           <a class="btn" href="?action=login">Log in</a>
           <a class="btn" href="?action=register">Register</a>
