@@ -35,58 +35,14 @@
 
   roles:
     - base_system
-    - web_stack  
     - database
+    - web_stack  
     - applications
     - system_services
     - vulnerabilities
     - user_environment
     
   post_tasks:
-    # Create vulnerable database entries
-    - name: Create vulnerable database with weak credentials
-      mysql_db:
-        name: testdb
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-
-    - name: Create database user with weak password
-      mysql_user:
-        name: testuser
-        password: "testpass"
-        priv: "testdb.*:ALL"
-        host: "%"
-        state: present
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-
-    - name: Create vulnerable database table
-      mysql_query:
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-        login_db: testdb
-        query: |
-          CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50),
-            password VARCHAR(50),
-            email VARCHAR(100),
-            role VARCHAR(20)
-          );
-          
-    - name: Insert sample vulnerable data
-      mysql_query:
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-        login_db: testdb
-        query: |
-          INSERT IGNORE INTO users (id, username, password, email, role) VALUES
-          (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
-          (2, 'john', 'password', 'john@lab.local', 'user'),
-          (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
-          (4, 'test', 'test123', 'test@lab.local', 'user');
-          
     - name: Create comprehensive vulnerability guide
       copy:
         content: |

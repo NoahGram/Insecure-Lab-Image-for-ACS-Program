@@ -1,7 +1,22 @@
 ---
 # User Environment Setup Tasks
 # Creates realistic user home directories with appropriate files
-# Note: Users should already exist (created by vulnerabilities role)
+
+- name: Create missing users for environment setup
+  user:
+    name: "{{ item }}"
+    password: "{{ item | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+    comment: "Environment user account"
+    state: present
+  loop:
+    - admin
+    - test
+    - demo
+  ignore_errors: yes  # Allow if users already exist
+  tags:
+    - user_environment
 
 - name: Ensure user home directories exist
   file:
