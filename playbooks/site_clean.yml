@@ -17,14 +17,16 @@
         
     - name: Load profile-specific versions
       set_fact:
-        apache_version: "{{ vars[current_profile]['apache_version'] | default('latest') }}"
-        php_version: "{{ vars[current_profile]['php_version'] | default('latest') }}"
-        mysql_version: "{{ vars[current_profile]['mysql_version'] | default('latest') }}"
-        gitea_version: "{{ vars[current_profile]['gitea_version'] | default('1.15.0') }}"
-        dokuwiki_version: "{{ vars[current_profile]['dokuwiki_version'] | default('stable') }}"
-        mantisbt_version: "{{ vars[current_profile]['mantisbt_version'] | default('2.25.8') }}"
-        cockpit_version: "{{ vars[current_profile]['cockpit_version'] | default('latest') }}"
-        postfix_version: "{{ vars[current_profile]['postfix_version'] | default('latest') }}"
+        apache_version: "{{ vars[current_profile]['versions']['apache_version'] | default('latest') }}"
+        php_version: "{{ vars[current_profile]['versions']['php_version'] | default('latest') }}"
+        mysql_version: "{{ vars[current_profile]['versions']['mysql_version'] | default('latest') }}"
+        gitea_version: "{{ vars[current_profile]['versions']['gitea_version'] | default('1.15.0') }}"
+        dokuwiki_version: "{{ vars[current_profile]['versions']['dokuwiki_version'] | default('stable') }}"
+        mantisbt_version: "{{ vars[current_profile]['versions']['mantisbt_version'] | default('2.25.8') }}"
+        cockpit_version: "{{ vars[current_profile]['versions']['cockpit_version'] | default('latest') }}"
+        postfix_version: "{{ vars[current_profile]['versions']['postfix_version'] | default('latest') }}"
+        # Load vulnerability controls
+        vulnerability_config: "{{ vars[current_profile]['vulnerabilities'] | default({}) }}"
         
     - name: Display selected vulnerability profile
       debug:
@@ -35,18 +37,12 @@
           - "MySQL version: {{ mysql_version }}"
 
   roles:
-    - role: base_system
-      tags: base_system
-    - role: database
-      tags: database
-    - role: web_stack
-      tags: web_stack
-    - role: applications
-      tags: applications
-    - role: system_services
-      tags: system_services
-    # - role: vulnerabilities
-    #   tags: vulnerabilities
+    - base_system
+    - database
+    - web_stack
+    - applications
+    - system_services
+    - user_environment
     
   post_tasks:
     # Final system verification

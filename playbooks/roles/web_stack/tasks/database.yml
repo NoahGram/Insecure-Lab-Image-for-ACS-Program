@@ -7,9 +7,9 @@
     timeout: 60
   ignore_errors: yes
 
-- name: Check if MySQL is running
+- name: Check if MariaDB is running
   service:
-    name: mysql
+    name: mariadb
   register: mysql_service
   ignore_errors: yes
 
