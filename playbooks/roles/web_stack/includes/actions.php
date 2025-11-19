@@ -4,7 +4,8 @@ require_once __DIR__ . '/helpers.php';
 $no_login_lock = '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php';
 $no_password_validation = '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php';
 $disable_session_regenerate = '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php';
-$no_csrf = '/var/www/roles/vulnerabilities/web_stack/no_csrf.php';
+$disable_csrf = '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php';
+$disable_session_cookies = '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php';
 
 if (is_readable($no_login_lock)) {
     require_once $no_login_lock;
@@ -18,22 +19,32 @@ if (is_readable($disable_session_regenerate)) {
     require_once $disable_session_regenerate;
 }
 
-if (is_readable($no_csrf)) {
-    require_once $no_csrf;
+if (is_readable($disable_csrf)) {
+    require_once $disable_csrf;
+}
+
+if (is_readable($disable_session_cookies)) {
+    require_once $disable_session_cookies;
 }
 
 $action = $_REQUEST['action'] ?? 'view';
 $page   = $_REQUEST['page'] ?? 'Home';
 
-// --- Secure session cookie settings ---
-session_set_cookie_params([
+// --- Secure session cookie settings (can be overridden by vulnerability files) ---
+$cookie_params = [
     'lifetime' => 0,
     'path' => '/',
     'domain' => $_SERVER['HTTP_HOST'],
     'secure' => isset($_SERVER['HTTPS']),
     'httponly' => true,
     'samesite' => 'Lax'
-]);
+];
+
+if (function_exists('session_set_cookie_params_override')) {
+    session_set_cookie_params_override($cookie_params);
+} else {
+    session_set_cookie_params($cookie_params);
+}
 session_start();
 
 // --- CSRF helpers ---

@@ -142,6 +142,22 @@
     group: www-data
     mode: '0644'
 
+- name: Deploy disable CSRF vulnerability override
+  copy:
+    src: files/disable_csrf.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_csrf.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy disable session cookies vulnerability override
+  copy:
+    src: files/disable_session_cookies.php
+    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
     login_user: root
