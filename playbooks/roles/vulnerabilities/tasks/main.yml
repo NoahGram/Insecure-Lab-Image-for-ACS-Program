@@ -370,7 +370,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';
