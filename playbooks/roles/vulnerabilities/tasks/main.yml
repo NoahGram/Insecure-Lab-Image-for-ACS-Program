@@ -1,35 +1,34 @@
 ---
-# Vulnerabilities Role - Introduce controlled vulnerabilities
-- name: Create vulnerable web pages for testing
+# Vulnerabilities Role - Granular vulnerability controls based on profile configuration
+# Each vulnerability type can be individually enabled/disabled using profile settings
+
+# ===========================================
+# WEB VULNERABILITIES
+# ===========================================
+
+- name: Create SQL injection vulnerable page
   copy:
-    content: |
-      <?php
-      // VULNERABLE PHP SCRIPT - FOR TESTING ONLY
-      // This script contains intentional vulnerabilities
-      echo "<h1>Vulnerable Test Page</h1>";
-      // SQL Injection
-      if (isset($_GET['id'])) { $id = $_GET['id']; $query = "SELECT * FROM users WHERE id = " . $id; echo "<p>Query: " . $query . "</p>"; }
-      // XSS
-      if (isset($_GET['name'])) { echo "<p>Hello " . $_GET['name'] . "</p>"; }
-      // Command injection
-      if (isset($_POST['ping'])) { $host = $_POST['host']; $output = shell_exec('ping -c 1 ' . $host); echo "<pre>" . $output . "</pre>"; }
-      // File inclusion
-      if (isset($_GET['page'])) { include($_GET['page']); }
-      ?>
-      <h2>Test Forms</h2>
-      <form method="GET">
-          <label>Test XSS: <input type="text" name="name"></label>
-          <input type="submit" value="Submit">
-      </form>
-      <form method="POST">
-          <label>Test Command Injection: <input type="text" name="host" value="127.0.0.1"></label>
-          <input type="hidden" name="ping" value="1">
-          <input type="submit" value="Ping">
-      </form>
-    dest: /var/www/html/vulnerable.php
+    src: "{{ playbook_dir }}/files/web/sql_injection.php"
+    dest: /var/www/html/sql_injection.php
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.sql_injection | default(false)
+  tags:
+    - web_vulnerabilities
+    - sql_injection
+
+- name: Create XSS vulnerable page
+  copy:
+    src: "{{ playbook_dir }}/files/web/xss_test.php"
+    dest: /var/www/html/xss_test.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
+  tags:
+    - web_vulnerabilities
+    - xss
 
 - name: Create vulnerable upload directory
   file:
@@ -38,47 +37,99 @@
     owner: www-data
     group: www-data
     mode: '0777'
+  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
+  tags:
+    - web_vulnerabilities
+    - file_upload
 
-- name: Create vulnerable file upload script
+- name: Create file upload bypass vulnerable page
   copy:
-    content: |
-      <?php
-      if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-          $target_dir = "uploads/";
-          $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-          if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-              echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
-          } else {
-              echo "Sorry, there was an error uploading your file.";
-          }
-      }
-      ?>
-      <h2>Vulnerable File Upload</h2>
-      <form action="" method="post" enctype="multipart/form-data">
-          <label>Select file to upload:</label>
-          <input type="file" name="fileToUpload" required>
-          <input type="submit" value="Upload File" name="submit">
-      </form>
-      <h3>Uploaded Files:</h3>
-      <?php $files = scandir('uploads/'); foreach($files as $file) { if($file != "." && $file != "..") { echo "<a href='uploads/$file'>$file</a><br>"; } } ?>
-    dest: /var/www/html/upload.php
+    src: "{{ playbook_dir }}/files/web/file_upload.php"
+    dest: /var/www/html/file_upload.php
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
+  tags:
+    - web_vulnerabilities
+    - file_upload
 
-- name: Create test users with weak passwords
+- name: Enable Apache server-info and server-status (info disclosure)
+  copy:
+    src: "{{ playbook_dir }}/files/configs/server-info.conf"
+    dest: /etc/apache2/conf-available/server-info.conf
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
+
+- name: Enable server-info configuration
+  command: a2enconf server-info
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
+
+- name: Create phpinfo disclosure page
+  copy:
+    src: "{{ playbook_dir }}/files/web/info.php"
+    dest: /var/www/html/info.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
+  tags:
+    - web_vulnerabilities
+    - info_disclosure
+
+- name: Create command injection vulnerable page
+  copy:
+    src: "{{ playbook_dir }}/files/web/command_injection.php"
+    dest: /var/www/html/command_injection.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.command_injection | default(false)
+  tags:
+    - web_vulnerabilities
+    - command_injection
+
+- name: Create path traversal vulnerable page
+  copy:
+    src: "{{ playbook_dir }}/files/web/path_traversal.php"
+    dest: /var/www/html/path_traversal.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.path_traversal | default(false)
+  tags:
+    - web_vulnerabilities
+    - path_traversal
+
+# ===========================================
+# SYSTEM VULNERABILITIES
+# ===========================================
+
+- name: Create weak user accounts
   user:
     name: "{{ item.name }}"
     password: "{{ item.password | password_hash('sha512') }}"
     shell: /bin/bash
     create_home: yes
+    comment: "Vulnerable test account"
   loop:
     - { name: "admin", password: "admin" }
     - { name: "test", password: "test" }
     - { name: "guest", password: "guest" }
-    - { name: "user", password: "password" }
+    - { name: "demo", password: "demo" }
+  when: vulnerability_config.system_vulnerabilities.weak_user_accounts | default(false)
+  tags:
+    - system_vulnerabilities
+    - weak_accounts
 
-- name: Add weak sudo privileges
+- name: Add dangerous sudo privileges
   lineinfile:
     path: /etc/sudoers
     line: "{{ item }}"
@@ -86,8 +137,12 @@
   loop:
     - "admin ALL=(ALL) NOPASSWD:ALL"
     - "test ALL=(ALL) ALL"
+  when: vulnerability_config.system_vulnerabilities.sudo_misconfiguration | default(false)
+  tags:
+    - system_vulnerabilities
+    - sudo_misconfiguration
 
-- name: Configure Apache with vulnerable settings
+- name: Configure Apache with verbose server information
   lineinfile:
     path: /etc/apache2/apache2.conf
     regexp: "{{ item.regexp }}"
@@ -95,36 +150,181 @@
   loop:
     - { regexp: "^ServerTokens", line: "ServerTokens Full" }
     - { regexp: "^ServerSignature", line: "ServerSignature On" }
+  when: vulnerability_config.system_vulnerabilities.service_information_disclosure | default(false)
   notify: restart apache
+  tags:
+    - system_vulnerabilities
+    - service_disclosure
 
-- name: Enable Apache server-info and server-status
+- name: Create world-writable test files
+  file:
+    path: "{{ item }}"
+    state: touch
+    mode: '0666'
+    owner: www-data
+    group: www-data
+  loop:
+    - /var/www/html/writable_file.txt
+    - /tmp/weak_permissions.log
+  when: vulnerability_config.system_vulnerabilities.weak_file_permissions | default(false)
+  tags:
+    - system_vulnerabilities
+    - weak_permissions
+
+# ===========================================
+# DATABASE VULNERABILITIES
+# ===========================================
+
+- name: Create weak database user
+  mysql_user:
+    name: testuser
+    password: "testpass"
+    priv: "*.*:ALL"
+    host: "%"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: vulnerability_config.database_vulnerabilities.weak_database_credentials | default(false)
+  tags:
+    - database_vulnerabilities
+    - weak_credentials
+
+- name: Create sample vulnerable database and data
+  mysql_db:
+    name: testdb
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+- name: Create vulnerable database table
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50),
+        password VARCHAR(50),
+        email VARCHAR(100),
+        role VARCHAR(20)
+      );
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+- name: Insert sample vulnerable data into database
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
+      INSERT IGNORE INTO users (id, username, password, email, role) VALUES
+      (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
+      (2, 'john', 'password', 'john@lab.local', 'user'),
+      (3, 'guest', 'guest', 'guest@lab.local', 'guest'),
+      (4, 'test', 'test123', 'test@lab.local', 'user');
+  when: vulnerability_config.database_vulnerabilities.sample_vulnerable_data | default(false)
+  tags:
+    - database_vulnerabilities
+    - sample_data
+
+# ===========================================
+# APPLICATION VULNERABILITIES
+# ===========================================
+
+- name: Deploy comprehensive vulnerable web application
   copy:
-    content: |
-      <Location "/server-info">
-          SetHandler server-info
-          Require all granted
-      </Location>
-      <Location "/server-status">
-          SetHandler server-status
-          Require all granted
-      </Location>
-    dest: /etc/apache2/conf-available/server-info.conf
-
-- name: Enable server-info configuration
-  command: a2enconf server-info
-  notify: restart apache
-
-- name: Create vulnerability assessment guide
-  copy:
-    content: |
-      ==============================================
-      VULNERABILITY ASSESSMENT LAB GUIDE
-      ==============================================
-      This system has been configured with intentional vulnerabilities for educational and testing purposes.
-      ⚠️  WARNING: This system should NEVER be exposed to the internet!
-      See /var/www/html for vulnerable endpoints.
-    dest: /root/vulnerability-guide.txt
+    src: "{{ role_path }}/web_stack/actions_vulnerable.php"
+    dest: /var/www/html/actions_vulnerable.php
+    owner: www-data
+    group: www-data
     mode: '0644'
+  when: vulnerability_config.application_vulnerabilities.vulnerable_web_apps | default(false)
+  tags:
+    - application_vulnerabilities
+    - vulnerable_apps
+
+# ===========================================
+# SYSTEM VULNERABILITIES - EXPOSED LOG FILES
+# ===========================================
+
+- name: Create exposed log directory
+  file:
+    path: /tmp/log
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create application log with embedded credentials
+  copy:
+    src: "{{ playbook_dir }}/files/logs/application.log"
+    dest: /tmp/log/application.log
+    mode: '0644'
+    owner: www-data
+    group: www-data
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create SSH session log with authentication details
+  copy:
+    src: "{{ playbook_dir }}/files/logs/auth.log"
+    dest: /tmp/log/auth.log
+    mode: '0640'
+    owner: syslog
+    group: adm
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create backup script log with plaintext passwords
+  copy:
+    src: "{{ playbook_dir }}/files/logs/backup_script.log"
+    dest: /tmp/log/backup_script.log
+    mode: '0644'
+    owner: backup
+    group: backup
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create network service configuration with credentials
+  copy:
+    src: "{{ playbook_dir }}/files/logs/network_config.log"
+    dest: /tmp/log/service_config_backup.conf
+    mode: '0600'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
+
+- name: Create old rotated log with historical credentials
+  copy:
+    src: "{{ playbook_dir }}/files/logs/migration.log.old"
+    dest: /tmp/log/migration.log.old
+    mode: '0644'
+    owner: root
+    group: root
+  when: vulnerability_config.system_vulnerabilities.exposed_log_files | default(false)
+  tags:
+    - system_vulnerabilities
+    - exposed_logs
 
 - name: Create vulnerabilities web_stack directory on target
   file:
@@ -170,7 +370,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';

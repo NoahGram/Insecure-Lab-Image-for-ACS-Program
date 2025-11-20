@@ -7,15 +7,15 @@
     timeout: 60
   ignore_errors: yes
 
-- name: Check if MySQL is running
+- name: Check if MariaDB is running
   service:
-    name: mysql
+    name: mariadb
   register: mysql_service
   ignore_errors: yes
 
-- name: Ensure wikidb database exists
+- name: Ensure testdb database exists
   mysql_db:
-    name: wikidb
+    name: testdb
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -25,7 +25,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +39,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       ALTER TABLE users
       MODIFY COLUMN username VARCHAR(100) NOT NULL,
@@ -55,7 +55,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: "INSERT IGNORE INTO users (id, username, password, email, role)
             VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}');"
   loop:
@@ -68,7 +68,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       CREATE TABLE IF NOT EXISTS pages (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -82,7 +82,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
+    login_db: testdb
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
       VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');

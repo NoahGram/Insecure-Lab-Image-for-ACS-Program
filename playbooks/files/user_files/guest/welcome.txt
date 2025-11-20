@@ -1,0 +1,38 @@
+# Welcome to the Lab System!
+
+Hello Guest User,
+
+You have limited access to this development/testing environment.
+
+## Available Services:
+- Web Application: http://localhost
+- Documentation: Available in /var/www/html
+- File sharing: Use /tmp for temporary files
+
+## Your Permissions:
+- Read access to most system files
+- Write access to your home directory and /tmp
+- No administrative privileges
+
+## Getting Started:
+1. Explore the web application at http://localhost
+2. Check the documentation in your home directory
+3. Use basic Linux commands to navigate
+4. Contact admin for additional access if needed
+
+## Important Notes:
+- This is a test environment - data may be reset
+- Do not store sensitive information
+- Report any issues to the administrator
+- Some features may be intentionally vulnerable for learning
+
+## Useful Commands:
+- ls -la          (list files)  
+- cd directory    (change directory)
+- cat filename    (view file contents)
+- pwd             (show current directory)
+- history         (show command history)
+
+Enjoy exploring the system!
+
+Contact: admin@lab.local for assistance

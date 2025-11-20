@@ -1,2 +1,2 @@
 app_dir: /var/www/html/labsys-wiki
-mysql_root_password: "CleanLabPassword123!"
+mysql_root_password: "maria"

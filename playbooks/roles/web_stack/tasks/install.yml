@@ -37,6 +37,16 @@
   notify: Restart web service
   when: labsys_wiki_enabled | default(true)
 
+- name: Template database configuration file
+  template:
+    src: "config.php"
+    dest: "{{ app_dir }}/includes/config.php"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  notify: Restart web service
+  when: labsys_wiki_enabled | default(true)
+
 - name: Copy templates directory with proper structure
   copy:
     src: "{{ role_path }}/templates/"
