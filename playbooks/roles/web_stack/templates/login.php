@@ -4,6 +4,7 @@
       <div class="muted" style="color:#a33;margin-bottom:8px"><?= h($login_error) ?></div>
   <?php endif; ?>
   <form method="POST" action="?action=login">
+    <?= csrf_field() ?>
     <label for="username">Username</label>
     <input id="username" name="username" type="text" required value="<?= h($_POST['username'] ?? '') ?>">
     <label for="password" style="margin-top:8px">Password</label>
