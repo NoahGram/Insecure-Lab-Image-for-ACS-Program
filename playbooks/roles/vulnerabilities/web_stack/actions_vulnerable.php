@@ -37,9 +37,23 @@ switch ($action) {
                         $_SESSION['role'] = $row['role'] ?? 'user';
                         $_SESSION['login_time'] = time();
                         
+                        // VULNERABILITY: IDENTIFICATION AND AUTHENTICATION FAILURES
+                        // Generate API token that never expires
+                        $api_token = base64_encode(json_encode([
+                            'user_id' => $row['id'],
+                            'username' => $row['username'],
+                            'role' => $row['role'],
+                            'issued_at' => time()
+                            // MISSING: 'expires_at' => time() + 3600
+                        ]));
+                        
+                        // VULNERABILITY: Store token in session AND expose in URL
+                        $_SESSION['api_token'] = $api_token;
+                        
                         // VULNERABILITY: LOGGING FAILURES - Successful login not logged
 
-                        header('Location: ?page=' . rawurlencode($page));
+                        // VULNERABILITY: Token exposed in URL (logs, browser history, referrer headers)
+                        header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
                         exit;
                     } else {
                         // VULNERABILITY: LOGGING FAILURES - Failed login attempt not logged
@@ -231,47 +245,66 @@ switch ($action) {
         header('Location: ?page=Home');
         exit;
 
-    case 'test_connection':
-        // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION - Database connection test exposed to anyone
-        $conn = db_connect();
-        if ($conn) {
-            $db_server_info    = function_exists('mysqli_get_server_info') ? mysqli_get_server_info($conn) : 'n/a';
-            $db_host_info      = function_exists('mysqli_get_host_info') ? mysqli_get_host_info($conn) : 'n/a';
-            $db_proto_info     = function_exists('mysqli_get_proto_info') ? mysqli_get_proto_info($conn) : 'n/a';
-            $db_server_version = function_exists('mysqli_get_server_version') ? mysqli_get_server_version($conn) : 'n/a';
-            $db_client_info    = function_exists('mysqli_get_client_info') ? mysqli_get_client_info() : 'n/a';
-
-            echo '<pre>';
-            echo "Database connection successful.\n\n";
-            echo "DB server info: " . htmlspecialchars((string)$db_server_info) . "\n";
-            echo "DB host info: " . htmlspecialchars((string)$db_host_info) . "\n";
-            echo "DB protocol version: " . htmlspecialchars((string)$db_proto_info) . "\n";
-            echo "DB server version (numeric): " . htmlspecialchars((string)$db_server_version) . "\n";
-            echo "DB client info: " . htmlspecialchars((string)$db_client_info) . "\n\n";
-
-            $conn->close();
-        } else {
-            echo 'Database connection failed: ' . htmlspecialchars(mysqli_connect_error());
+    case 'diagnostics':
+        // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION
+        // Diagnostic endpoint exposed without authentication
+        
+        if (!isset($_GET['check'])) {
+            echo json_encode(['error' => 'No diagnostic check specified']);
+            exit;
+        }
+        
+        $check = $_GET['check'];
+        
+        switch ($check) {
+            case 'db':
+                $conn = db_connect();
+                if ($conn) {
+                    echo json_encode([
+                        'status' => 'connected',
+                        'server_info' => mysqli_get_server_info($conn),
+                        'host_info' => mysqli_get_host_info($conn)
+                    ]);
+                    $conn->close();
+                }
+                break;
+                
+            case 'php':
+                phpinfo();
+                break;
+                
+            case 'env':
+                echo '<pre>';
+                print_r($_ENV);
+                print_r(getenv());
+                echo '</pre>';
+                break;
         }
         exit;
-
-    case 'phpinfo':
-        // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION - phpinfo exposed to anyone
-        phpinfo();
-        exit;
     
-    case 'debug':
-        // VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION - Debug info exposed to anyone
-        if ($_GET['show_debug']) {
-        echo '<pre>';
-        print_r($_SERVER);
-        print_r($_SESSION);
-        echo get_included_files();
-        echo phpinfo();
-        echo '</pre>';
-        exit;
-    }
-    break;
+    case 'api_test':
+        // VULNERABILITY: API testing endpoint left in production
+        // Exposes internal application state
+        
+        if (isset($_GET['show_session'])) {
+            echo json_encode([
+                'session' => $_SESSION,
+                'timestamp' => time()
+            ]);
+            exit;
+        }
+        
+        if (isset($_GET['show_config'])) {
+            // VULNERABILITY: Exposes configuration
+            echo json_encode([
+                'php_version' => phpversion(),
+                'loaded_extensions' => get_loaded_extensions(),
+                'include_path' => get_include_path(),
+                'upload_max_filesize' => ini_get('upload_max_filesize')
+            ]);
+            exit;
+        }
+        break;
 
     case 'fetch_resource':
         // VULNERABILITY: SSRF - Server-Side Request Forgery
