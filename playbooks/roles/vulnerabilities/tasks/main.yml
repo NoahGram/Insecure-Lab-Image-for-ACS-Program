@@ -6,29 +6,7 @@
 # WEB VULNERABILITIES
 # ===========================================
 
-- name: Create SQL injection vulnerable page
-  copy:
-    src: "{{ playbook_dir }}/files/web/sql_injection.php"
-    dest: /var/www/html/sql_injection.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.sql_injection | default(false)
-  tags:
-    - web_vulnerabilities
-    - sql_injection
 
-- name: Create XSS vulnerable page
-  copy:
-    src: "{{ playbook_dir }}/files/web/xss_test.php"
-    dest: /var/www/html/xss_test.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
-  tags:
-    - web_vulnerabilities
-    - xss
 
 - name: Create vulnerable upload directory
   file:
@@ -342,6 +320,24 @@
     group: www-data
     mode: '0644'
 
+
+- name: Deploy no client side password validation
+  copy:
+    src: files/no_client_side_password_validation.php
+    dest: /var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+
+- name: Deploy no server side password validation
+  copy:
+    src: files/no_password_validation.php
+    dest: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
 - name: Deploy disable CSRF vulnerability override
   copy:
     src: files/disable_csrf.php
@@ -362,6 +358,14 @@
   copy:
     src: files/disable_session_regenerate.php
     dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Deploy hidden role field vulnerability override
+  copy:
+    src: files/hidden_role_field.php
+    dest: /var/www/roles/vulnerabilities/web_stack/hidden_role_field.php
     owner: www-data
     group: www-data
     mode: '0644'

@@ -6,6 +6,8 @@ $no_password_validation = '/var/www/roles/vulnerabilities/web_stack/no_password_
 $disable_session_regenerate = '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php';
 $disable_csrf = '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php';
 $disable_session_cookies = '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php';
+$hidden_role_field = '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php';
+$editable_url_parameters = '/var/www/roles/vulnerabilities/web_stack/editable_url_parameters.php';
 
 if (is_readable($no_login_lock)) {
     require_once $no_login_lock;
@@ -25,6 +27,14 @@ if (is_readable($disable_csrf)) {
 
 if (is_readable($disable_session_cookies)) {
     require_once $disable_session_cookies;
+}
+
+if (is_readable($hidden_role_field)) {
+    require_once $hidden_role_field;
+}
+
+if (is_readable($editable_url_parameters)) {
+    require_once $editable_url_parameters;
 }
 
 $action = $_REQUEST['action'] ?? 'view';
@@ -223,7 +233,18 @@ switch ($action) {
 
                 $hash = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
+                
+                // Check for role override vulnerabilities
                 $role = 'user';
+                if (function_exists('get_user_role_from_request')) {
+                    $role = get_user_role_from_request();
+                } elseif (function_exists('get_url_parameter_role')) {
+                    $url_role = get_url_parameter_role();
+                    if ($url_role !== null) {
+                        $role = $url_role;
+                    }
+                }
+                
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
 
                 if ($stmt->execute()) {
