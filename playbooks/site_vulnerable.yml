@@ -36,7 +36,7 @@
   roles:
     - base_system
     - database
-    - web_stack  
+    - web_stack
     - applications
     - system_services
     - vulnerabilities
