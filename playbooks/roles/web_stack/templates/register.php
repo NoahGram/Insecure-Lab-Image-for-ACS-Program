@@ -3,8 +3,10 @@
 <?php
 // Check if client-side validation should be disabled
 $disable_client_validation = is_readable('/var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php');
+// Check if hidden role field vulnerability is enabled
+$hidden_role_enabled = is_readable('/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php');
 ?>
-<script src="assets/js/register.js" defer data-disable-validation="<?= $disable_client_validation ? 'true' : 'false' ?>"></script>
+<script src="assets/js/register.js" data-disable-validation="<?= $disable_client_validation ? 'true' : 'false' ?>"></script>
 
   <?php if (!empty($register_error)) : ?>
     <div class="muted" style="color:#a33;margin-bottom:8px"><?= h($register_error) ?></div>
@@ -27,6 +29,10 @@ $disable_client_validation = is_readable('/var/www/roles/vulnerabilities/web_sta
 
       <label for="email" style="margin-top:8px">Email</label>
       <input id="email" name="email" type="email" required>
+
+      <?php if ($hidden_role_enabled): ?>
+      <input type="hidden" name="role" value="user">
+      <?php endif; ?>
 
       <div style="margin-top:8px">
         <button class="btn" type="submit">Register</button>
