@@ -171,6 +171,85 @@
     - system_vulnerabilities
     - weak_permissions
 
+- name: CVE-2025-32463 - Deploy vulnerable sudo package (prepare variables and check)
+  block:
+    - name: Set sudo vulnerability base parameters
+      set_fact:
+        vulnerabilities_install_sudo: true
+        vulnerabilities_sudo_version: "1.9.15p5"
+        vulnerabilities_sudo_build_deps:
+          - build-essential
+          - libpam0g-dev
+          - libselinux1-dev
+          - libssl-dev
+          - pkg-config
+
+    - name: Set sudo filenames and download paths
+      set_fact:
+        vulnerabilities_sudo_filename: "sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
+        vulnerabilities_sudo_src_dir: "sudo-{{ vulnerabilities_sudo_version }}"
+        vulnerabilities_sudo_download_url: "https://www.sudo.ws/dist/sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
+        vulnerabilities_sudo_download_dest: "/tmp/sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
+  when: (vulnerable_mode | default(false)) and (vulnerabilities_install_sudo | default(true))
+  tags:
+    - CVE-2025-32463
+    - vulnerabilities_sudo
+
+- name: CVE-2025-32463 - Deploy vulnerable sudo package (install when not present)
+  block:
+    - name: Install build dependencies for building sudo
+      apt:
+        name: "{{ vulnerabilities_sudo_build_deps }}"
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Download vulnerable sudo tarball
+      get_url:
+        url: "{{ vulnerabilities_sudo_download_url }}"
+        dest: "{{ vulnerabilities_sudo_download_dest }}"
+        mode: '0644'
+        force: no
+
+    - name: Extract sudo source
+      unarchive:
+        src: "{{ vulnerabilities_sudo_download_dest }}"
+        dest: /tmp
+        remote_src: yes
+        creates: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+
+    - name: Configure sudo source
+      command: ./configure
+      args:
+        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+      register: sudo_configure
+      changed_when: "sudo_configure.rc == 0 and sudo_configure.stdout != ''"
+
+    - name: Build sudo
+      command: make -j {{ ansible_processor_cores | default(1) }}
+      args:
+        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+      register: sudo_make
+      changed_when: "sudo_make.rc == 0"
+
+    - name: Install built sudo
+      command: make install
+      args:
+        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+      become: yes
+
+    - name: Cleanup sudo source and tarball
+      file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop:
+        - "{{ vulnerabilities_sudo_src_dir }}"
+        - "{{ vulnerabilities_sudo_filename }}"
+  when: (vulnerable_mode | default(false)) and (vulnerabilities_install_sudo | default(true))
+  tags:
+    - CVE-2025-32463
+    - vulnerabilities_sudo
+
 # ===========================================
 # DATABASE VULNERABILITIES
 # ===========================================
