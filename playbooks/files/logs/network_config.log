@@ -1,0 +1,26 @@
+# Network service configuration backup
+# WARNING: Contains sensitive information
+
+[database_servers]
+prod_db = mysql://root:maria@localhost:3306/production
+gitea_db = mysql://gitea:cup_of_tea@localhost:3306/gitea
+mantisbt_db = mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
+test_db = mysql://testuser:testpass@localhost:3306/testdb
+dev_db = mysql://developer:DevPassword789@localhost:3306/development
+
+[web_services]
+api_endpoint = https://api.example.com/v1/
+api_key = sk-1234567890abcdef1234567890abcdef
+webhook_secret = whsec_abcd1234efgh5678ijkl9012mnop
+
+[ssh_access]
+production_server = ssh://admin:AdminSSH2023@prod.internal
+staging_server = ssh://deploy:DeployKey456@staging.internal
+
+[external_apis]
+payment_gateway = pk_live_abcdef123456789
+email_service = smtp://emailuser:EmailPass123@mail.provider.com:587
+
+[backup_locations]
+primary_backup = sftp://backup_user:BackupSecure789@backup1.internal/backups/
+secondary_backup = s3://backup-bucket?access_key=AKIA1234567890&secret=wJalrXUt+SecretKey123

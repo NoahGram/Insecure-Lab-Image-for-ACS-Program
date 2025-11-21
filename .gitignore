@@ -15,7 +15,6 @@ inventory.ini
 # Ignore temporary files
 *.tmp
 *.temp
-*.log
 
 # Ignore OS specific files
 .DS_Store

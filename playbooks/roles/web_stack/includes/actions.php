@@ -1,32 +1,19 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
-$no_login_lock = '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php';
-$no_password_validation = '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php';
-$disable_session_regenerate = '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php';
-$disable_csrf = '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php';
-$disable_session_cookies = '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php';
 
-if (is_readable($no_login_lock)) {
-    require_once $no_login_lock;
+$vuln_files = [
+    '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
+    '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php',
+    '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php',
+    '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
+    '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
+    '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
+];
+
+foreach ($vuln_files as $file) {
+    if (is_readable($file)) require_once $file;
 }
-
-if (is_readable($no_password_validation)) {
-    require_once $no_password_validation;
-}
-
-if (is_readable($disable_session_regenerate)) {
-    require_once $disable_session_regenerate;
-}
-
-if (is_readable($disable_csrf)) {
-    require_once $disable_csrf;
-}
-
-if (is_readable($disable_session_cookies)) {
-    require_once $disable_session_cookies;
-}
-
 $action = $_REQUEST['action'] ?? 'view';
 $page   = $_REQUEST['page'] ?? 'Home';
 
@@ -223,7 +210,17 @@ switch ($action) {
 
                 $hash = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
+
                 $role = 'user';
+                if (function_exists('get_user_role_from_request')) {
+                    $role = get_user_role_from_request();
+                } elseif (function_exists('get_url_parameter_role')) {
+                    $url_role = get_url_parameter_role();
+                    if ($url_role !== null) {
+                        $role = $url_role;
+                    }
+                }
+                
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
 
                 if ($stmt->execute()) {
@@ -235,6 +232,7 @@ switch ($action) {
                     }
                     $_SESSION['username'] = $username;
                     $_SESSION['role'] = $role;
+                    $_SESSION['email'] = $email;
 
                     header('Location: ?page=Home');
                     exit;
