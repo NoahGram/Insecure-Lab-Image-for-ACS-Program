@@ -1,4 +1,11 @@
 <?php
+// VULNERABILITY: Overly permissive CORS configuration
+// Allows any origin to make requests - should restrict to specific domains
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 
@@ -306,49 +313,135 @@ switch ($action) {
         }
         break;
 
-    case 'fetch_resource':
-        // VULNERABILITY: SSRF - Server-Side Request Forgery
-        // No URL validation, whitelist, or domain restrictions
-        // Allows attackers to make requests to internal resources
+case 'fetch_resource':
+    // VULNERABILITY: SSRF - Server-Side Request Forgery
+    // CRITICAL FLAWS:
+    // 1. No URL validation or whitelist
+    // 2. Accepts file://, http://, https:// and ANY protocol
+    // 3. No domain/IP restrictions (can access localhost, private IPs, cloud metadata)
+    // 4. No logging of access attempts
+    // 5. Follows redirects blindly
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['url'])) {
+        $url = $_POST['url'] ?? $_GET['url'] ?? '';
         
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['url'])) {
-            $url = $_POST['url'] ?? $_GET['url'] ?? '';
-            
-            if (empty($url)) {
-                echo json_encode(['error' => 'No URL provided']);
-                exit;
-            }
+        if (empty($url)) {
+            echo json_encode(['error' => 'No URL provided']);
+            exit;
+        }
 
-            // VULNERABILITY: No validation of URL scheme, domain, or IP address
-            // Attackers can use: file://, http://localhost, http://127.0.0.1, http://169.254.169.254
+        // VULNERABILITY: No validation - accepts ANY URL
+        
+        $parsed = parse_url($url);
+        $scheme = $parsed['scheme'] ?? 'http';
+        $host = $parsed['host'] ?? 'localhost';
+        $port = $parsed['port'] ?? ($scheme === 'https' ? 443 : 80);
+        
+        // VULNERABILITY: LOGGING FAILURE - No audit trail of SSRF attempts
+        
+        // ==========================================
+        // FILE:// PROTOCOL - Local File Access
+        // ==========================================
+        if ($scheme === 'file') {
+            // VULNERABILITY: Can read ANY local file the web server can access
+            $filepath = str_replace('file://', '', $url);
             
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // VULNERABILITY: Follows redirects
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // VULNERABILITY: Disabled SSL verification
-            
-            $response = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $error = curl_error($ch);
-            curl_close($ch);
-
-            if ($error) {
-                echo json_encode([
-                    'error' => $error,
-                    'url' => $url
-                ]);
-            } else {
+            if (file_exists($filepath)) {
+                $content = @file_get_contents($filepath);
                 echo json_encode([
                     'success' => true,
                     'url' => $url,
-                    'http_code' => $http_code,
-                    'content' => $response,
-                    'length' => strlen($response)
+                    'http_code' => 200,
+                    'content' => $content,
+                    'length' => strlen($content),
+                    'protocol' => 'file'
+                ]);
+            } else {
+                echo json_encode([
+                    'error' => 'File not found or permission denied',
+                    'url' => $url
                 ]);
             }
             exit;
         }
-        break;
+        
+        // ==========================================
+        // HTTP/HTTPS - Remote Resource Fetching
+        // ==========================================
+        
+        // VULNERABILITY: No IP/domain blacklist
+        // Should block: localhost, 127.0.0.1, 0.0.0.0, 169.254.169.254, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);  // VULNERABILITY: Follows redirects
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);         // VULNERABILITY: Too many redirects allowed
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // VULNERABILITY: No SSL verification
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE); // VULNERABILITY: Accepts HTTP/0.9
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        // If HTTP request succeeded
+        if ($response !== false && $http_code > 0) {
+            echo json_encode([
+                'success' => true,
+                'url' => $url,
+                'http_code' => $http_code,
+                'content' => $response,
+                'length' => strlen($response),
+                'protocol' => 'http'
+            ]);
+            exit;
+        }
+        
+        // ==========================================
+        // RAW TCP - Port Scanning & Banner Grabbing
+        // ==========================================
+        
+        // VULNERABILITY: If HTTP fails, tries raw TCP connection
+        
+        $socket = @fsockopen($host, $port, $errno, $errstr, 3);
+        
+        if ($socket) {
+            stream_set_timeout($socket, 2);
+            $banner = stream_get_contents($socket, 4096); // Simplified - read up to 4KB
+            fclose($socket);
+            
+            // Clean banner for display
+            $banner_display = preg_replace('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/u', '.', $banner);
+            
+            echo json_encode([
+                'success' => true,
+                'url' => $url,
+                'port_open' => true,
+                'port' => $port,
+                'banner' => base64_encode($banner),
+                'banner_text' => $banner_display,
+                'banner_hex' => bin2hex(substr($banner, 0, 256)),
+                'length' => strlen($banner),
+                'protocol' => 'raw_tcp',
+                'note' => 'Non-HTTP service detected - raw TCP banner shown'
+            ]);
+            exit;
+        }
+        
+        // ==========================================
+        // CONNECTION FAILED
+        // ==========================================
+        echo json_encode([
+            'error' => "Connection failed: $errstr (errno: $errno)",
+            'url' => $url,
+            'port_open' => false,
+            'port' => $port,
+            'curl_error' => $error
+        ]);
+        exit;
+    }
+    break;
 }

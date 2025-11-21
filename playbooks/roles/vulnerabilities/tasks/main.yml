@@ -75,6 +75,21 @@
     mode: '0644'
   notify: restart apache
 
+- name: Configure PHP to display errors
+  lineinfile:
+    path: /etc/php/{{ php_version }}/apache2/php.ini
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+  loop:
+    - { regexp: '^display_errors\s*=', line: 'display_errors = On' }
+    - { regexp: '^display_startup_errors\s*=', line: 'display_startup_errors = On' }
+    - { regexp: '^error_reporting\s*=', line: 'error_reporting = E_ALL' }
+    - { regexp: '^log_errors\s*=', line: 'log_errors = On' }
+    - { regexp: '^error_log\s*=', line: 'error_log = /var/log/php_errors.log' }
+  notify: restart apache
+  tags: php_errors
+
 - name: Create test users with weak passwords
   user:
     name: "{{ item.name }}"
