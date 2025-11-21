@@ -370,6 +370,14 @@
     group: www-data
     mode: '0644'
 
+- name: Deploy editable url paramater override
+  copy:
+    src: files/editable_url_parameters.php
+    dest: /var/www/roles/vulnerabilities/web_stack/editable_url_parameters.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
     login_user: root
