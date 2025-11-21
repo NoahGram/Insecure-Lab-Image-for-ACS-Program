@@ -119,7 +119,7 @@
 - name: Create Gitea database user
   mysql_user:
     name: gitea
-    password: "{{ gitea_db_password | default('GiteaDBPassword123!') }}"
+    password: "{{ gitea_db_password | default('cup_of_tea') }}"
     priv: "gitea.*:ALL"
     state: present
     login_user: root
@@ -135,7 +135,7 @@
 - name: Create MantisBT database user
   mysql_user:
     name: mantisbt
-    password: "{{ mantisbt_db_password | default('MantisBTDBPassword123!') }}"
+    password: "{{ mantisbt_db_password | default('apache2Mantis') }}"
     priv: "mantisbt.*:ALL"
     state: present
     login_user: root

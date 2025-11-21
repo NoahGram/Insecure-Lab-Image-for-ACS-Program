@@ -1,0 +1,64 @@
+# BACKUP SERVICE CONFIGURATION
+# Automated backup system settings
+
+[BACKUP_SETTINGS]
+backup_schedule=daily_3am
+retention_period=30_days  
+backup_location=/backup
+compression=gzip
+
+[DATABASE_TARGETS]
+mysql_all_databases=enabled
+gitea_database=enabled
+mantisbt_database=enabled
+
+[FILE_TARGETS]  
+web_files=/var/www/html
+configuration_files=/etc
+user_homes=/home
+system_logs=/var/log
+
+[CREDENTIALS]
+# WARNING: Credentials stored in plaintext for automation
+# This is a security vulnerability but needed for unattended backups
+
+mysql_root_user=root
+mysql_root_password=maria
+
+gitea_db_user=gitea
+gitea_db_password=cup_of_tea
+
+mantisbt_db_user=mantisbt  
+mantisbt_db_password=apache2Mantis
+
+[NOTIFICATIONS]
+email_alerts=enabled
+email_recipient=backup@lab.local
+email_on_success=false
+email_on_failure=true
+log_file=/var/log/backup.log
+
+[ADVANCED_SETTINGS]
+parallel_compression=enabled
+bandwidth_limit=none
+encryption=disabled
+remote_sync=disabled
+
+# Cron Schedule (managed by system administrator)
+# 0 3 * * * /home/backup/automated_backup.sh
+
+[RESTORE_PROCEDURES]
+# To restore from backup:
+# 1. Stop affected services
+# 2. Restore database: mysql < backup_file.sql  
+# 3. Restore files: tar -xzf backup_file.tar.gz
+# 4. Fix permissions and ownership
+# 5. Restart services
+# 6. Verify functionality
+
+[SECURITY_NOTES]
+⚠️  This configuration file contains plaintext passwords
+⚠️  Restrict access to backup user only
+⚠️  Consider implementing encryption for sensitive data
+⚠️  Regular testing of restore procedures required
+⚠️  Monitor backup logs for failures

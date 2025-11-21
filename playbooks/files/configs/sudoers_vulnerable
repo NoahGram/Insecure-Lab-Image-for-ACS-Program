@@ -1,0 +1,8 @@
+# Dangerous sudo privileges for vulnerable lab environment
+# WARNING: These are intentionally insecure for testing purposes
+
+# Admin user - passwordless sudo access to everything
+admin ALL=(ALL) NOPASSWD:ALL
+
+# Test user - sudo access with password required
+test ALL=(ALL) ALL
