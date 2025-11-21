@@ -11,7 +11,6 @@ dokuwiki_version: "stable"           # Latest stable DokuWiki version
 mantisbt_version: "2.25.8"           # Latest stable MantisBT version
 
 # Monitoring and System Services
-wazuh_version: "4.7.0"               # Latest stable Wazuh version
 cockpit_version: "latest"            # Latest stable Cockpit version
 postfix_version: "latest"            # Latest stable Postfix version
 openssh_version: "latest"            # System available version

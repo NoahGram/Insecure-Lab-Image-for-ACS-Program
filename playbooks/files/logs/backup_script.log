@@ -1,0 +1,22 @@
+#!/bin/bash
+# Backup script execution log
+echo "[$(date)] Starting backup process..."
+
+# Database credentials (TODO: move to secure vault)
+DB_USER="root"
+DB_PASS="maria"
+BACKUP_USER="backup_admin"
+BACKUP_PASS="BackupAdmin2023!"
+
+echo "[$(date)] Connecting to database with user: $DB_USER"
+mysqldump -u $DB_USER -p$DB_PASS --all-databases > /tmp/db_full_backup.sql
+
+echo "[$(date)] Uploading to backup server..."
+echo "Using credentials: $BACKUP_USER / $BACKUP_PASS"
+
+# SSH key backup (weak permissions)
+echo "[$(date)] Backing up SSH keys..."
+cp /root/.ssh/id_rsa /tmp/log/root_ssh_key_backup
+chmod 644 /tmp/log/root_ssh_key_backup
+
+echo "[$(date)] Backup process completed"

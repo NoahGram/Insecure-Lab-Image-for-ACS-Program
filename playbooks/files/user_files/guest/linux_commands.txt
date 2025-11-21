@@ -1,0 +1,52 @@
+# Common Linux Commands Quick Reference
+
+## File and Directory Operations
+ls                 # List files in current directory
+ls -la             # List all files with details
+cd dirname         # Change to directory
+cd ..              # Go up one directory
+cd ~               # Go to home directory
+pwd                # Show current directory path
+mkdir dirname      # Create directory
+rmdir dirname      # Remove empty directory
+
+## File Operations  
+cat filename       # Display file contents
+less filename      # View file with paging
+head filename      # Show first 10 lines
+tail filename      # Show last 10 lines
+cp source dest     # Copy file
+mv source dest     # Move/rename file
+rm filename        # Delete file
+touch filename     # Create empty file
+
+## File Permissions
+chmod 755 file     # Make file executable
+chmod 644 file     # Make file read/write for owner
+ls -l              # Show file permissions
+
+## System Information
+whoami             # Show current username
+who                # Show logged in users
+ps                 # Show running processes
+top                # Show system processes (press q to quit)
+df -h              # Show disk usage
+free -h            # Show memory usage
+date               # Show current date/time
+
+## Network
+ping hostname      # Test network connectivity
+wget URL           # Download file from internet
+curl URL           # Fetch web content
+
+## Text Search
+grep "text" file   # Search for text in file
+find . -name "*txt" # Find files ending in .txt
+history | grep cmd  # Search command history
+
+## Getting Help
+man command        # Show manual for command
+command --help     # Show command help
+info command       # Show info about command
+
+Press 'q' to quit when viewing with less, man, or top commands.

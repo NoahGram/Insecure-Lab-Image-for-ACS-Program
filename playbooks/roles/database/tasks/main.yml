@@ -65,6 +65,15 @@
     login_unix_socket: /var/run/mysqld/mysqld.sock
   when: mysql_root_access.rc == 0
 
+- name: Update MariaDB root password (if changed from old password)
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_user: root
+    login_password: "CleanLabPassword123!"
+  ignore_errors: yes
+  when: mysql_root_access.rc != 0
+
 - name: Create MariaDB configuration for root user
   copy:
     content: |
@@ -110,7 +119,7 @@
 - name: Create Gitea database user
   mysql_user:
     name: gitea
-    password: "GiteaDBPassword123!"
+    password: "{{ gitea_db_password | default('cup_of_tea') }}"
     priv: "gitea.*:ALL"
     state: present
     login_user: root
@@ -126,7 +135,7 @@
 - name: Create MantisBT database user
   mysql_user:
     name: mantisbt
-    password: "MantisBTDBPassword123!"
+    password: "{{ mantisbt_db_password | default('apache2Mantis') }}"
     priv: "mantisbt.*:ALL"
     state: present
     login_user: root

@@ -11,19 +11,6 @@
   when: dpkg_audit_pre.stdout != ""
   ignore_errors: yes
 
-- name: Hold problematic packages (only if they exist)
-  shell: |
-    if dpkg -l | grep -q "{{ item }}"; then
-      echo "{{ item }} hold" | dpkg --set-selections
-    else
-      echo "{{ item }} not installed, skipping hold"
-    fi
-  loop:
-    - wazuh-manager
-    - wazuh-agent
-  ignore_errors: yes
-  changed_when: false
-
 - name: Ensure the system is updated
   ansible.builtin.apt:
     update_cache: yes

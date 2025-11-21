@@ -5,7 +5,7 @@
 app_dir: /var/www/html/labsys-wiki
 
 # Database settings  
-mysql_root_password: "CleanLabPassword123!"
+mysql_root_password: "maria"
 
 # Apache settings
 apache_version: "2.4"

@@ -7,9 +7,9 @@
     timeout: 60
   ignore_errors: yes
 
-- name: Check if MySQL is running
+- name: Check if MariaDB is running
   service:
-    name: mysql
+    name: mariadb
   register: mysql_service
   ignore_errors: yes
 
@@ -35,17 +35,33 @@
       );
   when: mysql_service is defined
 
+- name: Upgrade users table for login system
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
+      ALTER TABLE users
+      MODIFY COLUMN username VARCHAR(100) NOT NULL,
+      MODIFY COLUMN password VARCHAR(255) NOT NULL,
+      MODIFY COLUMN email VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user',
+      ADD COLUMN IF NOT EXISTS failed_attempts INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS last_failed TIMESTAMP NULL DEFAULT NULL,
+      ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
+  when: mysql_service is defined
+
 - name: Insert sample users
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
     login_db: testdb
-    query: "INSERT IGNORE INTO users (id, username, password, email)
-            VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}');"
+    query: "INSERT IGNORE INTO users (id, username, password, email, role)
+            VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}');"
   loop:
-    - { id: 1, username: 'admin', password: 'admin123', email: 'admin@portal.local' }
-    - { id: 2, username: 'jane',  password: 'password',  email: 'jane@portal.local' }
-    - { id: 3, username: 'guest', password: 'guest',     email: 'guest@portal.local' }
+    - { id: 1, username: 'admin', role: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local' }
+    - { id: 2, username: 'jane',  role: 'user', password: 'Jane@Secure456!',  email: 'jane@portal.local' }
+    - { id: 3, username: 'guest', role: 'user', password: 'Guest@Secure789!', email: 'guest@portal.local' }
   when: mysql_service is defined
 
 - name: Create pages table
@@ -70,35 +86,4 @@
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
       VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');
-  when: mysql_service is defined
-
-- name: Upgrade users table for login system
-  mysql_query:
-    login_user: root
-    login_password: "{{ mysql_root_password }}"
-    login_db: testdb
-    query: |
-      ALTER TABLE users
-      MODIFY COLUMN username VARCHAR(100) NOT NULL,
-      MODIFY COLUMN password VARCHAR(255) NOT NULL,
-      MODIFY COLUMN email VARCHAR(150),
-      ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user',
-      ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
-  when: mysql_service is defined
-
-- name: Insert or update sample users with roles
-  mysql_query:
-    login_user: root
-    login_password: "{{ mysql_root_password }}"
-    login_db: testdb
-    query: |
-      INSERT INTO users (id, username, password, email, role)
-      VALUES
-        (1, 'admin', 'admin123', 'admin@portal.local', 'admin'),
-        (2, 'jane', 'password', 'jane@portal.local', 'user'),
-        (3, 'guest', 'guest', 'guest@portal.local', 'user')
-      ON DUPLICATE KEY UPDATE
-        password=VALUES(password),
-        email=VALUES(email),
-        role=VALUES(role);
   when: mysql_service is defined

@@ -1,0 +1,15 @@
+[2025-11-15 09:15:23] INFO: Application startup initiated
+[2025-11-15 09:15:24] DEBUG: Database connection mysql://dbadmin:SecretDB_Pass2023@localhost:3306/proddb
+[2025-11-15 09:15:25] INFO: User authentication module loaded
+[2025-11-15 09:15:26] WARN: Failed login attempt for user: admin
+[2025-11-15 09:15:27] DEBUG: Admin credentials: admin / AdminPass123!
+[2025-11-15 09:15:28] INFO: SSH key backup: /home/backup/.ssh/id_rsa (password: backup_key_2023)
+[2025-11-15 09:15:29] ERROR: Failed to connect to LDAP server ldaps://ldap.corp.local
+[2025-11-15 09:15:30] DEBUG: LDAP bind: CN=svc-ldap,OU=Service,DC=corp,DC=local password: LDAPsvc_P@ss
+[2025-11-15 09:15:31] INFO: Application ready to serve requests
+[2025-11-15 09:20:45] WARN: Database backup started with credentials root:maria
+[2025-11-15 09:21:12] INFO: Backup completed to /var/backups/db_backup_20251115.sql
+[2025-11-15 09:25:33] DEBUG: API key for external service: 7f8d9e2a-4b6c-1234-9876-abcdef012345
+[2025-11-15 09:25:34] DEBUG: Gitea database: mysql://gitea:cup_of_tea@localhost:3306/gitea
+[2025-11-15 09:25:35] DEBUG: MantisBT database: mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
+[2025-11-15 09:30:15] ERROR: Permission denied accessing /etc/shadow (using sudo password: SudoPass456)

@@ -1,0 +1,10 @@
+Nov 15 08:45:12 lab-server sshd[12345]: Accepted password for admin from 192.168.1.100 port 54321 ssh2
+Nov 15 08:45:13 lab-server sshd[12345]: pam_unix(sshd:session): session opened for user admin by (uid=0)
+Nov 15 08:46:22 lab-server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/bin/bash
+Nov 15 08:46:23 lab-server sudo: pam_unix(sudo:session): session opened for user root by admin(uid=1000)
+Nov 15 08:47:15 lab-server systemd-logind[567]: New session 15 of user admin.
+Nov 15 08:50:33 lab-server su: pam_unix(su:auth): authentication failure; logname=admin uid=1000 euid=0 tty=pts/0 ruser=admin rhost=  user=root
+Nov 15 08:50:35 lab-server su: (to root) admin on pts/0
+Nov 15 08:50:35 lab-server su: pam_unix(su:session): session opened for user root by admin(uid=1000)
+Nov 15 09:15:42 lab-server cron[8901]: (root) CMD (mysqldump -u root -pmaria --all-databases > /var/backups/daily_backup.sql)
+Nov 15 09:16:01 lab-server systemd[1]: Started Daily apt download activities.

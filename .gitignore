@@ -8,11 +8,13 @@ inventory.ini
 
 # Ignore Vagrant runtime files
 .vagrant/
+/.vagrant
+/.vagrant/machines/
+
 
 # Ignore temporary files
 *.tmp
 *.temp
-*.log
 
 # Ignore OS specific files
 .DS_Store

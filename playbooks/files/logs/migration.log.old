@@ -1,0 +1,10 @@
+[2025-11-01 10:30:15] INFO: Legacy system migration started
+[2025-11-01 10:30:16] DEBUG: Old database: mysql://legacy_admin:OldSystemPass2022@legacy.internal:3306/legacy_db
+[2025-11-01 10:30:17] WARN: Using deprecated authentication method
+[2025-11-01 10:30:18] DEBUG: Service account: legacy_svc / LegacyService123
+[2025-11-01 10:30:19] INFO: Migrating user accounts...
+[2025-11-01 10:30:20] DEBUG: Admin account migration: admin -> newadmin (temp pass: TempAdminPass456)
+[2025-11-01 10:30:21] DEBUG: Service migration: legacy_api_key -> ak_legacy_789456123
+[2025-11-01 10:30:22] INFO: Migration completed successfully
+[2025-11-01 10:30:23] NOTE: Remember to update firewall rules for new server 192.168.100.50
+[2025-11-01 10:30:24] NOTE: Emergency access: ssh root@192.168.100.50 (password: Emergency2025!)

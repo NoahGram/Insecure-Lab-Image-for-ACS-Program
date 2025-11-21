@@ -1,0 +1,52 @@
+g# SECURITY LAB DEMONSTRATION
+
+## Vulnerability Testing Demonstration
+
+Welcome to our security testing lab! This environment contains intentional vulnerabilities for educational purposes.
+
+### Available Demos:
+
+#### 1. SQL Injection Demo
+Location: http://localhost/sql_injection.php
+- Try username: admin' OR '1'='1
+- Shows how unvalidated input can compromise databases
+
+#### 2. Cross-Site Scripting (XSS) Demo  
+Location: http://localhost/xss_test.php
+- Try input: <script>alert('XSS')</script>
+- Demonstrates how malicious scripts can be injected
+
+#### 3. File Upload Vulnerability Demo
+Location: http://localhost/file_upload.php
+- Try uploading a PHP file with malicious code
+- Shows dangers of unrestricted file uploads
+
+#### 4. Information Disclosure Demo
+Location: http://localhost/info.php
+- Reveals sensitive system information
+- Example of TMI (Too Much Information)
+
+#### 5. Command Injection Demo  
+Location: http://localhost/command_injection.php
+- Try input: 127.0.0.1; ls -la
+- Shows how user input can execute system commands
+
+### Demo Credentials:
+- Username: demo
+- Password: demo
+- Database: root/maria
+
+### Presentation Notes:
+1. Start with overview of web application
+2. Demonstrate each vulnerability type
+3. Show logs and system impact
+4. Discuss remediation strategies
+5. Q&A session
+
+### Safety Reminders:
+⚠️ This is an isolated lab environment
+⚠️ Do not run these tests on production systems
+⚠️ All vulnerabilities are intentional for education
+⚠️ Environment may be reset between demos
+
+For questions during demo: demo@lab.local
