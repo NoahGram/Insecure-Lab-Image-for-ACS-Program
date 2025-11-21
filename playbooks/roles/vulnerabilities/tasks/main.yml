@@ -56,7 +56,6 @@
   notify: restart apache
   tags: php_errors
 
-- name: Create test users with weak passwords
 - name: Enable Apache server-info and server-status (info disclosure)
   copy:
     src: "{{ playbook_dir }}/files/configs/server-info.conf"
