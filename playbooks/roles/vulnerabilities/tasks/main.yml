@@ -439,14 +439,6 @@
     - system_vulnerabilities
     - exposed_logs
 
-- name: Create vulnerabilities web_stack directory on target
-  file:
-    path: /var/www/roles/vulnerabilities/web_stack
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: '0755'
-
 - name: Deploy no login lock vulnerability override
   copy:
     src: files/no_login_lock.php
