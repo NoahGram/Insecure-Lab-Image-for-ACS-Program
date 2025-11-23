@@ -44,34 +44,8 @@
     - cleanup_vulnerabilities
     - selective_cleanup
     - api_vulnerabilities
-
-# ===========================================
-# WEB VULNERABILITIES
-# ===========================================
-
-- name: Create vulnerable upload directory
-  file:
-    path: /var/www/html/uploads
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: '0777'
-  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
-  tags:
-    - web_vulnerabilities
-    - file_upload
-
-- name: Create file upload bypass vulnerable page
-  copy:
-    src: "{{ playbook_dir }}/files/web/file_upload.php"
-    dest: /var/www/html/file_upload.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.file_upload_bypass | default(false)
-  tags:
-    - web_vulnerabilities
-    - file_upload
+    
+# NOTE: Individual vulnerability files removed - LabSys Wiki now provides comprehensive web vulnerability testing
 
 - name: Configure PHP to display errors
   lineinfile:
@@ -105,42 +79,6 @@
   tags:
     - web_vulnerabilities
     - info_disclosure
-
-- name: Create phpinfo disclosure page
-  copy:
-    src: "{{ playbook_dir }}/files/web/info.php"
-    dest: /var/www/html/info.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.info_disclosure | default(false)
-  tags:
-    - web_vulnerabilities
-    - info_disclosure
-
-- name: Create command injection vulnerable page
-  copy:
-    src: "{{ playbook_dir }}/files/web/command_injection.php"
-    dest: /var/www/html/command_injection.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.command_injection | default(false)
-  tags:
-    - web_vulnerabilities
-    - command_injection
-
-- name: Create path traversal vulnerable page
-  copy:
-    src: "{{ playbook_dir }}/files/web/path_traversal.php"
-    dest: /var/www/html/path_traversal.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.path_traversal | default(false)
-  tags:
-    - web_vulnerabilities
-    - path_traversal
 
 # ===========================================
 # API VULNERABILITIES
@@ -423,18 +361,7 @@
 # ===========================================
 # APPLICATION VULNERABILITIES
 # ===========================================
-
-- name: Deploy comprehensive vulnerable web application
-  copy:
-    src: "{{ role_path }}/web_stack/actions_vulnerable.php"
-    dest: /var/www/html/actions_vulnerable.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.application_vulnerabilities.vulnerable_web_apps | default(false)
-  tags:
-    - application_vulnerabilities
-    - vulnerable_apps
+# NOTE: Standalone vulnerable web applications removed - LabSys Wiki provides comprehensive web vulnerability testing
 
 # ===========================================
 # SYSTEM VULNERABILITIES - EXPOSED LOG FILES
