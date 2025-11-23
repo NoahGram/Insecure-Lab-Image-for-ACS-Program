@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/helpers.php';
+// require_once __DIR__ . '/helpers.php';
+
+$action = $_REQUEST['action'] ?? 'view';
+$page   = $_REQUEST['page'] ?? 'Home';
 
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
@@ -9,13 +12,17 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
     '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
+
+    '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
+    '/var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php',
+    '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
+    '/var/www/roles/vulnerabilities/web_stack/insecure_tokens.php',
+    '/var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php',
 ];
 
 foreach ($vuln_files as $file) {
     if (is_readable($file)) require_once $file;
 }
-$action = $_REQUEST['action'] ?? 'view';
-$page   = $_REQUEST['page'] ?? 'Home';
 
 // --- Secure session cookie settings (can be overridden by vulnerability files) ---
 $cookie_params = [
@@ -32,6 +39,8 @@ if (function_exists('session_set_cookie_params_override')) {
 } else {
     session_set_cookie_params($cookie_params);
 }
+
+require_once __DIR__ . '/helpers.php';
 
 // --- CSRF helpers ---
 if (!function_exists('csrf_token')) {

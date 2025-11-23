@@ -3,10 +3,51 @@
 # Each vulnerability type can be individually enabled/disabled using profile settings
 
 # ===========================================
-# WEB VULNERABILITIES
+# CLEANUP VULNERABILITIES
 # ===========================================
 
+- name: Remove existing vulnerable override files
+  block:
+    - name: Find all vulnerability override files
+      find:
+        paths: /var/www/roles/vulnerabilities/web_stack
+        patterns: "*.php"
+      register: existing_vuln_files
+    - name: Remove existing vulnerability override files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ existing_vuln_files.files }}"
+      when: existing_vuln_files.files | length > 0
+  when: not (vulnerable_mode | default(false))
+  tags:
+    - cleanup_vulnerabilities
 
+# ===========================================
+# SELECTIVE CLEANUP VULNERABILITIES
+# ===========================================
+
+- name: Remove API vulnerability files when individually disabled
+  file:
+    path: "/var/www/roles/vulnerabilities/web_stack/{{ item.file }}"
+    state: absent
+  loop:
+    - { file: 'ssrf.php', enabled: "{{ vulnerability_config.api_vulnerabilities.ssrf | default(false) }}" }
+    - { file: 'exposed_diagnostics.php', enabled: "{{ vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) }}" }
+    - { file: 'exposed_test_endpoints.php', enabled: "{{ vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) }}" }
+    - { file: 'insecure_tokens.php', enabled: "{{ vulnerability_config.api_vulnerabilities.insecure_tokens | default(false) }}" }
+    - { file: 'verbose_error_messages.php', enabled: "{{ vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false) }}" }
+  when: 
+    - vulnerable_mode | default(false)
+    - not item.enabled
+  tags:
+    - cleanup_vulnerabilities
+    - selective_cleanup
+    - api_vulnerabilities
+
+# ===========================================
+# WEB VULNERABILITIES
+# ===========================================
 
 - name: Create vulnerable upload directory
   file:
@@ -31,15 +72,6 @@
   tags:
     - web_vulnerabilities
     - file_upload
-
-- name: Deploy vulnerable actions.php to web app (replace clean actions)
-  copy:
-    src: "{{ playbook_dir }}/roles/vulnerabilities/web_stack/actions_vulnerable.php"
-    dest: "{{ app_dir }}/includes/actions.php"
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  notify: restart apache
 
 - name: Configure PHP to display errors
   lineinfile:
@@ -110,6 +142,79 @@
     - web_vulnerabilities
     - path_traversal
 
+# ===========================================
+# API VULNERABILITIES
+# ===========================================
+
+- name: Create vulnerabilities web_stack directory on target
+  file:
+    path: /var/www/roles/vulnerabilities/web_stack
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  tags: api_vulnerabilities
+
+- name: Deploy SSRF vulnerability
+  copy:
+    src: files/web/api/ssrf.php
+    dest: /var/www/roles/vulnerabilities/web_stack/ssrf.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - ssrf
+
+- name: Deploy exposed diagnostics vulnerability
+  copy:
+    src: files/web/api/exposed_diagnostics.php
+    dest: /var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Deploy exposed test endpoints vulnerability
+  copy:
+    src: files/web/api/exposed_test_endpoints.php
+    dest: /var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_test_endpoints
+
+- name: Deploy insecure API tokens vulnerability
+  copy:
+    src: files/web/api/insecure_tokens.php
+    dest: /var/www/roles/vulnerabilities/web_stack/insecure_tokens.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.insecure_tokens | default(false)
+  tags:
+    - api_vulnerabilities
+    - insecure_tokens
+
+- name: Deploy verbose error messages vulnerability
+  copy:
+    src: files/web/api/verbose_error_messages.php
+    dest: /var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false)
+  tags:
+    - api_vulnerabilities
+    - verbose_error_messages
+  
 # ===========================================
 # SYSTEM VULNERABILITIES
 # ===========================================
