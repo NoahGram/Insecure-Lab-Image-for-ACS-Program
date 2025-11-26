@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
-// require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/helpers.php';
 
 $action = $_REQUEST['action'] ?? 'view';
 $page   = $_REQUEST['page'] ?? 'Home';
@@ -39,8 +39,6 @@ if (function_exists('session_set_cookie_params_override')) {
 } else {
     session_set_cookie_params($cookie_params);
 }
-
-require_once __DIR__ . '/helpers.php';
 
 // --- CSRF helpers ---
 if (!function_exists('csrf_token')) {
