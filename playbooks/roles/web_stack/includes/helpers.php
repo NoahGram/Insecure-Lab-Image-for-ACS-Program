@@ -1,4 +1,20 @@
 <?php
+// --- Secure session cookie settings (can be overridden by vulnerability files) ---
+$cookie_params = [
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'],
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+];
+
+if (function_exists('session_set_cookie_params_override')) {
+    session_set_cookie_params_override($cookie_params);
+} else {
+    session_set_cookie_params($cookie_params);
+}
+
 session_start();
 
 $editable_url_parameters = '/var/www/roles/vulnerabilities/web_stack/editable_url_parameters.php';

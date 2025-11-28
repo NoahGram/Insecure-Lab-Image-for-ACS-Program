@@ -24,22 +24,6 @@ foreach ($vuln_files as $file) {
     if (is_readable($file)) require_once $file;
 }
 
-// --- Secure session cookie settings (can be overridden by vulnerability files) ---
-$cookie_params = [
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => $_SERVER['HTTP_HOST'],
-    'secure' => isset($_SERVER['HTTPS']),
-    'httponly' => true,
-    'samesite' => 'Lax'
-];
-
-if (function_exists('session_set_cookie_params_override')) {
-    session_set_cookie_params_override($cookie_params);
-} else {
-    session_set_cookie_params($cookie_params);
-}
-
 // --- CSRF helpers ---
 if (!function_exists('csrf_token')) {
     function csrf_token(): string {
