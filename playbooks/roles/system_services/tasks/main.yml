@@ -1,20 +1,93 @@
 ---
-# System Services Role - Cockpit, Postfix
-- name: Install Postfix mail server
+# System Services Role - Cockpit, Postfix, Roundcube
+
+# ========================================
+# POSTFIX MAIL SERVER SETUP
+# ========================================
+
+- name: Install Postfix and mail utilities
   ansible.builtin.apt:
-    name: postfix
+    name:
+      - postfix
+      - mailutils
+      - libsasl2-2
+      - libsasl2-modules
+      - sasl2-bin
+      - dovecot-core
+      - dovecot-imapd
+      - dovecot-pop3d
     state: present
+    update_cache: yes
+    cache_valid_time: 3600
   environment:
     DEBIAN_FRONTEND: noninteractive
 
-- name: Configure Postfix main settings
+- name: Configure Postfix main.cf settings
   lineinfile:
     path: /etc/postfix/main.cf
-    regexp: "^{{ item.key }}"
+    regexp: "^{{ item.key }}\\s*="
     line: "{{ item.key }} = {{ item.value }}"
+    create: yes
+    backup: yes
   loop:
-    - { key: "myhostname", value: "lab.local" }
-    - { key: "mydomain", value: "lab.local" }
+    - { key: "myhostname", value: "{{ postfix_hostname }}" }
+    - { key: "mydomain", value: "{{ postfix_domain }}" }
+    - { key: "myorigin", value: "$mydomain" }
+    - { key: "inet_interfaces", value: "all" }
+    - { key: "inet_protocols", value: "{{ postfix_inet_protocols }}" }
+    - { key: "mydestination", value: "$myhostname, localhost.$mydomain, localhost, $mydomain" }
+    - { key: "home_mailbox", value: "Maildir/" }
+    - { key: "mailbox_size_limit", value: "{{ postfix_mailbox_size_limit }}" }
+    - { key: "message_size_limit", value: "{{ postfix_message_size_limit }}" }
+    - { key: "smtpd_banner", value: "$myhostname ESMTP" }
+  notify: restart postfix
+
+- name: Configure Postfix SASL authentication
+  lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: "^{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+    create: yes
+  loop:
+    - { key: "smtpd_sasl_type", value: "{{ postfix_sasl_type }}" }
+    - { key: "smtpd_sasl_path", value: "{{ postfix_sasl_path }}" }
+    - { key: "smtpd_sasl_auth_enable", value: "yes" }
+    - { key: "smtpd_sasl_security_options", value: "noanonymous" }
+    - { key: "smtpd_sasl_local_domain", value: "$myhostname" }
+    - { key: "broken_sasl_auth_clients", value: "yes" }
+  when: postfix_enable_sasl | bool
+  notify: restart postfix
+
+- name: Configure Postfix TLS encryption
+  lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: "^{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+    create: yes
+  loop:
+    - { key: "smtpd_tls_cert_file", value: "{{ postfix_tls_cert_file }}" }
+    - { key: "smtpd_tls_key_file", value: "{{ postfix_tls_key_file }}" }
+    - { key: "smtpd_use_tls", value: "yes" }
+    - { key: "smtpd_tls_session_cache_database", value: "btree:${data_directory}/smtpd_scache" }
+    - { key: "smtp_tls_session_cache_database", value: "btree:${data_directory}/smtp_scache" }
+    - { key: "smtpd_tls_security_level", value: "may" }
+    - { key: "smtp_tls_security_level", value: "may" }
+  when: postfix_enable_tls | bool
+  notify: restart postfix
+
+- name: Configure Postfix submission port (587)
+  blockinfile:
+    path: /etc/postfix/master.cf
+    marker: "# {mark} ANSIBLE MANAGED - SUBMISSION PORT"
+    block: |
+      submission inet n       -       y       -       -       smtpd
+        -o syslog_name=postfix/submission
+        -o smtpd_tls_security_level=encrypt
+        -o smtpd_sasl_auth_enable=yes
+        -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+    create: yes
+    backup: yes
+  when: postfix_enable_sasl | bool
   notify: restart postfix
 
 - name: Start and enable Postfix
@@ -23,6 +96,218 @@
     state: started
     enabled: yes
 
+# ========================================
+# DOVECOT IMAP/POP3 SERVER SETUP
+# ========================================
+
+- name: Configure Dovecot authentication
+  lineinfile:
+    path: /etc/dovecot/conf.d/10-auth.conf
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} = {{ item.value }}"
+    create: yes
+    backup: yes
+  loop:
+    - { key: "disable_plaintext_auth", value: "no" }
+    - { key: "auth_mechanisms", value: "plain login" }
+  notify: restart dovecot
+
+- name: Configure Dovecot mail location
+  lineinfile:
+    path: /etc/dovecot/conf.d/10-mail.conf
+    regexp: "^mail_location"
+    line: "mail_location = maildir:~/Maildir"
+    create: yes
+    backup: yes
+  notify: restart dovecot
+
+- name: Configure Dovecot SASL for Postfix
+  copy:
+    content: |
+      service auth {
+        unix_listener /var/spool/postfix/private/auth {
+          mode = 0660
+          user = postfix
+          group = postfix
+        }
+      }
+    dest: /etc/dovecot/conf.d/10-master.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify: restart dovecot
+
+- name: Start and enable Dovecot
+  systemd:
+    name: dovecot
+    state: started
+    enabled: yes
+
+# ========================================
+# ROUNDCUBE WEBMAIL SETUP
+# ========================================
+
+- name: Install Roundcube dependencies
+  ansible.builtin.apt:
+    name:
+      - php
+      - php-cli
+      - php-fpm
+      - php-mysql
+      - php-imap
+      - php-mbstring
+      - php-xml
+      - php-intl
+      - php-zip
+      - php-curl
+      - php-gd
+      - php-ldap
+      - unzip
+      - wget
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Check if Roundcube is already downloaded
+  stat:
+    path: /tmp/roundcube-{{ roundcube_version }}.tar.gz
+  register: roundcube_archive
+
+- name: Download Roundcube
+  get_url:
+    url: "https://github.com/roundcube/roundcubemail/releases/download/{{ roundcube_version }}/roundcubemail-{{ roundcube_version }}-complete.tar.gz"
+    dest: /tmp/roundcube-{{ roundcube_version }}.tar.gz
+    timeout: 120
+    force: no
+  retries: 3
+  delay: 5
+  when: not roundcube_archive.stat.exists
+
+- name: Check if Roundcube is already extracted
+  stat:
+    path: /var/www/html/roundcube
+  register: roundcube_dir
+
+- name: Extract Roundcube
+  unarchive:
+    src: /tmp/roundcube-{{ roundcube_version }}.tar.gz
+    dest: /var/www/html/
+    remote_src: yes
+    owner: www-data
+    group: www-data
+    creates: /var/www/html/roundcubemail-{{ roundcube_version }}
+  when: not roundcube_dir.stat.exists
+
+- name: Rename Roundcube directory
+  command: mv /var/www/html/roundcubemail-{{ roundcube_version }} /var/www/html/roundcube
+  args:
+    creates: /var/www/html/roundcube
+  when: not roundcube_dir.stat.exists
+
+- name: Set Roundcube directory permissions
+  file:
+    path: /var/www/html/roundcube
+    owner: www-data
+    group: www-data
+    recurse: yes
+    mode: '0755'
+
+- name: Create Roundcube database
+  mysql_db:
+    name: "{{ roundcube_db_name }}"
+    state: present
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
+  ignore_errors: yes
+
+- name: Create Roundcube database user
+  mysql_user:
+    name: "{{ roundcube_db_user }}"
+    password: "{{ roundcube_db_password }}"
+    priv: "{{ roundcube_db_name }}.*:ALL"
+    host: localhost
+    state: present
+  ignore_errors: yes
+
+- name: Check if Roundcube database is initialized
+  shell: mysql -u {{ roundcube_db_user }} -p{{ roundcube_db_password }} {{ roundcube_db_name }} -e "SHOW TABLES;" | grep -q "users"
+  register: roundcube_db_check
+  failed_when: false
+  changed_when: false
+
+- name: Initialize Roundcube database schema
+  mysql_db:
+    name: "{{ roundcube_db_name }}"
+    state: import
+    target: /var/www/html/roundcube/SQL/mysql.initial.sql
+  when: roundcube_db_check.rc != 0
+  ignore_errors: yes
+
+- name: Configure Roundcube config.inc.php
+  template:
+    src: roundcube_config.php.j2
+    dest: /var/www/html/roundcube/config/config.inc.php
+    owner: www-data
+    group: www-data
+    mode: '0640'
+    backup: yes
+
+- name: Create Roundcube Apache configuration
+  copy:
+    content: |
+      Alias /roundcube /var/www/html/roundcube
+      
+      <Directory /var/www/html/roundcube>
+          Options +FollowSymLinks
+          DirectoryIndex index.php
+          AllowOverride All
+          Require all granted
+          
+          <IfModule mod_php7.c>
+              php_flag display_errors Off
+              php_flag log_errors On
+              php_value upload_max_filesize 10M
+              php_value post_max_size 10M
+          </IfModule>
+      </Directory>
+      
+      <Directory /var/www/html/roundcube/config>
+          Require all denied
+      </Directory>
+      
+      <Directory /var/www/html/roundcube/temp>
+          Require all denied
+      </Directory>
+      
+      <Directory /var/www/html/roundcube/logs>
+          Require all denied
+      </Directory>
+    dest: /etc/apache2/conf-available/roundcube.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable Roundcube Apache configuration
+  command: a2enconf roundcube
+  args:
+    creates: /etc/apache2/conf-enabled/roundcube.conf
+  notify: restart apache2
+
+- name: Ensure Apache modules are enabled for Roundcube
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rewrite
+    - headers
+  notify: restart apache2
+  ignore_errors: yes
+
+# ========================================
+# COCKPIT SYSTEM MONITORING
+# ========================================
+
 - name: Install Cockpit system monitoring
   ansible.builtin.apt:
     name:
@@ -30,6 +315,8 @@
       - cockpit-system
       - cockpit-networkmanager
     state: present
+    update_cache: yes
+    cache_valid_time: 3600
 
 - name: Start and enable Cockpit
   systemd:
@@ -37,16 +324,25 @@
     state: started
     enabled: yes
 
-- name: Configure UFW firewall
+# ========================================
+# FIREWALL CONFIGURATION
+# ========================================
+
+- name: Configure UFW firewall for all services
   community.general.ufw:
     rule: allow
     port: "{{ item }}"
   loop:
-    - '22'
-    - '80'
-    - '443'
-    - '3000'
-    - '9090'
+    - '22'      # SSH
+    - '25'      # SMTP
+    - '80'      # HTTP
+    - '143'     # IMAP
+    - '443'     # HTTPS
+    - '587'     # SMTP Submission
+    - '993'     # IMAPS
+    - '995'     # POP3S
+    - '3000'    # Gitea
+    - '9090'    # Cockpit
   ignore_errors: yes
 
 - name: Enable UFW firewall
