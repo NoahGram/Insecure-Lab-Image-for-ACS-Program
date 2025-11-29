@@ -1,0 +1,26 @@
+---
+# System Services Role - Default Variables
+
+# Postfix Configuration
+postfix_hostname: "lab.local"
+postfix_domain: "lab.local"
+postfix_inet_protocols: "ipv4"
+postfix_mailbox_size_limit: "0"
+postfix_message_size_limit: "10240000"
+
+# Roundcube Configuration
+roundcube_version: "1.6.5"
+roundcube_db_name: "roundcube"
+roundcube_db_user: "roundcube"
+roundcube_db_password: "roundcube_secure_pass"
+roundcube_des_key: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+
+# SMTP/SASL Configuration
+postfix_enable_sasl: yes
+postfix_sasl_type: "dovecot"
+postfix_sasl_path: "private/auth"
+
+# TLS Configuration
+postfix_enable_tls: yes
+postfix_tls_cert_file: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
+postfix_tls_key_file: "/etc/ssl/private/ssl-cert-snakeoil.key"
