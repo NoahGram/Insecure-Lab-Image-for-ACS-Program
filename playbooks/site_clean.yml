@@ -40,6 +40,7 @@
     - base_system
     - database
     - web_stack
+    - phpmyadmin
     - applications
     - system_services
     - user_environment
@@ -60,6 +61,7 @@
           
           Database:
           - MariaDB: localhost:3306 (root/{{ mysql_root_password }})
+          - phpMyAdmin: http://{{ ansible_default_ipv4.address }}:8080/phpmyadmin
           
           SSH Access: ssh -p {{ ansible_port }} {{ ansible_user }}@{{ ansible_host }}
           
