@@ -37,6 +37,7 @@
     - base_system
     - database
     - web_stack
+    - phpmyadmin
     - applications
     - system_services
     - vulnerabilities
@@ -63,6 +64,7 @@
           System Access:
           - Weak accounts: admin/admin, test/test, guest/guest
           - Database: testuser/testpass (% access)
+          - phpMyAdmin: http://{{ ansible_default_ipv4.address }}:8080/phpmyadmin
           
           Testing Tools:
           - nmap -sV {{ ansible_default_ipv4.address }}
