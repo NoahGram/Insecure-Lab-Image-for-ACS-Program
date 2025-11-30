@@ -114,7 +114,7 @@ Vagrant.configure("2") do |config|
   # Use a numeric suffix to reduce chance of collision with existing VMs
   vb.name = "ansible-control-node-acs-001"
     vb.memory = "4096"  # 4GB RAM, 2048MB minimum for Ansible Control Node
-    vb.cpus = 2         # 2 CPU cores
+    vb.cpus = 6         # 6 CPU cores
     
     # Performance optimizations
     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
