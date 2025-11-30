@@ -14,6 +14,7 @@
     - name: Set current vulnerability profile
       set_fact:
         current_profile: "{{ vulnerability_profile | default(default_vulnerability_profile) }}"
+        vulnerable_mode: false
         
     - name: Load profile-specific versions
       set_fact:
@@ -42,6 +43,7 @@
     - web_stack
     - applications
     - system_services
+    - vulnerabilities
     - user_environment
     
   post_tasks:

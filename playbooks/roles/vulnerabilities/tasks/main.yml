@@ -6,22 +6,37 @@
 # CLEANUP VULNERABILITIES
 # ===========================================
 
-- name: Remove existing vulnerable override files
+- name: Force cleanup of all vulnerability files for clean deployment
   block:
     - name: Find all vulnerability override files
       find:
         paths: /var/www/roles/vulnerabilities/web_stack
         patterns: "*.php"
       register: existing_vuln_files
+
     - name: Remove existing vulnerability override files
       file:
         path: "{{ item.path }}"
         state: absent
       loop: "{{ existing_vuln_files.files }}"
       when: existing_vuln_files.files | length > 0
+    
+    - name: Reset database passwords to secure defaults
+      mysql_query:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_db: testdb
+        query: |
+          UPDATE users SET password = '{{ item.password }}'
+          WHERE username = '{{ item.username }}';
+      loop:
+        - { username: 'admin', password: 'Admin@Secure123!' }
+        - { username: 'jane', password: 'Jane@Secure456!' }
+        - { username: 'guest', password: 'Guest@Secure789!' }
+      ignore_errors: yes
   when: not (vulnerable_mode | default(false))
   tags:
-    - cleanup_vulnerabilities
+    - cleanup
 
 # ===========================================
 # SELECTIVE CLEANUP VULNERABILITIES
@@ -41,7 +56,7 @@
     - vulnerable_mode | default(false)
     - not item.enabled
   tags:
-    - cleanup_vulnerabilities
+    - cleanup
     - selective_cleanup
     - api_vulnerabilities
     
@@ -446,6 +461,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 
 - name: Deploy no client side password validation
@@ -455,6 +471,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 
 - name: Deploy no server side password validation
@@ -464,6 +481,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable CSRF vulnerability override
   copy:
@@ -472,6 +490,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable session cookies vulnerability override
   copy:
@@ -480,6 +499,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable session regenerate vulnerability override
   copy:
@@ -488,6 +508,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy hidden role field vulnerability override
   copy:
@@ -496,6 +517,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy editable url paramater override
   copy:
@@ -504,6 +526,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
@@ -518,3 +541,4 @@
     - { username: 'jane', password: 'jane' }
     - { username: 'guest', password: 'guest' }
   ignore_errors: yes
+  when: vulnerable_mode | default(false)
