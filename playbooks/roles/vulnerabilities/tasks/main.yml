@@ -161,20 +161,21 @@
       command: ./configure
       args:
         chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+        creates: "/tmp/{{ vulnerabilities_sudo_src_dir }}/Makefile"
       register: sudo_configure
-      changed_when: "sudo_configure.rc == 0 and sudo_configure.stdout != ''"
+      changed_when: sudo_configure.rc == 0 and sudo_configure.stdout != ''
 
     - name: Build sudo
-      command: make -j {{ ansible_processor_cores | default(1) }}
+      command: make -j {{ (ansible_processor_cores | default(1) | int) + 1 }}
       args:
         chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
       register: sudo_make
-      changed_when: "sudo_make.rc == 0"
 
     - name: Install built sudo
       command: make install
       args:
         chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
+        creates: "/usr/local/bin/sudo"
       become: yes
 
     - name: Cleanup sudo source and tarball
@@ -188,6 +189,49 @@
   tags:
     - CVE-2025-32463
     - vulnerabilities_sudo
+
+
+- name: Ensure neofetch2 binary is present in /usr/bin
+  copy:
+    src: "files/neofetch2"
+    dest: /usr/bin/neofetch2
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  tags:
+    - system_vulnerabilities
+    - neofetch2
+
+- name: Ensure cron.hourly wrapper for neofetch2 exists
+  copy:
+    dest: /etc/cron.hourly/neofetch2
+    content: |
+      #!/bin/sh
+      # Run neofetch2 and append output to a dedicated log for detection exercises
+      # Cron runs this as root, so we can append the output safely.
+      /usr/bin/neofetch2 2>&1 | tee -a /var/log/neofetch2.log >/dev/null
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  tags:
+    - system_vulnerabilities
+    - neofetch2
+- name: Ensure neofetch2 log file exists
+  file:
+    path: /var/log/neofetch2.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  tags:
+    - system_vulnerabilities
+    - neofetch2
 
 # ===========================================
 # DATABASE VULNERABILITIES
