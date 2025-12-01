@@ -8,6 +8,14 @@
 
 - name: Force cleanup of all vulnerability files for clean deployment
   block:
+    - name: Ensure vulnerability directory exists for cleanup
+      file:
+        path: /var/www/roles/vulnerabilities/web_stack
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+    
     - name: Find all vulnerability override files
       find:
         paths: /var/www/roles/vulnerabilities/web_stack
@@ -106,6 +114,7 @@
     owner: www-data
     group: www-data
     mode: '0755'
+  when: vulnerable_mode | default(false)
   tags: api_vulnerabilities
 
 - name: Deploy SSRF vulnerability
