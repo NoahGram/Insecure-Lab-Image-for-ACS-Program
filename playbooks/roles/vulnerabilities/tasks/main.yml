@@ -181,6 +181,28 @@
 # SYSTEM VULNERABILITIES
 # ===========================================
 
+- name: Set SUID on python3 interpreter
+  block:
+    - name: Locate python3 binary
+      command: which python3
+      register: python3_path
+      changed_when: false
+      failed_when: false
+
+    - name: Set SUID bit on python3
+      file:
+        path: "{{ python3_path.stdout }}"
+        mode: '4755'
+        owner: root
+        group: root
+      become: true
+      when: python3_path.rc == 0
+
+  when: vulnerability_config.system_vulnerabilities.setuid_python3 | default(true)
+  tags:
+    - system_vulnerabilities
+    - setuid_python3
+
 - name: Create weak user accounts
   user:
     name: "{{ item.name }}"

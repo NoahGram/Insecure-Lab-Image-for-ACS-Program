@@ -1,0 +1,71 @@
+---
+# phpMyAdmin Installation and Configuration
+
+- name: Install phpMyAdmin and dependencies
+  ansible.builtin.apt:
+    name:
+      - phpmyadmin
+      - php-mbstring
+      - php-zip
+      - php-gd
+      - php-json
+      - php-curl
+      - php-bz2
+      - php-phpseclib
+      - php-symfony-expression-language
+      - composer
+    state: present
+    update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Create phpMyAdmin configuration directory if not exists
+  file:
+    path: /etc/phpmyadmin
+    state: directory
+    mode: '0755'
+
+- name: Configure phpMyAdmin
+  template:
+    src: config.inc.php.j2
+    dest: /etc/phpmyadmin/config.inc.php
+    owner: root
+    group: www-data
+    mode: '0640'
+  notify: restart apache
+
+- name: Create phpMyAdmin Apache configuration
+  template:
+    src: phpmyadmin.conf.j2
+    dest: /etc/apache2/conf-available/phpmyadmin.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart apache
+
+- name: Enable phpMyAdmin Apache configuration
+  command: a2enconf phpmyadmin
+  args:
+    creates: /etc/apache2/conf-enabled/phpmyadmin.conf
+  notify: restart apache
+
+- name: Create phpMyAdmin temporary directory
+  file:
+    path: /var/lib/phpmyadmin/tmp
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0750'
+
+- name: Ensure Apache is restarted to load phpMyAdmin
+  meta: flush_handlers
+
+- name: Display phpMyAdmin access information
+  debug:
+    msg:
+      - "phpMyAdmin has been installed successfully!"
+      - "Access URL: http://{{ ansible_default_ipv4.address | default('localhost') }}:8080/phpmyadmin"
+      - "Login with MySQL credentials:"
+      - "  - Root user: root / {{ mysql_root_password }}"
+      - "  - Gitea user: gitea / {{ gitea_db_password | default('cup_of_tea') }}"
+      - "  - MantisBT user: mantisbt / {{ mantisbt_db_password | default('apache2Mantis') }}"
