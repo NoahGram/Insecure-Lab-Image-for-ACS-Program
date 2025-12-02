@@ -74,6 +74,30 @@
   ignore_errors: yes
   when: mysql_root_access.rc != 0
 
+# Configure MariaDB password hashing behaviour depending on vulnerable_mode
+- name: Configure MariaDB to use weak hashing (old_passwords) when vulnerable_mode is enabled
+  copy:
+    dest: /etc/mysql/conf.d/10-auth-method.cnf
+    content: |
+      [mysqld]
+      old_passwords=1
+      default_authentication_plugin=mysql_native_password
+  notify: Restart mariadb
+  become: yes
+  when: vulnerable_mode | default(false)
+
+- name: Configure MariaDB to prefer bcrypt when not in vulnerable_mode
+  copy:
+    dest: /etc/mysql/conf.d/10-auth-method.cnf
+    content: |
+      [mysqld]
+      plugin_load_add=auth_bcrypt=auth_bcrypt.so
+      default_authentication_plugin=auth_bcrypt
+  notify: Restart mariadb
+  become: yes
+  when: not (vulnerable_mode | default(false))
+
+
 - name: Create MariaDB configuration for root user
   copy:
     content: |

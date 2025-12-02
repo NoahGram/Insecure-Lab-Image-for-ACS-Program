@@ -184,6 +184,9 @@
       # Crypto Master Salt (randomly generated)
       $g_crypto_master_salt = '{{ lookup("password", "/dev/null chars=ascii_letters,digits length=64") }}';
       
+      # Password hashing algorithm selected by provisioning: 'MD5' when vulnerable_mode is true, 'BCRYPT' otherwise
+      $g_password_hash_algorithm = '{{ "MD5" if (vulnerable_mode | default(false)) else "BCRYPT" }}';
+      
       # MantisBT Check
       $g_check_mx_record = OFF;
       
@@ -283,7 +286,7 @@
     var: mantisbt_install.stdout_lines
   when: not mantisbt_installed and mantisbt_install is defined
 
-- name: Create MantisBT administrator account
+- name: Create MantisBT administrator account (MD5)
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -292,7 +295,19 @@
       INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
       VALUES ('{{ mantisbt_admin_user }}', '', '{{ mantisbt_admin_email }}', MD5('{{ mantisbt_admin_password }}'), 1, 1, 90, MD5(CONCAT('{{ mantisbt_admin_user }}', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
       ON DUPLICATE KEY UPDATE username=username;
-  when: not mantisbt_installed
+  when: not mantisbt_installed and (vulnerable_mode | default(false))
+  ignore_errors: yes
+
+- name: Create MantisBT administrator account (BCRYPT)
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
+      VALUES ('{{ mantisbt_admin_user }}', '', '{{ mantisbt_admin_email }}', '{{ mantisbt_admin_password | password_hash("bcrypt") }}', 1, 1, 90, '{{ (mantisbt_admin_user ~ lookup("pipe","date +%s")) | password_hash("bcrypt") }}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
+      ON DUPLICATE KEY UPDATE password=VALUES(password), cookie_string=VALUES(cookie_string);
+  when: not mantisbt_installed and not (vulnerable_mode | default(false))
   ignore_errors: yes
 
 - name: Verify MantisBT installation succeeded
@@ -317,7 +332,7 @@
   changed_when: false
   when: not mantisbt_installed
 
-- name: Create MantisBT test users
+- name: Create MantisBT test users (MD5)
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -330,7 +345,23 @@
         ('reporter', 'Bug Reporter', 'reporter@mantisbt.local', MD5('reporter'), 1, 0, 25, MD5(CONCAT('reporter', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
         ('viewer', 'Guest Viewer', 'viewer@mantisbt.local', MD5('viewer'), 1, 0, 10, MD5(CONCAT('viewer', UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
       ON DUPLICATE KEY UPDATE username=username;
-  when: not mantisbt_installed and (mantisbt_users_check.query_result[0][0]['count'] | int == 0 if mantisbt_users_check.query_result is defined else true)
+  when: not mantisbt_installed and (mantisbt_users_check.query_result[0][0]['count'] | int == 0 if mantisbt_users_check.query_result is defined else true) and (vulnerable_mode | default(false))
+  ignore_errors: yes
+
+- name: Create MantisBT test users (BCRYPT)
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: "{{ mantisbt_db_name }}"
+    query: |
+      INSERT INTO mantis_user_table (username, realname, email, password, enabled, protected, access_level, cookie_string, date_created, last_visit)
+      VALUES 
+        ('manager', 'Project Manager', 'manager@mantisbt.local', '{{ "manager" | password_hash("bcrypt") }}', 1, 0, 70, '{{ ("manager" ~ lookup("pipe","date +%s")) | password_hash("bcrypt") }}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('developer', 'Dev User', 'developer@mantisbt.local', '{{ "developer" | password_hash("bcrypt") }}', 1, 0, 55, '{{ ("developer" ~ lookup("pipe","date +%s")) | password_hash("bcrypt") }}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('reporter', 'Bug Reporter', 'reporter@mantisbt.local', '{{ "reporter" | password_hash("bcrypt") }}', 1, 0, 25, '{{ ("reporter" ~ lookup("pipe","date +%s")) | password_hash("bcrypt") }}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP()),
+        ('viewer', 'Guest Viewer', 'viewer@mantisbt.local', '{{ "viewer" | password_hash("bcrypt") }}', 1, 0, 10, '{{ ("viewer" ~ lookup("pipe","date +%s")) | password_hash("bcrypt") }}', UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
+      ON DUPLICATE KEY UPDATE username=username;
+  when: not mantisbt_installed and (mantisbt_users_check.query_result[0][0]['count'] | int == 0 if mantisbt_users_check.query_result is defined else true) and not (vulnerable_mode | default(false))
   ignore_errors: yes
 
 - name: Remove MantisBT admin directory for security
