@@ -8,26 +8,10 @@
 
 - name: Force cleanup of all vulnerability files for clean deployment
   block:
-    - name: Ensure vulnerability directory exists for cleanup
+    - name: Remove entire vulnerability override directory
       file:
         path: /var/www/roles/vulnerabilities/web_stack
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
-    
-    - name: Find all vulnerability override files
-      find:
-        paths: /var/www/roles/vulnerabilities/web_stack
-        patterns: "*.php"
-      register: existing_vuln_files
-
-    - name: Remove existing vulnerability override files
-      file:
-        path: "{{ item.path }}"
         state: absent
-      loop: "{{ existing_vuln_files.files }}"
-      when: existing_vuln_files.files | length > 0
     
     - name: Reset database passwords to secure defaults
       mysql_query:
