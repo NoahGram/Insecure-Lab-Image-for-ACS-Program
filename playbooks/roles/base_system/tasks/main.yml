@@ -12,12 +12,26 @@
   ignore_errors: yes
 
 - name: Ensure the system is updated
-  ansible.builtin.apt:
-    update_cache: yes
-    upgrade: dist
-    autoremove: yes
-  register: system_update
-  ignore_errors: yes
+  block:
+    - name: Update apt cache (use cache_valid_time to avoid unnecessary updates)
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      register: apt_update
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Perform full upgrade in background (async) and avoid interactive prompts
+      ansible.builtin.apt:
+        upgrade: full-upgrade
+        autoremove: yes
+        install_recommends: no
+      register: system_update
+      async: 1800
+      poll: 0
+      ignore_errors: yes
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
 - name: Check for remaining broken packages after update
   shell: dpkg --audit
