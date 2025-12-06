@@ -464,3 +464,11 @@
     - { username: 'jane', password: 'jane' }
     - { username: 'guest', password: 'guest' }
   ignore_errors: yes
+
+- name: Enable vulnerable Cryptographic Failures with weak hashing algorithms
+  copy:
+    src: files/cryptographic_failures.php
+    dest: /var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php
+    owner: www-data
+    group: www-data
+    mode: "0644"

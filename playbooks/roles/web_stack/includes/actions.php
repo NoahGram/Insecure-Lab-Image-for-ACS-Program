@@ -9,6 +9,7 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
     '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
+    "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 
 foreach ($vuln_files as $file) {
@@ -208,7 +209,10 @@ switch ($action) {
                 }
                 $stmt->close();
 
-                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $hash = isset($generate_hash) 
+                    ? $generate_hash($password, false) // Generates unsafe hash as md5 function from the input. 
+                    : password_hash($password, PASSWORD_DEFAULT);
+
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
 
                 $role = 'user';
