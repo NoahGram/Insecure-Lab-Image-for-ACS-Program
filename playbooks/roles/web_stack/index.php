@@ -48,6 +48,7 @@ require_once __DIR__ . '/includes/actions.php';
     elseif (in_array($action, ['edit','create'])) include 'templates/edit.php';
     elseif ($action === 'search') include 'templates/search.php';
     elseif ($action === 'profile') include 'templates/profile.php';
+    elseif ($action === 'logs') include 'templates/logs.php';
     ?>
 </main>
 
