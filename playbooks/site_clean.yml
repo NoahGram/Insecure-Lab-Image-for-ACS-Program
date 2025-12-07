@@ -25,6 +25,7 @@
         mantisbt_version: "{{ vars[current_profile]['versions']['mantisbt_version'] | default('2.25.8') }}"
         cockpit_version: "{{ vars[current_profile]['versions']['cockpit_version'] | default('latest') }}"
         postfix_version: "{{ vars[current_profile]['versions']['postfix_version'] | default('latest') }}"
+        vulnerable_mode: false
         # Load vulnerability controls
         vulnerability_config: "{{ vars[current_profile]['vulnerabilities'] | default({}) }}"
         

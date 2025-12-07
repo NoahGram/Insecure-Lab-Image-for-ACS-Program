@@ -57,7 +57,8 @@
     login_password: "{{ mysql_root_password }}"
     login_db: testdb
     query: "INSERT IGNORE INTO users (id, username, password, email, role)
-            VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}');"
+            VALUES ({{ item.id }}, '{{ item.username }}', '{{ (vulnerable_mode | default(false)) |
+            ternary(item.password, item.password | password_hash('bcrypt')) }}', '{{ item.email }}', '{{ item.role }}');"
   loop:
     - { id: 1, username: 'admin', role: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local' }
     - { id: 2, username: 'jane',  role: 'user', password: 'Jane@Secure456!',  email: 'jane@portal.local' }

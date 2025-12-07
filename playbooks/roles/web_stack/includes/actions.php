@@ -119,8 +119,7 @@ switch ($action) {
                     } else {
                         $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
                             ? password_verify($password, $stored)
-                            : hash_equals((string)$stored, (string)$password);
-
+                            : false;
                         if ($ok) {
                             // Reset failed attempts
                             $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');

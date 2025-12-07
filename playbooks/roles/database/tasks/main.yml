@@ -74,6 +74,30 @@
   ignore_errors: yes
   when: mysql_root_access.rc != 0
 
+# Configure MariaDB password hashing behaviour depending on vulnerable_mode
+- name: Configure MariaDB to use weak hashing (old_passwords) when vulnerable_mode is enabled
+  copy:
+    dest: /etc/mysql/conf.d/10-auth-method.cnf
+    content: |
+      [mysqld]
+      old_passwords=1
+      default_authentication_plugin=mysql_native_password
+  notify: Restart mariadb
+  become: yes
+  when: vulnerable_mode | default(false)
+
+- name: Configure MariaDB to prefer bcrypt when not in vulnerable_mode
+  copy:
+    dest: /etc/mysql/conf.d/10-auth-method.cnf
+    content: |
+      [mysqld]
+      plugin_load_add=auth_bcrypt=auth_bcrypt.so
+      default_authentication_plugin=auth_bcrypt
+  notify: Restart mariadb
+  become: yes
+  when: not (vulnerable_mode | default(false))
+
+
 - name: Create MariaDB configuration for root user
   copy:
     content: |
@@ -140,3 +164,76 @@
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
+
+# ------------------------------------------
+# Vulnerable vs Clean network + default credentials
+# - When `vulnerable_mode` is true we:
+#   * bind MariaDB to 0.0.0.0 (unsecured port)
+#   * create an over-permissive user `default_admin`@`%` with password `default`
+#   * open port 3306 via UFW if available
+# - When not vulnerable_mode we bind to localhost and remove the insecure user and close the port
+# ------------------------------------------
+
+- name: Configure MariaDB bind address for vulnerable deployments
+  copy:
+    dest: /etc/mysql/conf.d/10-bind-address.cnf
+    content: |
+      [mysqld]
+      bind-address = 0.0.0.0
+  notify: Restart mariadb
+  become: yes
+  when: vulnerable_mode | default(false)
+
+- name: Configure MariaDB bind address for clean deployments
+  copy:
+    dest: /etc/mysql/conf.d/10-bind-address.cnf
+    content: |
+      [mysqld]
+      bind-address = 127.0.0.1
+  notify: Restart mariadb
+  become: yes
+  when: not (vulnerable_mode | default(false))
+
+- name: Create over-permissive default admin user (vulnerable)
+  mysql_user:
+    name: default_admin
+    password: "default"
+    host: "%"
+    priv: "*.*:ALL,GRANT"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: vulnerable_mode | default(false)
+
+- name: Remove over-permissive default admin user (clean)
+  mysql_user:
+    name: default_admin
+    host: "%"
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+  when: not (vulnerable_mode | default(false))
+
+- name: Ensure UFW is installed (for firewall toggling)
+  apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  become: yes
+  when: ansible_facts['pkg_mgr'] is defined
+
+- name: Open MariaDB port 3306 in UFW (vulnerable)
+  ufw:
+    rule: allow
+    port: 3306
+    proto: tcp
+  become: yes
+  when: vulnerable_mode | default(false)
+
+- name: Close MariaDB port 3306 in UFW (clean)
+  ufw:
+    rule: deny
+    port: 3306
+    proto: tcp
+  become: yes
+  when: not (vulnerable_mode | default(false))

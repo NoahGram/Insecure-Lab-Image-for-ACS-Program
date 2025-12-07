@@ -118,11 +118,9 @@ switch ($action) {
                 }
                 $stmt->close();
 
-                $hash = password_hash($password, PASSWORD_DEFAULT);
-
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
                 $role = 'user';
-                $stmt->bind_param('ssss', $username, $hash, $email, $role);
+                $stmt->bind_param('ssss', $username, $password, $email, $role);
                 if ($stmt->execute()) {
                     $_SESSION['username'] = $username;
                     $_SESSION['email'] = $email;
