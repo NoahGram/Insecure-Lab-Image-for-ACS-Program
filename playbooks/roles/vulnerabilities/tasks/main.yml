@@ -51,18 +51,14 @@
     - system_vulnerabilities
     - setuid_python3
 
-- name: Create weak user accounts
+# Note: Main user accounts are created in user_environment role
+# This task only ensures weak passwords for the vulnerability scenario
+- name: Ensure weak passwords on accounts (vulnerability scenario)
   user:
     name: "{{ item.name }}"
     password: "{{ item.password | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Vulnerable test account"
   loop:
-    - { name: "admin", password: "admin" }
-    - { name: "test", password: "test" }
     - { name: "guest", password: "guest" }
-    - { name: "demo", password: "demo" }
   when: vulnerability_config.system_vulnerabilities.weak_user_accounts | default(false)
   tags:
     - system_vulnerabilities
@@ -74,8 +70,7 @@
     line: "{{ item }}"
     validate: 'visudo -cf %s'
   loop:
-    - "admin ALL=(ALL) NOPASSWD:ALL"
-    - "test ALL=(ALL) ALL"
+    - "mike ALL=(ALL) NOPASSWD:ALL"
   when: vulnerability_config.system_vulnerabilities.sudo_misconfiguration | default(false)
   tags:
     - system_vulnerabilities
@@ -109,6 +104,189 @@
   tags:
     - system_vulnerabilities
     - weak_permissions
+
+# ===========================================
+# SSH KEY EXPOSURE VULNERABILITY
+# ===========================================
+- name: Make backup home directory world-readable (vulnerability!)
+  file:
+    path: /home/backup
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Create backup user .ssh directory
+  file:
+    path: /home/backup/.ssh
+    state: directory
+    owner: backup
+    group: backup
+    mode: '0755'  # Intentionally too permissive
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy SSH private key with weak permissions
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/id_rsa"
+    dest: /home/backup/.ssh/id_rsa
+    owner: backup
+    group: backup
+    mode: '0644'  # World-readable private key!
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy SSH public key
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/id_rsa.pub"
+    dest: /home/backup/.ssh/id_rsa.pub
+    owner: backup
+    group: backup
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy authorized_keys with root access
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/authorized_keys"
+    dest: /home/backup/.ssh/authorized_keys
+    owner: backup
+    group: backup
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Ensure root .ssh directory exists
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Add backup key to root authorized_keys (privilege escalation path)
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/authorized_keys"
+    dest: /root/.ssh/authorized_keys
+    owner: root
+    group: root
+    mode: '0600'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+# ===========================================
+# BASH HISTORY CREDENTIAL EXPOSURE
+# ===========================================
+- name: Make linda home directory world-readable (vulnerability!)
+  file:
+    path: /home/linda
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy linda bash history with credentials
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/linda/.bash_history"
+    dest: /home/linda/.bash_history
+    owner: linda
+    group: linda
+    mode: '0644'  # Readable by others - vulnerability!
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy backup user bash history with credentials
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.bash_history"
+    dest: /home/backup/.bash_history
+    owner: backup
+    group: backup
+    mode: '0644'  # Readable by others - vulnerability!
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy mike bash history (protected)
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/mike/.bash_history"
+    dest: /home/mike/.bash_history
+    owner: mike
+    group: mike
+    mode: '0600'  # This one is protected - realistic mix
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+# ===========================================
+# CRON JOB INJECTION VULNERABILITY
+# ===========================================
+- name: Create scripts directory
+  file:
+    path: /opt/scripts
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Deploy maintenance script with weak permissions
+  copy:
+    src: "{{ playbook_dir }}/files/configs/system-maintenance.sh"
+    dest: /opt/scripts/system-maintenance.sh
+    owner: root
+    group: root
+    mode: '0777'  # World-writable - the vulnerability!
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Deploy cron job that runs as root
+  copy:
+    src: "{{ playbook_dir }}/files/configs/cron-maintenance"
+    dest: /etc/cron.d/system-maintenance
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Create maintenance log file
+  file:
+    path: /var/log/maintenance.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
 
 - name: CVE-2025-32463 - Deploy vulnerable sudo package (prepare variables and check)
   block:
@@ -191,18 +369,18 @@
     - vulnerabilities_sudo
 
 
-- name: Ensure neofetch2 binary is present in /usr/bin
-  copy:
-    src: "files/neofetch2"
-    dest: /usr/bin/neofetch2
-    owner: root
-    group: root
-    mode: '0755'
-  become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
-  tags:
-    - system_vulnerabilities
-    - neofetch2
+# - name: Ensure neofetch2 binary is present in /usr/bin
+#   copy:
+#     src: "files/neofetch2"
+#     dest: /usr/bin/neofetch2
+#     owner: root
+#     group: root
+#     mode: '0755'
+#   become: yes
+#   when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+#   tags:
+#     - system_vulnerabilities
+#     - neofetch2
 
 - name: Ensure cron.hourly wrapper for neofetch2 exists
   copy:
