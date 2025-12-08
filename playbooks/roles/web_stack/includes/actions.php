@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/logger.php';
 
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
@@ -9,6 +10,7 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
     '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
+    "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 
 foreach ($vuln_files as $file) {
@@ -94,6 +96,7 @@ switch ($action) {
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verify_csrf()) {
+                ActivityLogger::logCsrfFailure('login');
                 http_response_code(400);
                 die('CSRF verification failed.');
             }
@@ -114,12 +117,12 @@ switch ($action) {
                     $last_failed = $row['last_failed'] ? strtotime($row['last_failed']) : 0;
 
                     if (is_account_locked($failed_attempts, $last_failed)) {
+                        ActivityLogger::logAccountLocked($username);
                         $login_error = 'Account temporarily locked. Try again later.';
                     } else {
                         $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
                             ? password_verify($password, $stored)
-                            : hash_equals((string)$stored, (string)$password);
-
+                            : false;
                         if ($ok) {
                             // Reset failed attempts
                             $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');
@@ -137,6 +140,8 @@ switch ($action) {
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'];
 
+                            ActivityLogger::logLogin($row['username']);
+
                             header('Location: ?page=' . rawurlencode($page));
                             exit;
                         } else {
@@ -147,10 +152,13 @@ switch ($action) {
                             $stmt2->execute();
                             $stmt2->close();
 
+                            ActivityLogger::logFailedLogin($username, $failed_attempts);
+
                             $login_error = 'Invalid username or password.';
                         }
                     }
                 } else {
+                    ActivityLogger::logFailedLogin($username, 1);
                     $login_error = 'Invalid username or password.';
                 }
 
@@ -166,6 +174,7 @@ switch ($action) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!verify_csrf()) {
+                ActivityLogger::logCsrfFailure('register');
                 http_response_code(400);
                 die('CSRF verification failed.');
             }
@@ -208,7 +217,10 @@ switch ($action) {
                 }
                 $stmt->close();
 
-                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $hash = isset($generate_hash) 
+                    ? $generate_hash($password, false) // Generates unsafe hash as md5 function from the input. 
+                    : password_hash($password, PASSWORD_DEFAULT);
+
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
 
                 $role = 'user';
@@ -234,6 +246,8 @@ switch ($action) {
                     $_SESSION['role'] = $role;
                     $_SESSION['email'] = $email;
 
+                    ActivityLogger::logRegistration($username, $role);
+
                     header('Location: ?page=Home');
                     exit;
                 } else {
@@ -250,9 +264,12 @@ switch ($action) {
 
     case 'logout':
         if (!verify_csrf()) {
+            ActivityLogger::logCsrfFailure('logout');
             http_response_code(400);
             die('CSRF verification failed.');
         }
+        $logout_username = $_SESSION['username'] ?? 'unknown';
+        ActivityLogger::logLogout($logout_username);
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
@@ -271,10 +288,12 @@ switch ($action) {
             die('Method not allowed');
         }
         if (!is_admin()) {
+            ActivityLogger::logUnauthorizedAccess('page_save');
             http_response_code(403);
             die('Forbidden: only admins can modify pages.');
         }
         if (!verify_csrf()) {
+            ActivityLogger::logCsrfFailure('page_save');
             http_response_code(400);
             die('CSRF verification failed.');
         }
@@ -293,11 +312,13 @@ switch ($action) {
                     $upd->bind_param('ssi', $save_content, $excerpt, $row['id']);
                     $upd->execute();
                     $upd->close();
+                    ActivityLogger::logPageUpdate($save_page);
                 } else {
                     $ins = $conn->prepare('INSERT INTO pages (title, content, excerpt) VALUES (?, ?, ?)');
                     $ins->bind_param('sss', $save_page, $save_content, $excerpt);
                     $ins->execute();
                     $ins->close();
+                    ActivityLogger::logPageCreate($save_page);
                 }
                 $stmt->close();
             }
@@ -313,10 +334,12 @@ switch ($action) {
             die('Method not allowed');
         }
         if (!is_admin()) {
+            ActivityLogger::logUnauthorizedAccess('page_delete');
             http_response_code(403);
             die('Forbidden: only admins can delete pages.');
         }
         if (!verify_csrf()) {
+            ActivityLogger::logCsrfFailure('page_delete');
             http_response_code(400);
             die('CSRF verification failed.');
         }
@@ -332,6 +355,7 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
             $conn->close();
+            ActivityLogger::logPageDelete($del_page);
         }
         header('Location: ?page=Home');
         exit;
