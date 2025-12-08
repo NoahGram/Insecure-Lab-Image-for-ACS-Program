@@ -125,7 +125,8 @@ switch ($action) {
                             $ok = verify_password_override($password, $stored);
                         } else {
                             // Secure mode: only accept bcrypt/argon2 hashes
-                            $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
+                            // Note: $2b$ is bcrypt from Python/Ansible, $2y$ is bcrypt from PHP
+                            $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2b$') || str_starts_with($stored, '$argon2')))
                                 ? password_verify($password, $stored)
                                 : false;
                         }
