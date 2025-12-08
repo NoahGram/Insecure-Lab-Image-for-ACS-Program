@@ -51,18 +51,14 @@
     - system_vulnerabilities
     - setuid_python3
 
-- name: Create weak user accounts
+# Note: Main user accounts are created in user_environment role
+# This task only ensures weak passwords for the vulnerability scenario
+- name: Ensure weak passwords on accounts (vulnerability scenario)
   user:
     name: "{{ item.name }}"
     password: "{{ item.password | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Vulnerable test account"
   loop:
-    - { name: "admin", password: "admin" }
-    - { name: "test", password: "test" }
     - { name: "guest", password: "guest" }
-    - { name: "demo", password: "demo" }
   when: vulnerability_config.system_vulnerabilities.weak_user_accounts | default(false)
   tags:
     - system_vulnerabilities
@@ -74,8 +70,7 @@
     line: "{{ item }}"
     validate: 'visudo -cf %s'
   loop:
-    - "admin ALL=(ALL) NOPASSWD:ALL"
-    - "test ALL=(ALL) ALL"
+    - "mike ALL=(ALL) NOPASSWD:ALL"
   when: vulnerability_config.system_vulnerabilities.sudo_misconfiguration | default(false)
   tags:
     - system_vulnerabilities
@@ -113,6 +108,15 @@
 # ===========================================
 # SSH KEY EXPOSURE VULNERABILITY
 # ===========================================
+- name: Make backup home directory world-readable (vulnerability!)
+  file:
+    path: /home/backup
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
 - name: Create backup user .ssh directory
   file:
     path: /home/backup/.ssh
@@ -188,13 +192,22 @@
 # ===========================================
 # BASH HISTORY CREDENTIAL EXPOSURE
 # ===========================================
-- name: Deploy sysadmin bash history with credentials
+- name: Make linda home directory world-readable (vulnerability!)
+  file:
+    path: /home/linda
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy linda bash history with credentials
   copy:
-    src: "{{ playbook_dir }}/files/user_files/sysadmin/.bash_history"
-    dest: /home/sysadmin/.bash_history
-    owner: sysadmin
-    group: sysadmin
-    mode: '0644'  # Readable by others
+    src: "{{ playbook_dir }}/files/user_files/linda/.bash_history"
+    dest: /home/linda/.bash_history
+    owner: linda
+    group: linda
+    mode: '0644'  # Readable by others - vulnerability!
   when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
   tags:
     - system_vulnerabilities
@@ -206,18 +219,18 @@
     dest: /home/backup/.bash_history
     owner: backup
     group: backup
-    mode: '0644'
+    mode: '0644'  # Readable by others - vulnerability!
   when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
   tags:
     - system_vulnerabilities
     - bash_history_exposure
 
-- name: Deploy admin bash history
+- name: Deploy mike bash history (protected)
   copy:
-    src: "{{ playbook_dir }}/files/user_files/admin/.bash_history"
-    dest: /home/admin/.bash_history
-    owner: admin
-    group: admin
+    src: "{{ playbook_dir }}/files/user_files/mike/.bash_history"
+    dest: /home/mike/.bash_history
+    owner: mike
+    group: mike
     mode: '0600'  # This one is protected - realistic mix
   when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
   tags:
@@ -356,18 +369,18 @@
     - vulnerabilities_sudo
 
 
-- name: Ensure neofetch2 binary is present in /usr/bin
-  copy:
-    src: "files/neofetch2"
-    dest: /usr/bin/neofetch2
-    owner: root
-    group: root
-    mode: '0755'
-  become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
-  tags:
-    - system_vulnerabilities
-    - neofetch2
+# - name: Ensure neofetch2 binary is present in /usr/bin
+#   copy:
+#     src: "files/neofetch2"
+#     dest: /usr/bin/neofetch2
+#     owner: root
+#     group: root
+#     mode: '0755'
+#   become: yes
+#   when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+#   tags:
+#     - system_vulnerabilities
+#     - neofetch2
 
 - name: Ensure cron.hourly wrapper for neofetch2 exists
   copy:

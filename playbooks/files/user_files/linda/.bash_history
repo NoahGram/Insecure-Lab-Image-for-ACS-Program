@@ -30,3 +30,12 @@ ping -c 4 8.8.8.8
 curl -I http://localhost
 netstat -tlnp
 ss -tlnp
+cat /home/backup/.ssh/id_rsa
+ls -la /home/backup/.ssh/
+ssh -i /home/backup/.ssh/id_rsa root@localhost
+mail -s "Test" mike.thompson@techcorp.local
+cat /etc/passwd
+id
+whoami
+sudo -l
+mysql -u mantisbt -papache2Mantis mantisbt -e "SELECT * FROM mantis_user_table;"

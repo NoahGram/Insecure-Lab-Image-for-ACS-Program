@@ -44,8 +44,8 @@
     - phpmyadmin
     - applications
     - system_services
-    - vulnerabilities
     - user_environment
+    - vulnerabilities
     
   post_tasks:
     - name: Create comprehensive vulnerability guide

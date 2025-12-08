@@ -1,15 +1,23 @@
-[2025-11-15 09:15:23] INFO: Application startup initiated
-[2025-11-15 09:15:24] DEBUG: Database connection mysql://dbadmin:SecretDB_Pass2023@localhost:3306/proddb
-[2025-11-15 09:15:25] INFO: User authentication module loaded
-[2025-11-15 09:15:26] WARN: Failed login attempt for user: admin
-[2025-11-15 09:15:27] DEBUG: Admin credentials: admin / AdminPass123!
-[2025-11-15 09:15:28] INFO: SSH key backup: /home/backup/.ssh/id_rsa (password: backup_key_2023)
-[2025-11-15 09:15:29] ERROR: Failed to connect to LDAP server ldaps://ldap.corp.local
-[2025-11-15 09:15:30] DEBUG: LDAP bind: CN=svc-ldap,OU=Service,DC=corp,DC=local password: LDAPsvc_P@ss
-[2025-11-15 09:15:31] INFO: Application ready to serve requests
-[2025-11-15 09:20:45] WARN: Database backup started with credentials root:maria
-[2025-11-15 09:21:12] INFO: Backup completed to /var/backups/db_backup_20251115.sql
-[2025-11-15 09:25:33] DEBUG: API key for external service: 7f8d9e2a-4b6c-1234-9876-abcdef012345
-[2025-11-15 09:25:34] DEBUG: Gitea database: mysql://gitea:cup_of_tea@localhost:3306/gitea
-[2025-11-15 09:25:35] DEBUG: MantisBT database: mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
-[2025-11-15 09:30:15] ERROR: Permission denied accessing /etc/shadow (using sudo password: SudoPass456)
+[2024-12-01 09:15:23] INFO: TechCorp Application startup initiated
+[2024-12-01 09:15:24] DEBUG: Database connection mysql://root:maria@localhost:3306/techcorp_main
+[2024-12-01 09:15:25] INFO: User authentication module loaded
+[2024-12-01 09:15:26] WARN: Failed login attempt for user: mike.thompson
+[2024-12-01 09:15:27] DEBUG: Authenticating user mike with password ~RedHat~
+[2024-12-01 09:15:28] INFO: SSH key backup configured: /home/backup/.ssh/id_rsa
+[2024-12-01 09:15:29] DEBUG: Backup service account credentials: backup / Backup2024!
+[2024-12-01 09:15:30] INFO: Mail server connection established (postfix/dovecot)
+[2024-12-01 09:15:31] DEBUG: Mail domain: techcorp.local
+[2024-12-01 09:20:45] WARN: Database backup started with credentials root:maria
+[2024-12-01 09:21:12] INFO: Backup completed to /backup/db_backup_20241201.sql
+[2024-12-01 09:25:33] DEBUG: Internal API key for services: tc_api_2024_xxxxxxxxxxxx
+[2024-12-01 09:25:34] DEBUG: Gitea database: mysql://gitea:cup_of_tea@localhost:3306/gitea
+[2024-12-01 09:25:35] DEBUG: MantisBT database: mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
+[2024-12-01 09:25:36] DEBUG: Roundcube database: mysql://roundcube:roundcube_secure_pass@localhost:3306/roundcube
+[2024-12-01 09:30:15] INFO: Linda (l.sanchez) logged in from 192.168.56.1
+[2024-12-01 09:30:16] DEBUG: Linda's session created, password: Summer2024!
+[2024-12-01 09:45:00] INFO: Scheduled maintenance task running as root
+[2024-12-01 09:45:01] DEBUG: Cron job /opt/scripts/system-maintenance.sh executed
+[2024-12-01 10:00:00] ERROR: Unauthorized access attempt to /etc/shadow
+[2024-12-01 10:00:01] WARN: Review security - SSH key permissions too loose on backup user
+[2024-12-01 10:15:23] INFO: Guest user (intern@techcorp.local) logged in
+[2024-12-01 10:15:24] DEBUG: Guest credentials verified: guest / guest
