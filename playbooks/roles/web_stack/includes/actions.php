@@ -120,9 +120,15 @@ switch ($action) {
                         ActivityLogger::logAccountLocked($username);
                         $login_error = 'Account temporarily locked. Try again later.';
                     } else {
-                        $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
-                            ? password_verify($password, $stored)
-                            : false;
+                        // Check if vulnerability override exists (cryptographic_failures.php)
+                        if (function_exists('verify_password_override')) {
+                            $ok = verify_password_override($password, $stored);
+                        } else {
+                            // Secure mode: only accept bcrypt/argon2 hashes
+                            $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
+                                ? password_verify($password, $stored)
+                                : false;
+                        }
                         if ($ok) {
                             // Reset failed attempts
                             $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');
