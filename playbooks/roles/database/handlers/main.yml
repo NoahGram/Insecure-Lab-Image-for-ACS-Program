@@ -1,0 +1,13 @@
+---
+- name: Restart mariadb
+  service:
+    name: mariadb
+    state: restarted
+  become: yes
+
+- name: Reapply MariaDB root password after restart
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  become: yes

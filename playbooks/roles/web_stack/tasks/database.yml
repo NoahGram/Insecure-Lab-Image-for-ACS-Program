@@ -51,13 +51,18 @@
       ADD UNIQUE KEY IF NOT EXISTS username_unique (username);
   when: mysql_service is defined
 
-- name: Insert sample users
+- name: Insert or update sample users with proper password hashing
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
     login_db: testdb
-    query: "INSERT IGNORE INTO users (id, username, password, email, role)
-            VALUES ({{ item.id }}, '{{ item.username }}', '{{ item.password }}', '{{ item.email }}', '{{ item.role }}');"
+    query: "INSERT INTO users (id, username, password, email, role)
+            VALUES ({{ item.id }}, '{{ item.username }}', '{{ (vulnerable_mode | default(false)) |
+            ternary(item.password, item.password | password_hash('bcrypt')) }}', '{{ item.email }}', '{{ item.role }}')
+            ON DUPLICATE KEY UPDATE 
+            password = '{{ (vulnerable_mode | default(false)) | ternary(item.password, item.password | password_hash('bcrypt')) }}',
+            email = '{{ item.email }}',
+            role = '{{ item.role }}';"
   loop:
     - { id: 1, username: 'admin', role: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local' }
     - { id: 2, username: 'jane',  role: 'user', password: 'Jane@Secure456!',  email: 'jane@portal.local' }
@@ -86,4 +91,26 @@
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
       VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');
+  when: mysql_service is defined
+
+- name: Create activity_logs table for monitoring
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: testdb
+    query: |
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        username VARCHAR(100),
+        ip_address VARCHAR(45),
+        action VARCHAR(50),
+        details TEXT,
+        severity VARCHAR(20) DEFAULT 'info',
+        user_agent TEXT,
+        INDEX idx_timestamp (timestamp),
+        INDEX idx_username (username),
+        INDEX idx_action (action),
+        INDEX idx_severity (severity)
+      );
   when: mysql_service is defined

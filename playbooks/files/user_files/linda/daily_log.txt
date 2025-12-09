@@ -1,0 +1,78 @@
+# ============================================
+# TechCorp Solutions - System Administration Log
+# Linda Sanchez - Senior Sysadmin
+# linda.sanchez@techcorp.local
+# ============================================
+
+## Week of December 2-8, 2024
+
+### Monday 2024-12-02
+- [x] Morning health check - all services running
+- [x] Deployed new lab environment via Ansible
+- [x] Configured Postfix/Dovecot for internal mail
+- [x] Setup Roundcube webmail interface
+- [x] Verified backup cron jobs running
+
+Security concerns reported to Mike:
+1. Backup user SSH key has 0644 permissions (should be 0600)
+2. /opt/scripts/system-maintenance.sh is world-writable
+3. Some users still have weak passwords
+
+### Tuesday 2024-12-03
+- [x] Apache configuration review
+- [x] MySQL performance tuning
+- [x] Gitea update to latest version
+- [ ] Security hardening - WAITING ON MIKE'S APPROVAL
+
+Noticed in bash history - need to stop typing passwords inline!
+mysql -u root -pmaria ... BAD HABIT
+
+### Wednesday 2024-12-04
+- [x] Log rotation setup
+- [x] Disk space audit (78% used on /var)
+- [x] Backup verification - all databases backed up
+
+### Thursday 2024-12-05
+- [x] Network connectivity tests
+- [x] SSL certificate review (using snakeoil - need real certs)
+- [x] User account audit
+
+Current Users:
+- mike (IT Manager) - full access
+- linda (me) - sysadmin access  
+- backup (service) - backup operations
+- guest (intern) - limited access
+- vagrant (provisioning) - locked, SSH only
+
+### Friday 2024-12-06
+- [x] End of week backup verification
+- [x] Security log review
+- [ ] Document all service credentials (ask Mike for master list)
+
+## Known Issues Tracker
+
+| Issue | Priority | Status | Owner |
+|-------|----------|--------|-------|
+| Weak SSH key permissions | HIGH | Open | Mike |
+| World-writable scripts | HIGH | Open | Mike |
+| Default passwords in use | MEDIUM | Open | All |
+| Plaintext passwords in history | LOW | Open | Self |
+
+## Quick Reference
+
+Service Status Check:
+```bash
+systemctl status apache2 mysql postfix dovecot gitea
+```
+
+Database Connections:
+- MySQL root: maria (change this!)
+- Gitea DB: gitea / cup_of_tea
+- Mantis DB: mantisbt / apache2Mantis
+
+Emergency Contact:
+- Mike Thompson: mike.thompson@techcorp.local
+- Security Team: security@techcorp.local
+
+---
+Reminder: Clean up bash_history - stop typing passwords!

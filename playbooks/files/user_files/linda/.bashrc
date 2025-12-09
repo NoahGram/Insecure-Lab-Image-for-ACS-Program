@@ -1,5 +1,6 @@
-# System Administrator Profile
-# Senior level system administration account
+# TechCorp Solutions - Linda Sanchez Profile
+# Senior System Administrator
+# linda.sanchez@techcorp.local
 
 # Advanced aliases
 alias ll='ls -la'
@@ -36,8 +37,8 @@ alias connections='ss -tuln'
 alias lastlog='lastlog | grep -v "Never"'
 alias failed_logins='grep "Failed password" /var/log/auth.log'
 
-# Powerful admin prompt (red with privileges indicator)
-export PS1='\[\033[01;31m\][SYSADMIN]\[\033[00m\] \[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+# Sysadmin prompt (cyan)
+export PS1='\[\033[01;36m\][linda@techcorp]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 
 # Extended PATH for admin tools  
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -45,7 +46,11 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # History settings for audit trail
 export HISTSIZE=50000
 export HISTFILESIZE=100000
-export HISTTIMEFORMAT="%d/%m/%y %T "
+export HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S "
+
+# Welcome message
+echo "Welcome Linda - TechCorp Senior Sysadmin"
+echo "Email: linda.sanchez@techcorp.local"
 
 # Auto-completion
 if [ -f /etc/bash_completion ]; then

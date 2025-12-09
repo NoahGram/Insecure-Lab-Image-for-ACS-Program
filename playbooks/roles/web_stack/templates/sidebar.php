@@ -7,7 +7,7 @@
         <li><strong>Email:</strong> <?= htmlspecialchars($_SESSION['email'] ?? 'Not set'); ?></li>
         <li><strong>Role:</strong> <?= htmlspecialchars($_SESSION['role'] ?? 'user'); ?></li>
       </ul>
-      <p class="small muted"><a href="?page=Home">Go to Home page</a></p>
+      <p class="small muted"><a href="?action=profile">View Profile</a> | <a href="?page=Home">Home</a></p>
       <p class="small muted">You can now access all pages and search the wiki.</p>
     <?php else: ?>
       <h4>Welcome, Guest!</h4>
