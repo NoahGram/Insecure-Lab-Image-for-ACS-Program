@@ -45,7 +45,6 @@
     - phpmyadmin
     - applications
     - system_services
-    - vulnerabilities
     - user_environment
     
   post_tasks:

@@ -2,56 +2,6 @@
 # Vulnerabilities Role - Granular vulnerability controls based on profile configuration
 # Each vulnerability type can be individually enabled/disabled using profile settings
 
-# ===========================================
-# CLEANUP VULNERABILITIES
-# ===========================================
-
-- name: Force cleanup of all vulnerability files for clean deployment
-  block:
-    - name: Remove entire vulnerability override directory
-      file:
-        path: /var/www/roles/vulnerabilities/web_stack
-        state: absent
-    
-    - name: Reset database passwords to secure defaults
-      mysql_query:
-        login_user: root
-        login_password: "{{ mysql_root_password }}"
-        login_db: testdb
-        query: |
-          UPDATE users SET password = '{{ item.password }}'
-          WHERE username = '{{ item.username }}';
-      loop:
-        - { username: 'admin', password: 'Admin@Secure123!' }
-        - { username: 'jane', password: 'Jane@Secure456!' }
-        - { username: 'guest', password: 'Guest@Secure789!' }
-      ignore_errors: yes
-  when: not (vulnerable_mode | default(false))
-  tags:
-    - cleanup
-
-# ===========================================
-# SELECTIVE CLEANUP VULNERABILITIES
-# ===========================================
-
-- name: Remove API vulnerability files when individually disabled
-  file:
-    path: "/var/www/roles/vulnerabilities/web_stack/{{ item.file }}"
-    state: absent
-  loop:
-    - { file: 'ssrf.php', enabled: "{{ vulnerability_config.api_vulnerabilities.ssrf | default(false) }}" }
-    - { file: 'exposed_diagnostics.php', enabled: "{{ vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) }}" }
-    - { file: 'exposed_test_endpoints.php', enabled: "{{ vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) }}" }
-    - { file: 'insecure_tokens.php', enabled: "{{ vulnerability_config.api_vulnerabilities.insecure_tokens | default(false) }}" }
-    - { file: 'verbose_error_messages.php', enabled: "{{ vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false) }}" }
-  when: 
-    - vulnerable_mode | default(false)
-    - not item.enabled
-  tags:
-    - cleanup
-    - selective_cleanup
-    - api_vulnerabilities
-    
 # NOTE: Individual vulnerability files removed - LabSys Wiki now provides comprehensive web vulnerability testing
 
 - name: Configure PHP to display errors
@@ -463,6 +413,7 @@
         dest: "{{ vulnerabilities_sudo_download_dest }}"
         mode: '0644'
         force: no
+        timeout: 60
 
     - name: Extract sudo source
       unarchive:
