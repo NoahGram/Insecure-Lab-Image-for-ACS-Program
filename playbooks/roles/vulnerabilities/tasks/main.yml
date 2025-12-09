@@ -16,6 +16,7 @@
     - { regexp: '^error_reporting\s*=', line: 'error_reporting = E_ALL' }
     - { regexp: '^log_errors\s*=', line: 'log_errors = On' }
     - { regexp: '^error_log\s*=', line: 'error_log = /var/log/php_errors.log' }
+  when: vulnerable_mode | default(false)
   notify: restart apache
   tags: php_errors
 

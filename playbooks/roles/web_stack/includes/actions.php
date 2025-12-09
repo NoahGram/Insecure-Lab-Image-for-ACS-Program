@@ -6,7 +6,6 @@ require_once __DIR__ . '/logger.php';
 $action = $_REQUEST['action'] ?? 'view';
 $page = $_REQUEST['page'] ?? 'Home';
 
-// Load vulnerability files BEFORE starting the session
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
     '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php',
