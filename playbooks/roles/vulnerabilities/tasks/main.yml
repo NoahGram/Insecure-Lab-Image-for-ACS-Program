@@ -519,7 +519,7 @@
 
 - name: Create sample vulnerable database and data
   mysql_db:
-    name: testdb
+    name: wikidb
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -532,7 +532,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -550,7 +550,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       INSERT IGNORE INTO users (id, username, password, email, role) VALUES
       (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
@@ -643,15 +643,29 @@
     - system_vulnerabilities
     - exposed_logs
 
+# NO LOGIN LOCK
+
 - name: Deploy no login lock vulnerability override
   copy:
     src: files/no_login_lock.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_login_lock.php
+    dest: /var/www/html/labsys-wiki/includes/modules/login_helpers.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
 
+- name: Remove failed_attempts and last_failed columns in vulnerable mode
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS failed_attempts,
+        DROP COLUMN IF EXISTS last_failed;
+  when: vulnerable_mode | default(false)
+
+  # NO PASSWORD VALIDATION
 
 - name: Deploy no client side password validation
   copy:
@@ -721,7 +735,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';

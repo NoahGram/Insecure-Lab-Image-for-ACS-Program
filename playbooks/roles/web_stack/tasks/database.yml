@@ -13,9 +13,9 @@
   register: mysql_service
   ignore_errors: yes
 
-- name: Ensure testdb database exists
+- name: Ensure wikidb database exists
   mysql_db:
-    name: testdb
+    name: wikidb
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -25,7 +25,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +39,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       ALTER TABLE users
       MODIFY COLUMN username VARCHAR(100) NOT NULL,
@@ -55,7 +55,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: "INSERT INTO users (id, username, password, email, role)
             VALUES ({{ item.id }}, '{{ item.username }}', '{{ (vulnerable_mode | default(false)) |
             ternary(item.password, item.password | password_hash('bcrypt')) }}', '{{ item.email }}', '{{ item.role }}')
@@ -73,7 +73,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       CREATE TABLE IF NOT EXISTS pages (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -87,7 +87,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
       VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');
@@ -97,7 +97,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       CREATE TABLE IF NOT EXISTS activity_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,

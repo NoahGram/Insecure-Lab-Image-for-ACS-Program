@@ -69,35 +69,10 @@ class ActivityLogger {
     }
     
     /**
-     * Log a failed login attempt
-     */
-    public static function logFailedLogin(string $username, int $attempt_count): void {
-        $severity = ($attempt_count >= 3) ? self::WARNING : self::INFO;
-        self::log(
-            'login_failed', 
-            "Failed login attempt #{$attempt_count}", 
-            $severity, 
-            $username
-        );
-    }
-    
-    /**
-     * Log an account lockout
-     */
-    public static function logAccountLocked(string $username): void {
-        self::log(
-            'account_locked', 
-            "Account locked due to too many failed login attempts", 
-            self::SECURITY, 
-            $username
-        );
-    }
-    
-    /**
      * Log a logout
      */
     public static function logLogout(string $username): void {
-        self::log('logout', "User logged out", self::INFO, $username);
+        ActivityLogger::log('logout', "User logged out", ActivityLogger::INFO, $username);
     }
     
     /**

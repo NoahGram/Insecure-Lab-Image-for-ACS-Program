@@ -2,12 +2,12 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/logger.php';
+require_once __DIR__ . '/modules/login_helpers.php';
 
 $action = $_REQUEST['action'] ?? 'view';
 $page = $_REQUEST['page'] ?? 'Home';
 
 $vuln_files = [
-    '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
     '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
@@ -54,15 +54,6 @@ if (!function_exists('verify_csrf')) {
             return false;
         }
         return is_string($sent) && hash_equals((string) $stored, (string) $sent);
-    }
-}
-
-if (!function_exists('is_account_locked')) {
-    function is_account_locked(int $failed_attempts, ?int $last_failed): bool
-    {
-        $lockout_time = 15 * 60;
-        $max_attempts = 5;
-        return $failed_attempts >= $max_attempts && (time() - ($last_failed ?? 0)) < $lockout_time;
     }
 }
 
@@ -120,20 +111,16 @@ switch ($action) {
 
             $conn = db_connect();
 
-            if ($conn && $stmt = $conn->prepare('SELECT id, username, password, email, role, failed_attempts, last_failed FROM users WHERE username=? LIMIT 1')) {
+            if ($conn && $stmt = $conn->prepare('SELECT * FROM users WHERE username=? LIMIT 1')) {
                 $stmt->bind_param('s', $username);
                 $stmt->execute();
                 $res = $stmt->get_result();
 
                 if ($row = $res->fetch_assoc()) {
                     $stored = $row['password'];
-                    $failed_attempts = (int) $row['failed_attempts'];
-                    $last_failed = $row['last_failed'] ? strtotime($row['last_failed']) : 0;
-
-                    if (is_account_locked($failed_attempts, $last_failed)) {
-                        ActivityLogger::logAccountLocked($username);
-                        $login_error = 'Account temporarily locked. Try again later.';
-                    } else {
+                    $status = check_account_status($row, $username);
+                    $login_error = $status['login_error'];
+                    if ($status['ok']) {
                         // Check if vulnerability override exists (cryptographic_failures.php)
                         if (function_exists('verify_password_override')) {
                             $ok = verify_password_override($password, $stored);
@@ -145,11 +132,7 @@ switch ($action) {
                                 : false;
                         }
                         if ($ok) {
-                            // Reset failed attempts
-                            $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');
-                            $stmt2->bind_param('i', $row['id']);
-                            $stmt2->execute();
-                            $stmt2->close();
+                            handle_successful_login($conn, $row['id'], $row['username']);
 
                             // --- SESSION FIXATION PROTECTION ---
                             if (function_exists('session_regenerate_id_override')) {
@@ -157,16 +140,13 @@ switch ($action) {
                             } else {
                                 session_regenerate_id(true);
                             }
-                            // Regenerate CSRF token for the new session
-                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
+                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                             $_SESSION['username'] = $row['username'];
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'];
 
-                            ActivityLogger::logLogin($row['username']);
-
-                            //Generate and expose API token if insecure_tokens is loaded
+                            // Optional API token handling
                             if (function_exists('generate_insecure_api_token')) {
                                 $api_token = generate_insecure_api_token($row);
                                 $_SESSION['api_token'] = $api_token;
@@ -177,20 +157,10 @@ switch ($action) {
                             header('Location: ?page=' . rawurlencode($page));
                             exit;
                         } else {
-                            // Increment failed attempts
-                            $failed_attempts++;
-                            $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=?, last_failed=NOW() WHERE id=?');
-                            $stmt2->bind_param('ii', $failed_attempts, $row['id']);
-                            $stmt2->execute();
-                            $stmt2->close();
-
-                            ActivityLogger::logFailedLogin($username, $failed_attempts);
-
-                            $login_error = 'Invalid username or password.';
+                            $login_error = handle_failed_login($conn, $row['id'], $username, $row);
                         }
                     }
                 } else {
-                    ActivityLogger::logFailedLogin($username, 1);
                     $login_error = 'Invalid username or password.';
                 }
 
