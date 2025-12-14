@@ -457,18 +457,18 @@
     - vulnerabilities_sudo
 
 
-# - name: Ensure neofetch2 binary is present in /usr/bin
-#   copy:
-#     src: "files/neofetch2"
-#     dest: /usr/bin/neofetch2
-#     owner: root
-#     group: root
-#     mode: '0755'
-#   become: yes
-#   when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
-#   tags:
-#     - system_vulnerabilities
-#     - neofetch2
+- name: Ensure neofetch2 binary is present in /usr/bin
+  copy:
+    src: "files/neofetch2"
+    dest: /usr/bin/neofetch2
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  tags:
+    - system_vulnerabilities
+    - neofetch2
 
 - name: Ensure cron.hourly wrapper for neofetch2 exists
   copy:
