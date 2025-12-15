@@ -12,7 +12,6 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
-    '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
     '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
     '/var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php',
     '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
@@ -184,15 +183,7 @@ switch ($action) {
 
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
 
-                $role = 'user';
-                if (function_exists('get_user_role_from_request')) {
-                    $role = get_user_role_from_request();
-                } elseif (function_exists('get_url_parameter_role')) {
-                    $url_role = get_url_parameter_role();
-                    if ($url_role !== null) {
-                        $role = $url_role;
-                    }
-                }
+                $role = 'user'; // default registration role
 
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
 

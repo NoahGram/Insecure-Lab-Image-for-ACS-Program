@@ -1,9 +1,5 @@
 <h2 class="page-title">Register</h2>
 <div class="login-box">
-<?php
-// Check if hidden role field vulnerability is enabled
-$hidden_role_enabled = is_readable('/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php');
-?>
 
 <script src="assets/js/register.js"></script>
 
@@ -28,10 +24,6 @@ $hidden_role_enabled = is_readable('/var/www/roles/vulnerabilities/web_stack/hid
 
       <label for="email" style="margin-top:8px">Email</label>
       <input id="email" name="email" type="email" required>
-
-      <?php if ($hidden_role_enabled): ?>
-      <input type="hidden" name="role" value="user">
-      <?php endif; ?>
 
       <div style="margin-top:8px">
         <button class="btn" type="submit">Register</button>

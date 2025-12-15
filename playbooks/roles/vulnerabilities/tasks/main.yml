@@ -682,6 +682,31 @@
     state: absent
   when: vulnerable_mode | default(false)
 
+# Hidden Field
+
+- name: Add hidden role field
+  blockinfile:
+    path: /var/www/html/labsys-wiki/templates/register.php
+    marker: ""
+    insertafter: '<input id="email" name="email" type="email" required>'
+    block: |
+      <input type="hidden" name="role" value="user">
+  when: vulnerable_mode | default(false)
+
+- name: Enable vulnerable role assignment
+  replace:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "\\$role\\s*=\\s*'user';\\s*// default registration role"
+    replace: |
+      $role = $_REQUEST['role'] ?? 'user';
+
+      $allowed_roles = ['user', 'admin'];
+      if (!in_array($role, $allowed_roles, true)) {
+          $role = 'user';
+      }
+  when: vulnerable_mode | default(false)
+
+
 # CSRF
 
 - name: Deploy disable CSRF vulnerability override
@@ -706,15 +731,6 @@
   copy:
     src: files/disable_session_regenerate.php
     dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-- name: Deploy hidden role field vulnerability override
-  copy:
-    src: files/hidden_role_field.php
-    dest: /var/www/roles/vulnerabilities/web_stack/hidden_role_field.php
     owner: www-data
     group: www-data
     mode: '0644'
