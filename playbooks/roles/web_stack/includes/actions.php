@@ -18,6 +18,7 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
     '/var/www/roles/vulnerabilities/web_stack/insecure_tokens.php',
     '/var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php',
+    '/var/www/roles/vulnerabilities/web_stack/xss_stored.php',
     "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 
