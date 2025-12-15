@@ -111,7 +111,23 @@
   tags:
     - api_vulnerabilities
     - verbose_error_messages
-  
+
+# ===========================================
+# WEB VULNERABILITIES (XSS, etc.)
+# ===========================================
+
+- name: Deploy stored XSS vulnerability
+  copy:
+    src: files/web/xss_stored.php
+    dest: /var/www/roles/vulnerabilities/web_stack/xss_stored.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
+  tags:
+    - web_vulnerabilities
+    - xss
+
 # ===========================================
 # SYSTEM VULNERABILITIES
 # ===========================================
