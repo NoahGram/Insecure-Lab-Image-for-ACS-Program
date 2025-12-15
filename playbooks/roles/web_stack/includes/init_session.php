@@ -5,7 +5,7 @@ $cookie_params = [
     'domain' => '',
     'secure' => isset($_SERVER['HTTPS']),
     'httponly' => true,
-    'samesite' => 'None'
+    'samesite' => 'Lax'
 ];
 
 session_set_cookie_params($cookie_params);

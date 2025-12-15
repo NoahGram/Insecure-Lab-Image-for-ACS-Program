@@ -682,7 +682,22 @@
     state: absent
   when: vulnerable_mode | default(false)
 
-# Hidden Field
+- name: Set insecure passwords in database for vulnerable deployment
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      UPDATE users SET password = '{{ item.password }}'
+      WHERE username = '{{ item.username }}';
+  loop:
+    - { username: 'admin', password: 'admin' }
+    - { username: 'jane', password: 'jane' }
+    - { username: 'guest', password: 'guest' }
+  ignore_errors: yes
+  when: vulnerable_mode | default(false)
+
+# HIDDEN FIELD
 
 - name: Add hidden role field
   blockinfile:
@@ -706,59 +721,70 @@
       }
   when: vulnerable_mode | default(false)
 
+# EDITABLE URL PARAMETER
 
-# CSRF
-
-- name: Deploy disable CSRF vulnerability override
+- name: Deploy editable url paramater
   copy:
-    src: files/disable_csrf.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_csrf.php
+    src: files/editable_url_parameters.php
+    dest: /var/www/html/labsys-wiki/includes/modules/authorization.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
+
+# CSRF
 
 - name: Deploy disable session cookies vulnerability override
   copy:
     src: files/disable_session_cookies.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php
+    dest: /var/www/html/labsys-wiki/includes/init_session.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
 
-- name: Deploy disable session regenerate vulnerability override
-  copy:
-    src: files/disable_session_regenerate.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
+- name: Remove csrf protection
+  file:
+    path: /var/www/html/labsys-wiki/includes/modules/csrf_protection.php
+    state: absent
   when: vulnerable_mode | default(false)
 
-- name: Deploy editable url paramater override
-  copy:
-    src: files/editable_url_parameters.php
-    dest: /var/www/roles/vulnerabilities/web_stack/editable_url_parameters.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
+- name: Remove all enforce_csrf() calls in vulnerable mode
+  replace:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*enforce_csrf\\(\\s*'[^']*'\\s*\\);\\s*$"
+    replace: ""
   when: vulnerable_mode | default(false)
 
-- name: Set insecure passwords in database for vulnerable deployment
-  mysql_query:
-    login_user: root
-    login_password: "{{ mysql_root_password }}"
-    login_db: wikidb
-    query: |
-      UPDATE users SET password = '{{ item.password }}'
-      WHERE username = '{{ item.username }}';
+- name: Remove CSRF token generation in vulnerable mode
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*\\$_SESSION\\['csrf_token'\\]\\s*=\\s*bin2hex\\(random_bytes\\(32\\)\\);\\s*$"
+    state: absent
+  when: vulnerable_mode | default(false)
+
+- name: Remove any line containing csrf_field() in vulnerable mode
+  lineinfile:
+    path: "/var/www/html/labsys-wiki/{{ item }}"
+    regexp: "csrf_field\\s*\\("
+    state: absent
   loop:
-    - { username: 'admin', password: 'admin' }
-    - { username: 'jane', password: 'jane' }
-    - { username: 'guest', password: 'guest' }
-  ignore_errors: yes
+    - templates/register.php
+    - templates/login.php
+    - templates/edit.php
+    - index.php
   when: vulnerable_mode | default(false)
+
+# SESSION FIXATION
+
+- name: Remove session_regenerate_id(true) calls in vulnerable mode
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: '^\s*session_regenerate_id\s*\(\s*true\s*\)\s*;\s*$'
+    state: absent
+  when: vulnerable_mode | default(false)
+
+# CRYPTOGRAPHIC FAILURES
 
 - name: Enable vulnerable Cryptographic Failures with weak hashing algorithms
   copy:

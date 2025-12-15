@@ -1,17 +1,16 @@
 <?php
+require_once __DIR__ . '/init_session.php';
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/modules/login_helpers.php';
 require_once __DIR__ . '/modules/password_validation.php';
+require_once __DIR__ . '/modules/output_escaping.php';
+require_once __DIR__ . '/modules/authorization.php';
 
 $action = $_REQUEST['action'] ?? 'view';
 $page = $_REQUEST['page'] ?? 'Home';
 
 $vuln_files = [
-    '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php',
-    '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
-    '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
     '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
     '/var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php',
     '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
@@ -26,47 +25,12 @@ foreach ($vuln_files as $file) {
     }
 }
 
-// --- CSRF helpers ---
-if (!function_exists('csrf_token')) {
-    function csrf_token(): string
-    {
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION['csrf_token'];
-    }
-}
-
-if (!function_exists('csrf_field')) {
-    function csrf_field(): string
-    {
-        return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
-    }
-}
-
-if (!function_exists('verify_csrf')) {
-    function verify_csrf(): bool
-    {
-        $sent = $_REQUEST['csrf_token'] ?? '';
-        $stored = $_SESSION['csrf_token'] ?? '';
-        if (empty($stored)) {
-            return false;
-        }
-        return is_string($sent) && hash_equals((string) $stored, (string) $sent);
-    }
-}
-
 // --- ACTIONS ---
 switch ($action) {
 
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!verify_csrf()) {
-                ActivityLogger::logCsrfFailure('login');
-                http_response_code(400);
-                header_remove('Set-Cookie');
-                die('CSRF verification failed.');
-            }
+            enforce_csrf('login');
 
             $username = $_POST['username'] ?? '';
             $password = $_POST['password'] ?? '';
@@ -96,12 +60,7 @@ switch ($action) {
                         if ($ok) {
                             handle_successful_login($conn, $row['id'], $row['username']);
 
-                            // --- SESSION FIXATION PROTECTION ---
-                            if (function_exists('session_regenerate_id_override')) {
-                                session_regenerate_id_override();
-                            } else {
-                                session_regenerate_id(true);
-                            }
+                            session_regenerate_id(true);
 
                             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                             $_SESSION['username'] = $row['username'];
@@ -137,12 +96,7 @@ switch ($action) {
     case 'register':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-            if (!verify_csrf()) {
-                ActivityLogger::logCsrfFailure('register');
-                http_response_code(400);
-                header_remove('Set-Cookie');
-                die('CSRF verification failed.');
-            }
+            enforce_csrf('register');
 
             $username = trim($_POST['username'] ?? '');
             $password = trim($_POST['password'] ?? '');
@@ -188,12 +142,9 @@ switch ($action) {
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
 
                 if ($stmt->execute()) {
-                    // --- SESSION FIXATION PROTECTION ---
-                    if (function_exists('session_regenerate_id_override')) {
-                        session_regenerate_id_override();
-                    } else {
-                        session_regenerate_id(true);
-                    }
+ 
+                    session_regenerate_id(true);
+
                     $_SESSION['username'] = $username;
                     $_SESSION['role'] = $role;
                     $_SESSION['email'] = $email;
@@ -215,12 +166,8 @@ switch ($action) {
         break;
 
     case 'logout':
-        if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('logout');
-            http_response_code(400);
-            header_remove('Set-Cookie');
-            die('CSRF verification failed.');
-        }
+        enforce_csrf('logout');
+
         $logout_username = $_SESSION['username'] ?? 'unknown';
         ActivityLogger::logLogout($logout_username);
         $_SESSION = [];
@@ -250,12 +197,7 @@ switch ($action) {
             http_response_code(403);
             die('Forbidden: only admins can modify pages.');
         }
-        if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('page_save');
-            http_response_code(400);
-            header_remove('Set-Cookie');
-            die('CSRF verification failed.');
-        }
+        enforce_csrf('page_save');
 
         $save_page = $_POST['page'] ?? 'Home';
         $save_content = $_POST['content'] ?? '';
@@ -297,12 +239,8 @@ switch ($action) {
             http_response_code(403);
             die('Forbidden: only admins can delete pages.');
         }
-        if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('page_delete');
-            http_response_code(400);
-            header_remove('Set-Cookie');
-            die('CSRF verification failed.');
-        }
+
+        enforce_csrf('page_delete');
 
         $del_page = $_POST['page'] ?? '';
         if ($del_page === 'Home') {
