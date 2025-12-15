@@ -406,7 +406,6 @@
         name: "{{ vulnerabilities_sudo_build_deps }}"
         state: present
         update_cache: yes
-      become: yes
 
     - name: Download vulnerable sudo tarball
       get_url:
@@ -415,6 +414,7 @@
         mode: '0644'
         force: no
         timeout: 60
+      register: sudo_download
 
     - name: Extract sudo source
       unarchive:
