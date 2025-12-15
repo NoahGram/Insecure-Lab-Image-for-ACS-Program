@@ -1,155 +1,37 @@
 ---
 # User Environment Setup Tasks
-# Creates realistic TechCorp Solutions user environment for pentesting training
-# Domain: techcorp.local
+# Creates realistic user home directories with appropriate files
 
-# ===========================================
-# USER GROUPS (Realistic Enterprise Structure)
-# ===========================================
-
-- name: Create enterprise user groups
-  group:
+- name: Create missing users for environment setup
+  user:
     name: "{{ item }}"
+    password: "{{ item | password_hash('sha512') }}"
+    shell: /bin/bash
+    create_home: yes
+    comment: "Environment user account"
     state: present
   loop:
-    - it-department
-    - operations
-    - backup-operators
-  tags:
-    - user_environment
-    - groups
-
-# ===========================================
-# SYSTEM USERS
-# ===========================================
-
-# Guest - Entry point for students
-- name: Ensure guest user exists
-  user:
-    name: guest
-    password: "{{ 'guest' | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "TechCorp Guest Account - Intern Access"
-    state: present
+    - admin
+    - test
+    - demo
+  ignore_errors: yes  # Allow if users already exist
   tags:
     - user_environment
 
-# Mike Thompson - IT Manager (was: admin)
-- name: Create mike user (IT Manager)
-  user:
-    name: mike
-    password: "{{ '~RedHat~' | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Mike Thompson - IT Manager"
-    groups: it-department
-    append: yes
-    state: present
-  tags:
-    - user_environment
-
-# Linda Sanchez - Senior Sysadmin (was: sysadmin)
-- name: Create linda user (Senior Sysadmin)
-  user:
-    name: linda
-    password: "{{ 'Summer2024!' | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Linda Sanchez - Senior System Administrator"
-    groups: it-department,operations
-    append: yes
-    state: present
-  tags:
-    - user_environment
-
-# Backup service account
-- name: Create backup user (Backup Operator)
-  user:
-    name: backup
-    password: "{{ 'Backup2024!' | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Automated Backup Service Account"
-    groups: backup-operators
-    append: yes
-    state: present
-  tags:
-    - user_environment
-
-# ===========================================
-# VAGRANT USER LOCKDOWN (Keep functional for Ansible)
-# ===========================================
-
-- name: Lock vagrant password for interactive login
-  user:
-    name: vagrant
-    password_lock: yes
-  ignore_errors: yes
-  tags:
-    - user_environment
-    - vagrant_lockdown
-
-- name: Create vagrant discovery artifact in /var/log
-  copy:
-    dest: /var/log/vagrant_provision.log
-    mode: '0644'
-    owner: root
-    group: root
-    content: |
-      ========================================
-      VAGRANT PROVISIONING LOG
-      ========================================
-      Date: {{ ansible_date_time.iso8601 }}
-      Vagrant Version: 2.4.x
-      Provider: VMware/VirtualBox
-      Box: ubuntu/noble64
-      
-      This VM was provisioned using Vagrant for automated
-      deployment. The vagrant user exists for provisioning
-      purposes only.
-      
-      SSH Key Location: /home/vagrant/.ssh/authorized_keys
-      
-      ========================================
-  tags:
-    - user_environment
-    - vagrant_lockdown
-
-- name: Create hint file in vagrant home
-  copy:
-    dest: /home/vagrant/README.txt
-    mode: '0644'
-    owner: vagrant
-    group: vagrant
-    content: |
-      ╔══════════════════════════════════════════════════════════════╗
-      ║  VAGRANT PROVISIONING ACCOUNT                                ║
-      ╠══════════════════════════════════════════════════════════════╣
-      ║  This account is used for automated VM provisioning.         ║
-      ║  Password login is disabled.                                 ║
-      ╚══════════════════════════════════════════════════════════════╝
-  ignore_errors: yes
-  tags:
-    - user_environment
-    - vagrant_lockdown
-
-# ===========================================
-# HOME DIRECTORY STRUCTURE
-# ===========================================
-
-- name: Ensure user home directories exist with correct permissions
+- name: Ensure user home directories exist
   file:
-    path: "/home/{{ item.user }}"
+    path: "/home/{{ item }}"
     state: directory
-    owner: "{{ item.user }}"
-    group: "{{ item.user }}"
-    mode: "{{ item.mode }}"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0755'
   loop:
-    - { user: "guest", mode: "0755" }
-    - { user: "mike", mode: "0750" }
-    - { user: "linda", mode: "0750" }
-    - { user: "backup", mode: "0750" }
+    - admin
+    - test
+    - guest
+    - demo
+    - sysadmin
+    - backup
   tags:
     - user_environment
 
@@ -161,21 +43,17 @@
     group: "{{ item.user }}"
     mode: '0755'
   loop:
-    # Mike (IT Manager)
-    - { user: "mike", dir: "scripts" }
-    - { user: "mike", dir: "reports" }
-    # Linda (Sysadmin)
-    - { user: "linda", dir: "docs" }
-    - { user: "linda", dir: "runbooks" }
-    - { user: "linda", dir: "configs" }
-    # Backup service
+    - { user: "demo", dir: "demo_files" }
+    - { user: "test", dir: "projects" }
+    - { user: "test", dir: "scripts" }
+    - { user: "test", dir: "temp" }
+    - { user: "test", dir: "logs" }
+    - { user: "sysadmin", dir: "docs" }
+    - { user: "sysadmin", dir: "runbooks" }
+    - { user: "sysadmin", dir: "configs" }
     - { user: "backup", dir: "backup_configs" }
   tags:
     - user_environment
-
-# ===========================================
-# USER FILES - BASHRC
-# ===========================================
 
 - name: Copy user bashrc files
   copy:
@@ -185,29 +63,43 @@
     group: "{{ item }}"
     mode: '0644'
   loop:
+    - admin
+    - test
     - guest
-    - mike
-    - linda
+    - demo
+    - sysadmin
     - backup
   tags:
     - user_environment
 
-- name: Fix line endings in bashrc files (Windows CRLF to Unix LF)
-  replace:
-    path: "/home/{{ item }}/.bashrc"
-    regexp: '\r'
-    replace: ''
+- name: Copy admin user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/admin/{{ item.src }}"
+    dest: "/home/admin/{{ item.dest }}"
+    owner: admin
+    group: admin
+    mode: "{{ item.mode }}"
   loop:
-    - guest
-    - mike
-    - linda
-    - backup
+    - { src: "backup_script.sh", dest: "backup_script.sh", mode: "0755" }
+    - { src: "admin_notes.txt", dest: "admin_notes.txt", mode: "0644" }
+    - { src: "credentials.txt", dest: "credentials.txt", mode: "0600" }
   tags:
     - user_environment
+    - admin_files
 
-# ===========================================
-# GUEST USER FILES
-# ===========================================
+- name: Copy test user files
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/test/{{ item.src }}"
+    dest: "/home/test/{{ item.dest }}"
+    owner: test
+    group: test
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: "setup_test_env.sh", dest: "scripts/setup_test_env.sh", mode: "0755" }
+    - { src: "test_plan.txt", dest: "test_plan.txt", mode: "0644" }
+  tags:
+    - user_environment
+    - test_files
 
 - name: Copy guest user files
   copy:
@@ -223,52 +115,39 @@
     - user_environment
     - guest_files
 
-# ===========================================
-# MIKE (IT Manager) USER FILES
-# ===========================================
-
-- name: Copy mike user files
+- name: Copy demo user files
   copy:
-    src: "{{ playbook_dir }}/files/user_files/mike/{{ item.src }}"
-    dest: "/home/mike/{{ item.dest }}"
-    owner: mike
-    group: mike
+    src: "{{ playbook_dir }}/files/user_files/demo/{{ item.src }}"
+    dest: "/home/demo/{{ item.dest }}"
+    owner: demo
+    group: demo
     mode: "{{ item.mode }}"
   loop:
-    - { src: "backup_script.sh", dest: "scripts/backup_script.sh", mode: "0755" }
-    - { src: "admin_notes.txt", dest: "admin_notes.txt", mode: "0644" }
-    - { src: "credentials.txt", dest: "credentials.txt", mode: "0600" }
+    - { src: "demo_script.txt", dest: "demo_script.txt", mode: "0644" }
+    - { src: "demo_files/run_demo.sh", dest: "demo_files/run_demo.sh", mode: "0755" }
   tags:
     - user_environment
-    - mike_files
+    - demo_files
 
-# ===========================================
-# LINDA (Senior Sysadmin) USER FILES
-# ===========================================
-
-- name: Copy linda user files
+- name: Copy sysadmin user files  
   copy:
-    src: "{{ playbook_dir }}/files/user_files/linda/{{ item.src }}"
-    dest: "/home/linda/{{ item.dest }}"
-    owner: linda
-    group: linda
+    src: "{{ playbook_dir }}/files/user_files/sysadmin/{{ item.src }}"
+    dest: "/home/sysadmin/{{ item.dest }}"
+    owner: sysadmin
+    group: sysadmin
     mode: "{{ item.mode }}"
   loop:
     - { src: "system_health.sh", dest: "system_health.sh", mode: "0755" }
     - { src: "daily_log.txt", dest: "daily_log.txt", mode: "0644" }
   tags:
     - user_environment
-    - linda_files
-
-# ===========================================
-# BACKUP SERVICE ACCOUNT FILES
-# ===========================================
+    - sysadmin_files
 
 - name: Copy backup user files
   copy:
     src: "{{ playbook_dir }}/files/user_files/backup/{{ item.src }}"
     dest: "/home/backup/{{ item.dest }}"
-    owner: backup
+    owner: backup  
     group: backup
     mode: "{{ item.mode }}"
   loop:
@@ -289,160 +168,15 @@
     - user_environment
     - backup_files
 
-# ===========================================
-# SCRIPT PERMISSIONS
-# ===========================================
-
 - name: Set executable permissions on scripts
   file:
     path: "{{ item }}"
     mode: '0755'
   loop:
-    - /home/mike/scripts/backup_script.sh
-    - /home/linda/system_health.sh
+    - /home/admin/backup_script.sh
+    - /home/test/scripts/setup_test_env.sh
+    - /home/demo/demo_files/run_demo.sh
+    - /home/sysadmin/system_health.sh
     - /home/backup/automated_backup.sh
-  ignore_errors: yes
   tags:
     - user_environment
-
-# ===========================================
-# MAILDIR SETUP (For Postfix/Dovecot/Roundcube)
-# ===========================================
-
-- name: Create Maildir structure for all users
-  shell: |
-    for user in guest mike linda backup; do
-      mkdir -p /home/$user/Maildir/{cur,new,tmp}
-      chown -R $user:$user /home/$user/Maildir
-      chmod -R 700 /home/$user/Maildir
-    done
-  args:
-    creates: /home/mike/Maildir/cur
-  tags:
-    - user_environment
-    - email
-
-# ===========================================
-# EMAIL ALIASES (techcorp.local domain)
-# ===========================================
-
-- name: Configure email aliases for realistic addresses
-  lineinfile:
-    path: /etc/aliases
-    line: "{{ item }}"
-    create: yes
-  loop:
-    - "mike.thompson: mike"
-    - "m.thompson: mike"
-    - "it-manager: mike"
-    - "linda.sanchez: linda"
-    - "l.sanchez: linda"
-    - "sysadmin: linda"
-    - "backup-service: backup"
-    - "intern: guest"
-  notify: rebuild aliases
-  tags:
-    - user_environment
-    - email
-
-# ===========================================
-# MOTD (Message of the Day) - TechCorp Branding
-# ===========================================
-
-- name: Disable default Ubuntu MOTD scripts
-  file:
-    path: "/etc/update-motd.d/{{ item }}"
-    mode: '0644'
-  loop:
-    - 10-help-text
-    - 50-motd-news
-    - 91-contract-ua-esm-status
-    - 95-hwe-eol
-  ignore_errors: yes
-  tags:
-    - user_environment
-    - motd
-
-- name: Create custom MOTD header - TechCorp Branding
-  copy:
-    dest: /etc/update-motd.d/00-techcorp-header
-    mode: '0755'
-    content: |
-      #!/bin/bash
-      echo ""
-      echo "  ╔════════════════════════════════════════════════════════════════╗"
-      echo "  ║                                                                ║"
-      echo "  ║   ████████╗███████╗ ██████╗██╗  ██╗ ██████╗ ██████╗ ██████╗    ║"
-      echo "  ║   ╚══██╔══╝██╔════╝██╔════╝██║  ██║██╔════╝██╔═══██╗██╔══██╗   ║"
-      echo "  ║      ██║   █████╗  ██║     ███████║██║     ██║   ██║██████╔╝   ║"
-      echo "  ║      ██║   ██╔══╝  ██║     ██╔══██║██║     ██║   ██║██╔══██╗   ║"
-      echo "  ║      ██║   ███████╗╚██████╗██║  ██║╚██████╗╚██████╔╝██║  ██║   ║"
-      echo "  ║      ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝   ║"
-      echo "  ║                      SOLUTIONS                                 ║"
-      echo "  ║                                                                ║"
-      echo "  ╠════════════════════════════════════════════════════════════════╣"
-      echo "  ║  Internal Development Server - lab.techcorp.local              ║"
-      echo "  ║  Authorized personnel only. All activity is logged.            ║"
-      echo "  ╚════════════════════════════════════════════════════════════════╝"
-      echo ""
-  tags:
-    - user_environment
-    - motd
-
-- name: Create custom system info MOTD
-  copy:
-    dest: /etc/update-motd.d/10-techcorp-sysinfo
-    mode: '0755'
-    content: |
-      #!/bin/bash
-      echo "  System Information:"
-      echo "  ────────────────────────────────────────────────────────────────"
-      printf "  %-20s %s\n" "Hostname:" "$(hostname)"
-      printf "  %-20s %s\n" "Domain:" "techcorp.local"
-      printf "  %-20s %s\n" "IP Address:" "$(hostname -I | awk '{print $1}')"
-      printf "  %-20s %s\n" "Kernel:" "$(uname -r)"
-      printf "  %-20s %s\n" "Uptime:" "$(uptime -p | sed 's/up //')"
-      echo ""
-  tags:
-    - user_environment
-    - motd
-
-- name: Create available services MOTD
-  copy:
-    dest: /etc/update-motd.d/20-techcorp-services
-    mode: '0755'
-    content: |
-      #!/bin/bash
-      echo "  TechCorp Internal Services:"
-      echo "  ────────────────────────────────────────────────────────────────"
-      echo "  • LabSys Wiki        : http://localhost:8080/labsys-wiki/"
-      echo "  • Webmail (Roundcube): http://localhost:8080/roundcube/"
-      echo "  • phpMyAdmin         : http://localhost:8080/phpmyadmin/"
-      echo "  • Gitea              : http://localhost:3000"
-      echo "  • Cockpit            : https://localhost:9090"
-      echo ""
-      echo "  IT Support: it-support@techcorp.local"
-      echo "  ════════════════════════════════════════════════════════════════"
-      echo ""
-  tags:
-    - user_environment
-    - motd
-
-# ===========================================
-# REMOVE OLD USERS (Cleanup)
-# ===========================================
-
-- name: Remove deprecated users (test, demo, admin, sysadmin)
-  user:
-    name: "{{ item }}"
-    state: absent
-    remove: yes
-  loop:
-    - test
-    - demo
-    - admin
-    - sysadmin
-  ignore_errors: yes
-  tags:
-    - user_environment
-    - cleanup

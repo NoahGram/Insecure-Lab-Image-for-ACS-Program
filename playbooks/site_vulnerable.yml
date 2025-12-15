@@ -3,36 +3,32 @@
   hosts: vps_lab
   gather_facts: yes
   vars:
-    # Default vulnerability profile - can be overridden via extra-vars
-    default_vulnerability_profile: "vulnerable_profile"
+    # Default profile name if not provided via command line
+    profile_name: "{{ vulnerability_profile | default('vulnerable_profile') }}"
     
   vars_files:
     - ../vulnerability-profiles.yml
   
   # Set version variables based on selected profile
   pre_tasks:
-    - name: Set current vulnerability profile
-      set_fact:
-        current_profile: "{{ vulnerability_profile | default(default_vulnerability_profile) }}"
-
     - name: Load profile-specific versions
       set_fact:
-        apache_version: "{{ vars[current_profile]['versions']['apache_version'] | default('latest') }}"
-        php_version: "{{ vars[current_profile]['versions']['php_version'] | default('latest') }}"
-        mysql_version: "{{ vars[current_profile]['versions']['mysql_version'] | default('latest') }}"
-        gitea_version: "{{ vars[current_profile]['versions']['gitea_version'] | default('1.15.0') }}"
-        dokuwiki_version: "{{ vars[current_profile]['versions']['dokuwiki_version'] | default('stable') }}"
-        mantisbt_version: "{{ vars[current_profile]['versions']['mantisbt_version'] | default('2.25.8') }}"
-        cockpit_version: "{{ vars[current_profile]['versions']['cockpit_version'] | default('latest') }}"
-        postfix_version: "{{ vars[current_profile]['versions']['postfix_version'] | default('latest') }}"
+        apache_version: "{{ vars[profile_name]['versions']['apache_version'] | default('latest') }}"
+        php_version: "{{ vars[profile_name]['versions']['php_version'] | default('latest') }}"
+        mysql_version: "{{ vars[profile_name]['versions']['mysql_version'] | default('latest') }}"
+        gitea_version: "{{ vars[profile_name]['versions']['gitea_version'] | default('1.15.0') }}"
+        dokuwiki_version: "{{ vars[profile_name]['versions']['dokuwiki_version'] | default('stable') }}"
+        mantisbt_version: "{{ vars[profile_name]['versions']['mantisbt_version'] | default('2.25.8') }}"
+        cockpit_version: "{{ vars[profile_name]['versions']['cockpit_version'] | default('latest') }}"
+        postfix_version: "{{ vars[profile_name]['versions']['postfix_version'] | default('latest') }}"
         # Load vulnerability controls
-        vulnerability_config: "{{ vars[current_profile]['vulnerabilities'] | default({}) }}"
+        vulnerability_config: "{{ vars[profile_name]['vulnerabilities'] | default({}) }}"
         vulnerable_mode: true
         
     - name: Display selected vulnerability profile
       debug:
         msg:
-          - "Selected vulnerability profile: {{ current_profile }}"
+          - "Selected vulnerability profile: {{ profile_name }}"
           - "Vulnerable mode: {{ vulnerable_mode }}"
           - "Apache version: {{ apache_version }}"
           - "PHP version: {{ php_version }}"
@@ -44,8 +40,8 @@
     - phpmyadmin
     - applications
     - system_services
-    - user_environment
     - vulnerabilities
+    - user_environment
     
   post_tasks:
     - name: Create comprehensive vulnerability guide
@@ -54,7 +50,7 @@
           ==============================================
           VULNERABILITY ASSESSMENT LAB GUIDE
           ==============================================
-          Profile: {{ current_profile }}
+          Profile: {{ profile_name }}
           
           This system contains intentional vulnerabilities for educational testing.
           ⚠️  WARNING: NEVER expose this system to the internet!
@@ -83,7 +79,7 @@
       debug:
         msg:
           - "=== VULNERABLE LAB DEPLOYMENT COMPLETE ==="
-          - "Profile: {{ current_profile }}"  
+          - "Profile: {{ profile_name }}"  
           - "Vulnerable endpoints available at http://localhost:8080"
           - "See /root/vulnerability-guide.txt for testing instructions"
           - "⚠️  WARNING: Contains intentional vulnerabilities!"

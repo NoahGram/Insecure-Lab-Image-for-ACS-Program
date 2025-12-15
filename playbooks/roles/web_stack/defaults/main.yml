@@ -1,13 +1,15 @@
 ---
 # Web Stack Role Default Variables
-# ==============================================
-# NOTE: Apache/PHP versions are managed in vulnerability-profiles.yml
-# This file contains only configuration settings
-# ==============================================
 
 # Application settings
 app_dir: /var/www/html/labsys-wiki
-labsys_wiki_enabled: true
 
-# Database credentials (single source of truth)
+# Database settings  
 mysql_root_password: "maria"
+
+# Apache settings
+apache_version: "2.4"
+php_version: "8.3"
+
+# Web application settings
+labsys_wiki_enabled: true

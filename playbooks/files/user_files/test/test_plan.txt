@@ -1,0 +1,41 @@
+# TEST USER TODO LIST
+# Development and Testing Tasks
+
+## Current Sprint Tasks
+- [ ] Test SQL injection vulnerabilities on web app
+- [ ] Verify XSS protection on all forms  
+- [x] Set up local development environment
+- [ ] Document API endpoints for Gitea integration
+- [ ] Test file upload functionality
+
+## Testing Checklist
+### Web Application Testing
+- [ ] Login/logout functionality
+- [ ] Form validation
+- [ ] SQL injection points
+- [ ] XSS vulnerability scanning
+- [ ] File upload restrictions
+- [ ] Session management
+
+### Database Testing  
+- [x] MySQL connection test
+- [ ] Gitea database integrity
+- [ ] MantisBT database performance
+- [ ] Backup/restore procedures
+
+### Security Testing
+- [ ] Password policy enforcement
+- [ ] User privilege escalation
+- [ ] Directory traversal vulnerabilities
+- [ ] Information disclosure issues
+
+## Test Credentials (Local Lab Only)
+Web App: test/test
+Database: root/maria
+Gitea: admin/admin123
+
+## Notes
+- Remember to reset passwords after testing
+- Document all vulnerabilities found
+- Use test data only, never production data
+- VPN required for external testing

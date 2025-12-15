@@ -1,6 +1,0 @@
----
-# Handlers for user_environment role
-
-- name: rebuild aliases
-  command: newaliases
-  become: yes

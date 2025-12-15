@@ -9,12 +9,7 @@ if ($conn && $stmt = $conn->prepare('SELECT content FROM pages WHERE title=? LIM
     $res = $stmt->get_result();
 
     if ($row = $res->fetch_assoc()) {
-        if (function_exists('display_page_content_override')) {
-            $content = display_page_content_override($row['content']);
-        } else {
-            $content = h($row['content']);
-        }
-        echo '<div class="content">'.$content.'</div>';
+        echo '<div class="content">'.$row['content'].'</div>';
     } else {
         echo '<div class="content muted">Pagina niet gevonden.</div>';
     }

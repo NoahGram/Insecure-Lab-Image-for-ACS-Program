@@ -1,14 +1,13 @@
-# TechCorp Solutions - Intern Account
-# Guest/Intern access account
-# Email: intern@techcorp.local
+# Guest User Profile
+# Limited access account
 
 # Basic aliases
 alias ll='ls -l'
 alias la='ls -la'
 alias ..='cd ..'
 
-# Simple prompt for intern
-export PS1='\[\033[01;32m\][guest@techcorp]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+# Simple prompt for guest
+export PS1='\u@\h:\w\$ '
 
 # Limit command history
 export HISTSIZE=100
@@ -18,10 +17,3 @@ export HISTFILESIZE=100
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
-
-# Welcome message
-echo "Welcome to TechCorp Solutions!"
-echo "You are logged in as: guest (Intern)"
-echo "Email: intern@techcorp.local"
-echo ""
-echo "Type 'cat ~/welcome.txt' for help"

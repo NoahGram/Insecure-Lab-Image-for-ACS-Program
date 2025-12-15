@@ -1,16 +1,10 @@
-Dec 01 08:45:12 lab-techcorp sshd[12345]: Accepted password for mike from 192.168.56.1 port 54321 ssh2
-Dec 01 08:45:13 lab-techcorp sshd[12345]: pam_unix(sshd:session): session opened for user mike by (uid=0)
-Dec 01 08:46:22 lab-techcorp sudo: mike : TTY=pts/0 ; PWD=/home/mike ; USER=root ; COMMAND=/bin/bash
-Dec 01 08:46:23 lab-techcorp sudo: pam_unix(sudo:session): session opened for user root by mike(uid=1000)
-Dec 01 08:47:15 lab-techcorp systemd-logind[567]: New session 15 of user mike.
-Dec 01 09:00:00 lab-techcorp sshd[12400]: Accepted password for linda from 192.168.56.1 port 54400 ssh2
-Dec 01 09:00:01 lab-techcorp sshd[12400]: pam_unix(sshd:session): session opened for user linda by (uid=0)
-Dec 01 09:00:15 lab-techcorp sudo: linda : TTY=pts/1 ; PWD=/home/linda ; USER=root ; COMMAND=/bin/cat /etc/shadow
-Dec 01 09:15:42 lab-techcorp cron[8901]: (root) CMD (/opt/scripts/system-maintenance.sh)
-Dec 01 09:16:01 lab-techcorp systemd[1]: Started Daily apt download activities.
-Dec 01 10:00:00 lab-techcorp sshd[12500]: Accepted password for guest from 192.168.56.1 port 54500 ssh2
-Dec 01 10:00:01 lab-techcorp sshd[12500]: pam_unix(sshd:session): session opened for user guest by (uid=0)
-Dec 01 10:05:33 lab-techcorp su: pam_unix(su:auth): authentication failure; logname=guest uid=1003 euid=0 tty=pts/2 ruser=guest rhost=  user=mike
-Dec 01 10:05:35 lab-techcorp su: FAILED SU (to mike) guest on pts/2
-Dec 01 10:10:00 lab-techcorp sshd[12600]: Accepted publickey for backup from 192.168.56.1 port 54600 ssh2
-Dec 01 10:10:01 lab-techcorp sshd[12600]: pam_unix(sshd:session): session opened for user backup by (uid=0)
+Nov 15 08:45:12 lab-server sshd[12345]: Accepted password for admin from 192.168.1.100 port 54321 ssh2
+Nov 15 08:45:13 lab-server sshd[12345]: pam_unix(sshd:session): session opened for user admin by (uid=0)
+Nov 15 08:46:22 lab-server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/bin/bash
+Nov 15 08:46:23 lab-server sudo: pam_unix(sudo:session): session opened for user root by admin(uid=1000)
+Nov 15 08:47:15 lab-server systemd-logind[567]: New session 15 of user admin.
+Nov 15 08:50:33 lab-server su: pam_unix(su:auth): authentication failure; logname=admin uid=1000 euid=0 tty=pts/0 ruser=admin rhost=  user=root
+Nov 15 08:50:35 lab-server su: (to root) admin on pts/0
+Nov 15 08:50:35 lab-server su: pam_unix(su:session): session opened for user root by admin(uid=1000)
+Nov 15 09:15:42 lab-server cron[8901]: (root) CMD (mysqldump -u root -pmaria --all-databases > /var/backups/daily_backup.sql)
+Nov 15 09:16:01 lab-server systemd[1]: Started Daily apt download activities.

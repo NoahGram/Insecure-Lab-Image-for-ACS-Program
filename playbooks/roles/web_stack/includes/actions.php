@@ -1,10 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/logger.php';
-
-$action = $_REQUEST['action'] ?? 'view';
-$page = $_REQUEST['page'] ?? 'Home';
 
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/no_login_lock.php',
@@ -13,25 +9,33 @@ $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
     '/var/www/roles/vulnerabilities/web_stack/hidden_role_field.php',
-    '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
-    '/var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php',
-    '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
-    '/var/www/roles/vulnerabilities/web_stack/insecure_tokens.php',
-    '/var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php',
-    '/var/www/roles/vulnerabilities/web_stack/xss_stored.php',
-    "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 
 foreach ($vuln_files as $file) {
-    if (is_readable($file)) {
-        require_once $file;
-    }
+    if (is_readable($file)) require_once $file;
+}
+$action = $_REQUEST['action'] ?? 'view';
+$page   = $_REQUEST['page'] ?? 'Home';
+
+// --- Secure session cookie settings (can be overridden by vulnerability files) ---
+$cookie_params = [
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'],
+    'secure' => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Lax'
+];
+
+if (function_exists('session_set_cookie_params_override')) {
+    session_set_cookie_params_override($cookie_params);
+} else {
+    session_set_cookie_params($cookie_params);
 }
 
 // --- CSRF helpers ---
 if (!function_exists('csrf_token')) {
-    function csrf_token(): string
-    {
+    function csrf_token(): string {
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
@@ -40,27 +44,20 @@ if (!function_exists('csrf_token')) {
 }
 
 if (!function_exists('csrf_field')) {
-    function csrf_field(): string
-    {
+    function csrf_field(): string {
         return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
     }
 }
 
 if (!function_exists('verify_csrf')) {
-    function verify_csrf(): bool
-    {
+    function verify_csrf(): bool {
         $sent = $_REQUEST['csrf_token'] ?? '';
-        $stored = $_SESSION['csrf_token'] ?? '';
-        if (empty($stored)) {
-            return false;
-        }
-        return is_string($sent) && hash_equals((string) $stored, (string) $sent);
+        return is_string($sent) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$sent);
     }
 }
 
 if (!function_exists('is_account_locked')) {
-    function is_account_locked(int $failed_attempts, ?int $last_failed): bool
-    {
+    function is_account_locked(int $failed_attempts, ?int $last_failed): bool {
         $lockout_time = 15 * 60;
         $max_attempts = 5;
         return $failed_attempts >= $max_attempts && (time() - ($last_failed ?? 0)) < $lockout_time;
@@ -68,33 +65,20 @@ if (!function_exists('is_account_locked')) {
 }
 
 if (!function_exists('validate_password')) {
-    function validate_password(string $password): array
-    {
+    function validate_password(string $password): array {
         $errors = [];
 
         // Basic rules
-        if (strlen($password) < 8)
-            $errors[] = 'At least 8 characters.';
-        if (!preg_match('/[A-Z]/', $password))
-            $errors[] = 'One uppercase letter.';
-        if (!preg_match('/[a-z]/', $password))
-            $errors[] = 'One lowercase letter.';
-        if (!preg_match('/[0-9]/', $password))
-            $errors[] = 'One number.';
-        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password))
-            $errors[] = 'One special character.';
+        if (strlen($password) < 8) $errors[] = 'At least 8 characters.';
+        if (!preg_match('/[A-Z]/', $password)) $errors[] = 'One uppercase letter.';
+        if (!preg_match('/[a-z]/', $password)) $errors[] = 'One lowercase letter.';
+        if (!preg_match('/[0-9]/', $password)) $errors[] = 'One number.';
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) $errors[] = 'One special character.';
 
         // Check against known weak passwords
         $common_passwords = [
-            'password',
-            '123456',
-            '12345678',
-            'qwerty',
-            'abc123',
-            'Password123!',
-            'letmein',
-            'admin',
-            'welcome'
+            'password','123456','12345678','qwerty','abc123',
+            'Password123!','letmein','admin','welcome'
         ];
         if (in_array($password, $common_passwords, true)) {
             $errors[] = 'Too common password.';
@@ -110,9 +94,7 @@ switch ($action) {
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verify_csrf()) {
-                ActivityLogger::logCsrfFailure('login');
                 http_response_code(400);
-                header_remove('Set-Cookie');
                 die('CSRF verification failed.');
             }
 
@@ -128,23 +110,15 @@ switch ($action) {
 
                 if ($row = $res->fetch_assoc()) {
                     $stored = $row['password'];
-                    $failed_attempts = (int) $row['failed_attempts'];
+                    $failed_attempts = (int)$row['failed_attempts'];
                     $last_failed = $row['last_failed'] ? strtotime($row['last_failed']) : 0;
 
                     if (is_account_locked($failed_attempts, $last_failed)) {
-                        ActivityLogger::logAccountLocked($username);
                         $login_error = 'Account temporarily locked. Try again later.';
                     } else {
-                        // Check if vulnerability override exists (cryptographic_failures.php)
-                        if (function_exists('verify_password_override')) {
-                            $ok = verify_password_override($password, $stored);
-                        } else {
-                            // Secure mode: only accept bcrypt/argon2 hashes
-                            // Note: $2b$ is bcrypt from Python/Ansible, $2y$ is bcrypt from PHP
-                            $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2b$') || str_starts_with($stored, '$argon2')))
-                                ? password_verify($password, $stored)
-                                : false;
-                        }
+                        $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$argon2')))
+                            ? password_verify($password, $stored)
+                            : false;
                         if ($ok) {
                             // Reset failed attempts
                             $stmt2 = $conn->prepare('UPDATE users SET failed_attempts=0, last_failed=NULL WHERE id=?');
@@ -158,22 +132,9 @@ switch ($action) {
                             } else {
                                 session_regenerate_id(true);
                             }
-                            // Regenerate CSRF token for the new session
-                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
                             $_SESSION['username'] = $row['username'];
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'];
-
-                            ActivityLogger::logLogin($row['username']);
-
-                            //Generate and expose API token if insecure_tokens is loaded
-                            if (function_exists('generate_insecure_api_token')) {
-                                $api_token = generate_insecure_api_token($row);
-                                $_SESSION['api_token'] = $api_token;
-                                header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
-                                exit;
-                            }
 
                             header('Location: ?page=' . rawurlencode($page));
                             exit;
@@ -185,13 +146,10 @@ switch ($action) {
                             $stmt2->execute();
                             $stmt2->close();
 
-                            ActivityLogger::logFailedLogin($username, $failed_attempts);
-
                             $login_error = 'Invalid username or password.';
                         }
                     }
                 } else {
-                    ActivityLogger::logFailedLogin($username, 1);
                     $login_error = 'Invalid username or password.';
                 }
 
@@ -207,16 +165,14 @@ switch ($action) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!verify_csrf()) {
-                ActivityLogger::logCsrfFailure('register');
                 http_response_code(400);
-                header_remove('Set-Cookie');
                 die('CSRF verification failed.');
             }
-
+            
             $username = trim($_POST['username'] ?? '');
             $password = trim($_POST['password'] ?? '');
             $password_confirm = trim($_POST['password_confirm'] ?? '');
-            $email = trim($_POST['email'] ?? '');
+            $email    = trim($_POST['email'] ?? '');
 
             if (!$username || !$password || !$password_confirm || !$email) {
                 $register_error = 'All fields are required.';
@@ -251,10 +207,7 @@ switch ($action) {
                 }
                 $stmt->close();
 
-                $hash = isset($generate_hash) 
-                    ? $generate_hash($password, false) // Generates unsafe hash as md5 function from the input. 
-                    : password_hash($password, PASSWORD_DEFAULT);
-
+                $hash = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $conn->prepare('INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)');
 
                 $role = 'user';
@@ -266,7 +219,7 @@ switch ($action) {
                         $role = $url_role;
                     }
                 }
-
+                
                 $stmt->bind_param('ssss', $username, $hash, $email, $role);
 
                 if ($stmt->execute()) {
@@ -279,8 +232,6 @@ switch ($action) {
                     $_SESSION['username'] = $username;
                     $_SESSION['role'] = $role;
                     $_SESSION['email'] = $email;
-
-                    ActivityLogger::logRegistration($username, $role);
 
                     header('Location: ?page=Home');
                     exit;
@@ -298,24 +249,15 @@ switch ($action) {
 
     case 'logout':
         if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('logout');
             http_response_code(400);
-            header_remove('Set-Cookie');
             die('CSRF verification failed.');
         }
-        $logout_username = $_SESSION['username'] ?? 'unknown';
-        ActivityLogger::logLogout($logout_username);
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params["path"],
-                $params["domain"],
-                $params["secure"],
-                $params["httponly"]
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
             );
         }
         session_destroy();
@@ -328,14 +270,11 @@ switch ($action) {
             die('Method not allowed');
         }
         if (!is_admin()) {
-            ActivityLogger::logUnauthorizedAccess('page_save');
             http_response_code(403);
             die('Forbidden: only admins can modify pages.');
         }
         if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('page_save');
             http_response_code(400);
-            header_remove('Set-Cookie');
             die('CSRF verification failed.');
         }
 
@@ -353,13 +292,11 @@ switch ($action) {
                     $upd->bind_param('ssi', $save_content, $excerpt, $row['id']);
                     $upd->execute();
                     $upd->close();
-                    ActivityLogger::logPageUpdate($save_page);
                 } else {
                     $ins = $conn->prepare('INSERT INTO pages (title, content, excerpt) VALUES (?, ?, ?)');
                     $ins->bind_param('sss', $save_page, $save_content, $excerpt);
                     $ins->execute();
                     $ins->close();
-                    ActivityLogger::logPageCreate($save_page);
                 }
                 $stmt->close();
             }
@@ -375,14 +312,11 @@ switch ($action) {
             die('Method not allowed');
         }
         if (!is_admin()) {
-            ActivityLogger::logUnauthorizedAccess('page_delete');
             http_response_code(403);
             die('Forbidden: only admins can delete pages.');
         }
         if (!verify_csrf()) {
-            ActivityLogger::logCsrfFailure('page_delete');
             http_response_code(400);
-            header_remove('Set-Cookie');
             die('CSRF verification failed.');
         }
 
@@ -397,7 +331,6 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
             $conn->close();
-            ActivityLogger::logPageDelete($del_page);
         }
         header('Location: ?page=Home');
         exit;

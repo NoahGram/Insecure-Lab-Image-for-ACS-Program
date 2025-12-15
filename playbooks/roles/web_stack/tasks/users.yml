@@ -1,23 +1,22 @@
 ---
 # Create system users for LabSys Wiki testing
-# Note: Main user creation is handled by user_environment role
-# This only ensures users exist for web app testing
-
-- name: Ensure test system users exist
+- name: Create test system users (without password initially)
   user:
     name: "{{ item.name }}"
     shell: /bin/bash
     create_home: yes
     state: present
   loop:
+    - { name: "sysadmin", password: "admin" }
     - { name: "guest", password: "guest" }  
-    - { name: "backup", password: "Backup2024!" }
+    - { name: "backup", password: "backup123" }
 
 # Set passwords using chpasswd (works without passlib)
 - name: Set passwords for test users
   shell: |
     echo "{{ item.name }}:{{ item.password }}" | chpasswd
   loop:
+    - { name: "sysadmin", password: "admin" }
     - { name: "guest", password: "guest" }
-    - { name: "backup", password: "Backup2024!" }
+    - { name: "backup", password: "backup123" }
   no_log: true  # Don't log passwords

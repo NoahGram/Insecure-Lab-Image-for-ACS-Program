@@ -1,11 +1,2 @@
----
-# Web Stack Role Variables
-# ==============================================
-# These override defaults and are the primary configuration
-# ==============================================
-
 app_dir: /var/www/html/labsys-wiki
-
-# Database credentials - this is the authoritative value
-# Used by: database role, web_stack role, applications role, phpmyadmin role
 mysql_root_password: "maria"
