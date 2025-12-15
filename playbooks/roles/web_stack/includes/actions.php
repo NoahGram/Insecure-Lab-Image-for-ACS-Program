@@ -3,12 +3,12 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/modules/login_helpers.php';
+require_once __DIR__ . '/modules/password_validation.php';
 
 $action = $_REQUEST['action'] ?? 'view';
 $page = $_REQUEST['page'] ?? 'Home';
 
 $vuln_files = [
-    '/var/www/roles/vulnerabilities/web_stack/no_password_validation.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_csrf.php',
     '/var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php',
@@ -54,43 +54,6 @@ if (!function_exists('verify_csrf')) {
             return false;
         }
         return is_string($sent) && hash_equals((string) $stored, (string) $sent);
-    }
-}
-
-if (!function_exists('validate_password')) {
-    function validate_password(string $password): array
-    {
-        $errors = [];
-
-        // Basic rules
-        if (strlen($password) < 8)
-            $errors[] = 'At least 8 characters.';
-        if (!preg_match('/[A-Z]/', $password))
-            $errors[] = 'One uppercase letter.';
-        if (!preg_match('/[a-z]/', $password))
-            $errors[] = 'One lowercase letter.';
-        if (!preg_match('/[0-9]/', $password))
-            $errors[] = 'One number.';
-        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password))
-            $errors[] = 'One special character.';
-
-        // Check against known weak passwords
-        $common_passwords = [
-            'password',
-            '123456',
-            '12345678',
-            'qwerty',
-            'abc123',
-            'Password123!',
-            'letmein',
-            'admin',
-            'welcome'
-        ];
-        if (in_array($password, $common_passwords, true)) {
-            $errors[] = 'Too common password.';
-        }
-
-        return $errors; // empty = password OK
     }
 }
 
@@ -192,13 +155,8 @@ switch ($action) {
                 break;
             }
 
-            if ($password !== $password_confirm) {
-                $register_error = 'Passwords do not match.';
-                break;
-            }
+            $password_errors = validate_password($password, $password_confirm);
 
-            // Password validation
-            $password_errors = validate_password($password);
             if (!empty($password_errors)) {
                 $register_error = implode(' ', $password_errors);
                 break;

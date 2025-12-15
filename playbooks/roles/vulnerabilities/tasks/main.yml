@@ -667,24 +667,22 @@
 
   # NO PASSWORD VALIDATION
 
-- name: Deploy no client side password validation
-  copy:
-    src: files/no_client_side_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-
-- name: Deploy no server side password validation
+- name: Deploy no server-side password validation
   copy:
     src: files/no_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
+    dest: /var/www/html/labsys-wiki/includes/modules/password_validation.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
+
+- name: Remove client-side password validation
+  file:
+    path: /var/www/html/labsys-wiki/assets/js/register.js
+    state: absent
+  when: vulnerable_mode | default(false)
+
+# CSRF
 
 - name: Deploy disable CSRF vulnerability override
   copy:
