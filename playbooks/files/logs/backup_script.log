@@ -1,22 +1,29 @@
 #!/bin/bash
-# Backup script execution log
-echo "[$(date)] Starting backup process..."
+# TechCorp Solutions - Backup Script Log
+# This is an old version that was accidentally left exposed
 
-# Database credentials (TODO: move to secure vault)
+echo "[2024-12-01 02:00:00] Starting TechCorp nightly backup..."
+
+# Database credentials (TODO: move to HashiCorp Vault - ticket #TC-2024-089)
 DB_USER="root"
 DB_PASS="maria"
-BACKUP_USER="backup_admin"
-BACKUP_PASS="BackupAdmin2023!"
 
-echo "[$(date)] Connecting to database with user: $DB_USER"
-mysqldump -u $DB_USER -p$DB_PASS --all-databases > /tmp/db_full_backup.sql
+echo "[2024-12-01 02:00:01] Connecting to MySQL as: $DB_USER"
+mysqldump -u $DB_USER -p$DB_PASS --all-databases > /backup/db_full_backup.sql
 
-echo "[$(date)] Uploading to backup server..."
-echo "Using credentials: $BACKUP_USER / $BACKUP_PASS"
+echo "[2024-12-01 02:00:15] Backup user credentials:"
+echo "  Service account: backup / Backup2024!"
+echo "  Database root: root / maria"
+echo "  Gitea DB: gitea / cup_of_tea"
 
-# SSH key backup (weak permissions)
-echo "[$(date)] Backing up SSH keys..."
-cp /root/.ssh/id_rsa /tmp/log/root_ssh_key_backup
-chmod 644 /tmp/log/root_ssh_key_backup
+# SSH key backup (Linda noted: permissions are wrong!)
+echo "[2024-12-01 02:00:30] SSH key location: /home/backup/.ssh/id_rsa"
+echo "[2024-12-01 02:00:31] WARNING: Key has loose permissions (0644)"
 
-echo "[$(date)] Backup process completed"
+# Remote sync
+echo "[2024-12-01 02:00:45] Syncing to backup server..."
+echo "  SCP user: backup"
+echo "  SSH key: /home/backup/.ssh/id_rsa"
+
+echo "[2024-12-01 02:01:00] Backup completed successfully"
+echo "[2024-12-01 02:01:01] Contact: linda.sanchez@techcorp.local for issues"

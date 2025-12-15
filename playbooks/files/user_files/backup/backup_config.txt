@@ -1,8 +1,10 @@
-# BACKUP SERVICE CONFIGURATION
-# Automated backup system settings
+# ============================================
+# TechCorp Solutions - Backup Service Config
+# Owner: Backup Service Account
+# ============================================
 
 [BACKUP_SETTINGS]
-backup_schedule=daily_3am
+backup_schedule=daily_2am
 retention_period=30_days  
 backup_location=/backup
 compression=gzip
@@ -11,6 +13,7 @@ compression=gzip
 mysql_all_databases=enabled
 gitea_database=enabled
 mantisbt_database=enabled
+roundcube_database=enabled
 
 [FILE_TARGETS]  
 web_files=/var/www/html
@@ -21,6 +24,7 @@ system_logs=/var/log
 [CREDENTIALS]
 # WARNING: Credentials stored in plaintext for automation
 # This is a security vulnerability but needed for unattended backups
+# TODO: Move to HashiCorp Vault - ticket #TC-2024-089
 
 mysql_root_user=root
 mysql_root_password=maria
@@ -31,9 +35,13 @@ gitea_db_password=cup_of_tea
 mantisbt_db_user=mantisbt  
 mantisbt_db_password=apache2Mantis
 
+roundcube_db_user=roundcube
+roundcube_db_password=roundcube_secure_pass
+
 [NOTIFICATIONS]
 email_alerts=enabled
-email_recipient=backup@lab.local
+email_recipient=backup-service@techcorp.local
+email_cc=linda.sanchez@techcorp.local
 email_on_success=false
 email_on_failure=true
 log_file=/var/log/backup.log

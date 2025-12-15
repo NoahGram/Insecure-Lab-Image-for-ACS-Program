@@ -1,10 +1,9 @@
 ---
 # Default variables for applications role
-
-# Application versions
-gitea_version: "1.21.0"
-dokuwiki_version: "stable"  
-mantisbt_version: "2.25.8"
+# ==============================================
+# NOTE: Application versions are managed in vulnerability-profiles.yml
+# This file contains only configuration settings, not versions
+# ==============================================
 
 # Gitea configuration
 gitea_user: "gitea"

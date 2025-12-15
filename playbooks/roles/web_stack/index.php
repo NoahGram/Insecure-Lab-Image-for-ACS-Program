@@ -30,9 +30,12 @@ require_once __DIR__ . '/includes/actions.php';
 
   <main class="card">
     <?php
-    if (empty($_SESSION['username']) && !in_array($action, ['login','register','view']) || ($action === 'view' && $page !== 'Home')) {
+    if (empty($_SESSION['username'])) {
+      if (!in_array($action, ['login','register','profile']) && !($action === 'view' && $page === 'Home')) {
         echo "<div class='small muted'>Please log in to view pages.</div>";
         $action = 'view';
+        $page = 'Home';
+      }
     }
 
     if (!empty($_SESSION['username']) && $action !== 'login' && $action !== 'register') {
@@ -44,6 +47,8 @@ require_once __DIR__ . '/includes/actions.php';
     elseif ($action === 'view') include 'templates/view.php';
     elseif (in_array($action, ['edit','create'])) include 'templates/edit.php';
     elseif ($action === 'search') include 'templates/search.php';
+    elseif ($action === 'profile') include 'templates/profile.php';
+    elseif ($action === 'logs') include 'templates/logs.php';
     ?>
 </main>
 

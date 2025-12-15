@@ -2,10 +2,23 @@
 # Vulnerabilities Role - Granular vulnerability controls based on profile configuration
 # Each vulnerability type can be individually enabled/disabled using profile settings
 
-# ===========================================
-# WEB VULNERABILITIES
-# ===========================================
 # NOTE: Individual vulnerability files removed - LabSys Wiki now provides comprehensive web vulnerability testing
+
+- name: Configure PHP to display errors
+  lineinfile:
+    path: /etc/php/{{ php_version }}/apache2/php.ini
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+  loop:
+    - { regexp: '^display_errors\s*=', line: 'display_errors = On' }
+    - { regexp: '^display_startup_errors\s*=', line: 'display_startup_errors = On' }
+    - { regexp: '^error_reporting\s*=', line: 'error_reporting = E_ALL' }
+    - { regexp: '^log_errors\s*=', line: 'log_errors = On' }
+    - { regexp: '^error_log\s*=', line: 'error_log = /var/log/php_errors.log' }
+  when: vulnerable_mode | default(false)
+  notify: restart apache
+  tags: php_errors
 
 - name: Enable Apache server-info and server-status (info disclosure)
   copy:
@@ -24,6 +37,96 @@
   tags:
     - web_vulnerabilities
     - info_disclosure
+
+# ===========================================
+# API VULNERABILITIES
+# ===========================================
+
+- name: Create vulnerabilities web_stack directory on target
+  file:
+    path: /var/www/roles/vulnerabilities/web_stack
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  when: vulnerable_mode | default(false)
+  tags: api_vulnerabilities
+
+- name: Deploy SSRF vulnerability
+  copy:
+    src: files/web/api/ssrf.php
+    dest: /var/www/roles/vulnerabilities/web_stack/ssrf.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - ssrf
+
+- name: Deploy exposed diagnostics vulnerability
+  copy:
+    src: files/web/api/exposed_diagnostics.php
+    dest: /var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Deploy exposed test endpoints vulnerability
+  copy:
+    src: files/web/api/exposed_test_endpoints.php
+    dest: /var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_test_endpoints
+
+- name: Deploy insecure API tokens vulnerability
+  copy:
+    src: files/web/api/insecure_tokens.php
+    dest: /var/www/roles/vulnerabilities/web_stack/insecure_tokens.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.insecure_tokens | default(false)
+  tags:
+    - api_vulnerabilities
+    - insecure_tokens
+
+- name: Deploy verbose error messages vulnerability
+  copy:
+    src: files/web/api/verbose_error_messages.php
+    dest: /var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false)
+  tags:
+    - api_vulnerabilities
+    - verbose_error_messages
+
+# ===========================================
+# WEB VULNERABILITIES (XSS, etc.)
+# ===========================================
+
+- name: Deploy stored XSS vulnerability
+  copy:
+    src: files/web/xss_stored.php
+    dest: /var/www/roles/vulnerabilities/web_stack/xss_stored.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
+  tags:
+    - web_vulnerabilities
+    - xss
 
 # ===========================================
 # SYSTEM VULNERABILITIES
@@ -51,18 +154,14 @@
     - system_vulnerabilities
     - setuid_python3
 
-- name: Create weak user accounts
+# Note: Main user accounts are created in user_environment role
+# This task only ensures weak passwords for the vulnerability scenario
+- name: Ensure weak passwords on accounts (vulnerability scenario)
   user:
     name: "{{ item.name }}"
     password: "{{ item.password | password_hash('sha512') }}"
-    shell: /bin/bash
-    create_home: yes
-    comment: "Vulnerable test account"
   loop:
-    - { name: "admin", password: "admin" }
-    - { name: "test", password: "test" }
     - { name: "guest", password: "guest" }
-    - { name: "demo", password: "demo" }
   when: vulnerability_config.system_vulnerabilities.weak_user_accounts | default(false)
   tags:
     - system_vulnerabilities
@@ -74,8 +173,7 @@
     line: "{{ item }}"
     validate: 'visudo -cf %s'
   loop:
-    - "admin ALL=(ALL) NOPASSWD:ALL"
-    - "test ALL=(ALL) ALL"
+    - "mike ALL=(ALL) NOPASSWD:ALL"
   when: vulnerability_config.system_vulnerabilities.sudo_misconfiguration | default(false)
   tags:
     - system_vulnerabilities
@@ -109,6 +207,189 @@
   tags:
     - system_vulnerabilities
     - weak_permissions
+
+# ===========================================
+# SSH KEY EXPOSURE VULNERABILITY
+# ===========================================
+- name: Make backup home directory world-readable (vulnerability!)
+  file:
+    path: /home/backup
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Create backup user .ssh directory
+  file:
+    path: /home/backup/.ssh
+    state: directory
+    owner: backup
+    group: backup
+    mode: '0755'  # Intentionally too permissive
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy SSH private key with weak permissions
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/id_rsa"
+    dest: /home/backup/.ssh/id_rsa
+    owner: backup
+    group: backup
+    mode: '0644'  # World-readable private key!
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy SSH public key
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/id_rsa.pub"
+    dest: /home/backup/.ssh/id_rsa.pub
+    owner: backup
+    group: backup
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Deploy authorized_keys with root access
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/authorized_keys"
+    dest: /home/backup/.ssh/authorized_keys
+    owner: backup
+    group: backup
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Ensure root .ssh directory exists
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+- name: Add backup key to root authorized_keys (privilege escalation path)
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.ssh/authorized_keys"
+    dest: /root/.ssh/authorized_keys
+    owner: root
+    group: root
+    mode: '0600'
+  when: vulnerability_config.system_vulnerabilities.ssh_key_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - ssh_key_exposure
+
+# ===========================================
+# BASH HISTORY CREDENTIAL EXPOSURE
+# ===========================================
+- name: Make linda home directory world-readable (vulnerability!)
+  file:
+    path: /home/linda
+    mode: '0755'  # Allow others to enter and list
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy linda bash history with credentials
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/linda/.bash_history"
+    dest: /home/linda/.bash_history
+    owner: linda
+    group: linda
+    mode: '0644'  # Readable by others - vulnerability!
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy backup user bash history with credentials
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/backup/.bash_history"
+    dest: /home/backup/.bash_history
+    owner: backup
+    group: backup
+    mode: '0644'  # Readable by others - vulnerability!
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+- name: Deploy mike bash history (protected)
+  copy:
+    src: "{{ playbook_dir }}/files/user_files/mike/.bash_history"
+    dest: /home/mike/.bash_history
+    owner: mike
+    group: mike
+    mode: '0600'  # This one is protected - realistic mix
+  when: vulnerability_config.system_vulnerabilities.bash_history_exposure | default(false)
+  tags:
+    - system_vulnerabilities
+    - bash_history_exposure
+
+# ===========================================
+# CRON JOB INJECTION VULNERABILITY
+# ===========================================
+- name: Create scripts directory
+  file:
+    path: /opt/scripts
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Deploy maintenance script with weak permissions
+  copy:
+    src: "{{ playbook_dir }}/files/configs/system-maintenance.sh"
+    dest: /opt/scripts/system-maintenance.sh
+    owner: root
+    group: root
+    mode: '0777'  # World-writable - the vulnerability!
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Deploy cron job that runs as root
+  copy:
+    src: "{{ playbook_dir }}/files/configs/cron-maintenance"
+    dest: /etc/cron.d/system-maintenance
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
+
+- name: Create maintenance log file
+  file:
+    path: /var/log/maintenance.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.system_vulnerabilities.cron_job_injection | default(false)
+  tags:
+    - system_vulnerabilities
+    - cron_job_injection
 
 - name: CVE-2025-32463 - Deploy vulnerable sudo package (prepare variables and check)
   block:
@@ -149,6 +430,7 @@
         dest: "{{ vulnerabilities_sudo_download_dest }}"
         mode: '0644'
         force: no
+        timeout: 60
 
     - name: Extract sudo source
       unarchive:
@@ -191,18 +473,18 @@
     - vulnerabilities_sudo
 
 
-- name: Ensure neofetch2 binary is present in /usr/bin
-  copy:
-    src: "files/neofetch2"
-    dest: /usr/bin/neofetch2
-    owner: root
-    group: root
-    mode: '0755'
-  become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
-  tags:
-    - system_vulnerabilities
-    - neofetch2
+# - name: Ensure neofetch2 binary is present in /usr/bin
+#   copy:
+#     src: "files/neofetch2"
+#     dest: /usr/bin/neofetch2
+#     owner: root
+#     group: root
+#     mode: '0755'
+#   become: yes
+#   when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+#   tags:
+#     - system_vulnerabilities
+#     - neofetch2
 
 - name: Ensure cron.hourly wrapper for neofetch2 exists
   copy:
@@ -377,14 +659,6 @@
     - system_vulnerabilities
     - exposed_logs
 
-- name: Create vulnerabilities web_stack directory on target
-  file:
-    path: /var/www/roles/vulnerabilities/web_stack
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: '0755'
-
 - name: Deploy no login lock vulnerability override
   copy:
     src: files/no_login_lock.php
@@ -392,6 +666,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 
 - name: Deploy no client side password validation
@@ -401,6 +676,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 
 - name: Deploy no server side password validation
@@ -410,6 +686,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable CSRF vulnerability override
   copy:
@@ -418,6 +695,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable session cookies vulnerability override
   copy:
@@ -426,6 +704,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy disable session regenerate vulnerability override
   copy:
@@ -434,6 +713,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy hidden role field vulnerability override
   copy:
@@ -442,6 +722,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Deploy editable url paramater override
   copy:
@@ -450,6 +731,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
+  when: vulnerable_mode | default(false)
 
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
@@ -464,3 +746,12 @@
     - { username: 'jane', password: 'jane' }
     - { username: 'guest', password: 'guest' }
   ignore_errors: yes
+  when: vulnerable_mode | default(false)
+
+- name: Enable vulnerable Cryptographic Failures with weak hashing algorithms
+  copy:
+    src: files/cryptographic_failures.php
+    dest: /var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php
+    owner: www-data
+    group: www-data
+    mode: "0644"

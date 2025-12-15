@@ -1,22 +1,24 @@
 ---
 # Base System Role - Default Variables
-# Software Versions - Set specific versions to ensure consistent deployments
-apache_version: "latest"              # Use latest stable Apache version
-php_version: "latest"                 # Use latest stable PHP version  
-mysql_version: "latest"               # Use latest stable MariaDB version
+# ==============================================
+# NOTE: Software versions are managed centrally in vulnerability-profiles.yml
+# These defaults are only used as fallbacks if profiles don't specify a version
+# ==============================================
 
-# Application Versions - Specific versions for lab consistency  
-gitea_version: "1.16.0"              # Latest stable Gitea version
-dokuwiki_version: "stable"           # Latest stable DokuWiki version
-mantisbt_version: "2.25.8"           # Latest stable MantisBT version
-
-# Monitoring and System Services
-cockpit_version: "latest"            # Latest stable Cockpit version
-postfix_version: "latest"            # Latest stable Postfix version
-openssh_version: "latest"            # System available version
-
-# Database Configuration
-mysql_root_password: "CleanLabPassword123!"
-
-# Vulnerability Profile (can be overridden)
+# Default vulnerability profile (can be overridden via command line)
 vulnerability_profile: "secure_profile"
+
+# Base packages to install (not version-specific)
+base_packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - net-tools
+  - unzip
+  - software-properties-common
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
