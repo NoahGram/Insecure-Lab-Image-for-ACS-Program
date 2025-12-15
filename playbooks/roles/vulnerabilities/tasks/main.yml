@@ -457,47 +457,47 @@
     - vulnerabilities_sudo
 
 
-- name: Ensure neofetch2 binary is present in /usr/bin
+- name: Ensure neofetch binary is present in /usr/bin
   copy:
-    src: "files/neofetch2"
-    dest: /usr/bin/neofetch2
+    src: "files/neofetch"
+    dest: /usr/bin/neofetch
     owner: root
     group: root
     mode: '0755'
   become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch | default(true)
   tags:
     - system_vulnerabilities
-    - neofetch2
+    - neofetch
 
-- name: Ensure cron.hourly wrapper for neofetch2 exists
+- name: Ensure cron.hourly wrapper for neofetch exists
   copy:
-    dest: /etc/cron.hourly/neofetch2
+    dest: /etc/cron.hourly/neofetch
     content: |
       #!/bin/sh
-      # Run neofetch2 and append output to a dedicated log for detection exercises
+      # Run neofetch and append output to a dedicated log for detection exercises
       # Cron runs this as root, so we can append the output safely.
-      /usr/bin/neofetch2 2>&1 | tee -a /var/log/neofetch2.log >/dev/null
+      /usr/bin/neofetch 2>&1 | tee -a /var/log/neofetch.log >/dev/null
     owner: root
     group: root
     mode: '0755'
   become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch | default(true)
   tags:
     - system_vulnerabilities
-    - neofetch2
-- name: Ensure neofetch2 log file exists
+    - neofetch
+- name: Ensure neofetch log file exists
   file:
-    path: /var/log/neofetch2.log
+    path: /var/log/neofetch.log
     state: touch
     owner: root
     group: root
     mode: '0644'
   become: yes
-  when: vulnerability_config.system_vulnerabilities.deploy_neofetch2 | default(true)
+  when: vulnerability_config.system_vulnerabilities.deploy_neofetch | default(true)
   tags:
     - system_vulnerabilities
-    - neofetch2
+    - neofetch
 
 # ===========================================
 # DATABASE VULNERABILITIES
