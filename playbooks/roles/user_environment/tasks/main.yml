@@ -352,7 +352,7 @@
 - name: Disable default Ubuntu MOTD scripts
   file:
     path: "/etc/update-motd.d/{{ item }}"
-    mode: '0644'
+    state: absent
   loop:
     - 10-help-text
     - 50-motd-news
