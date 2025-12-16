@@ -1,5 +1,5 @@
 # Use a minimal Python image as the base
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Install necessary OS packages: pip is for Ansible, openssh-client is for SSH connections to managed nodes
 RUN apt-get update && \
