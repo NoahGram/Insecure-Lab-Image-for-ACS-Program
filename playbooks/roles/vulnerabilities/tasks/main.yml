@@ -778,7 +778,7 @@
     - application_vulnerabilities
     - dokuwiki
 
-- name: Ensure root namespace directory exists
+- name: Ensure DokuWiki root media namespace directory exists
   file:
     path: /var/www/dokuwiki/data/media/0
     state: directory
