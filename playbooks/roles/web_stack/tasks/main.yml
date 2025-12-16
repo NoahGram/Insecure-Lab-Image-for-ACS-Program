@@ -1,6 +1,12 @@
 ---
 # Web Stack Role - Apache, PHP installation and LabSys Wiki configuration
 
+# Update apt cache once to avoid repeated refreshes (speeds subsequent installs)
+- name: Update apt cache (once)
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
 # Add PHP repository for older versions (required for Ubuntu 24.04)
 - name: Add Ondrej Sury PHP repository
   ansible.builtin.apt_repository:
@@ -22,7 +28,8 @@
       - "{% if php_version == 'latest' %}php-xml{% else %}php{{ php_version }}-xml{% endif %}"
       - "{% if php_version == 'latest' %}php-zip{% else %}php{{ php_version }}-zip{% endif %}"
     state: present
-    update_cache: yes
+    update_cache: no
+    install_recommends: no
 
 - name: Enable Apache modules
   apache2_module:
