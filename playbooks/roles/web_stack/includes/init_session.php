@@ -3,7 +3,7 @@ $cookie_params = [
     'lifetime' => 0,
     'path' => '/',
     'domain' => '',
-    'secure' => isset($_SERVER['HTTPS']),
+    'secure' => true,
     'httponly' => true,
     'samesite' => 'Lax'
 ];

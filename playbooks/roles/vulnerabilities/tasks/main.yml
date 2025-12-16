@@ -768,11 +768,11 @@
     state: absent
   when: vulnerable_mode | default(false)
 
-- name: Remove all enforce_csrf() calls in vulnerable mode
-  replace:
+- name: Remove enforce_csrf() calls in vulnerable mode
+  ansible.builtin.lineinfile:
     path: /var/www/html/labsys-wiki/includes/actions.php
-    regexp: "^\\s*enforce_csrf\\(\\s*'[^']*'\\s*\\);\\s*$"
-    replace: ""
+    regexp: "^\\s*enforce_csrf\\(\\s*'[^']*'\\s*\\);"
+    state: absent
   when: vulnerable_mode | default(false)
 
 - name: Remove CSRF token generation in vulnerable mode
