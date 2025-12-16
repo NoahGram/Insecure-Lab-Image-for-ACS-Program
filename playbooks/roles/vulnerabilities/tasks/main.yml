@@ -411,7 +411,7 @@
 - name: CVE-2025-32463 - Deploy vulnerable sudo package (Pre-compiled .deb)
   block:
     - name: Download the pre-compiled vulnerable sudo .deb package
-      ansible.builtin.get_url:
+      get_url:
         # Use the specific URL for the Ubuntu 22.04 package you found
         url: "{{ vulnerabilities_sudo_download_url }}"
         # Download it to the /tmp directory, which is a safe staging area
