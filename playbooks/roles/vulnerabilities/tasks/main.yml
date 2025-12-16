@@ -55,7 +55,7 @@
 - name: Deploy SSRF vulnerability
   copy:
     src: files/web/api/ssrf.php
-    dest: /var/www/roles/vulnerabilities/web_stack/ssrf.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_fetch.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -67,7 +67,7 @@
 - name: Deploy exposed diagnostics vulnerability
   copy:
     src: files/web/api/exposed_diagnostics.php
-    dest: /var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php
+    dest: /var/www/html/labsys-wiki/includes/modules/diagnostics.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -79,7 +79,7 @@
 - name: Deploy exposed test endpoints vulnerability
   copy:
     src: files/web/api/exposed_test_endpoints.php
-    dest: /var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_test.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -91,7 +91,7 @@
 - name: Deploy insecure API tokens vulnerability
   copy:
     src: files/web/api/insecure_tokens.php
-    dest: /var/www/roles/vulnerabilities/web_stack/insecure_tokens.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_tokens.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -103,7 +103,7 @@
 - name: Deploy verbose error messages vulnerability
   copy:
     src: files/web/api/verbose_error_messages.php
-    dest: /var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php
+    dest: /var/www/html/labsys-wiki/includes/modules/error_display.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -112,9 +112,28 @@
     - api_vulnerabilities
     - verbose_error_messages
   
+- name: Inject insecure token handler into login action
+  blockinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    marker: ""
+    insertafter: "\\$_SESSION\\['role'\\] = \\$row\\['role'\\];"
+    block: |
+      
+                              // API token handling
+                              if (function_exists('generate_insecure_api_token')) {
+                                  $api_token = generate_insecure_api_token($row);
+                                  $_SESSION['api_token'] = $api_token;
+                                  header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
+                                  exit;
+                              }
+  when: vulnerability_config.api_vulnerabilities.insecure_tokens | default(false)
+  tags:
+    - api_vulnerabilities
+    - insecure_tokens
+      
 # ===========================================
 # SYSTEM VULNERABILITIES
-# ===========================================
+# =========================================== 
 
 - name: Set SUID on python3 interpreter
   block:

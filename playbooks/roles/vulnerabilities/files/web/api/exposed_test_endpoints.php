@@ -1,7 +1,4 @@
 <?php
-// VULNERABILITY: API testing endpoint left in production
-// Exposes internal application state
-
 if ($action === 'api_test') {
     if (isset($_GET['show_session'])) {
         echo json_encode([

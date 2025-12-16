@@ -1,4 +1,7 @@
 <?php
+$action = $_REQUEST['action'] ?? 'view';
+$page = $_REQUEST['page'] ?? 'Home';
+
 require_once __DIR__ . '/init_session.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/logger.php';
@@ -6,16 +9,13 @@ require_once __DIR__ . '/modules/login_helpers.php';
 require_once __DIR__ . '/modules/password_validation.php';
 require_once __DIR__ . '/modules/output_escaping.php';
 require_once __DIR__ . '/modules/authorization.php';
-
-$action = $_REQUEST['action'] ?? 'view';
-$page = $_REQUEST['page'] ?? 'Home';
+require_once __DIR__ . '/modules/api_fetch.php';
+require_once __DIR__ . '/modules/api_test.php';
+require_once __DIR__ . '/modules/api_tokens.php';
+require_once __DIR__ . '/modules/diagnostics.php';
+require_once __DIR__ . '/modules/error_display.php';
 
 $vuln_files = [
-    '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
-    '/var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php',
-    '/var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php',
-    '/var/www/roles/vulnerabilities/web_stack/insecure_tokens.php',
-    '/var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php',
     "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 
@@ -66,14 +66,6 @@ switch ($action) {
                             $_SESSION['username'] = $row['username'];
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'];
-
-                            // Optional API token handling
-                            if (function_exists('generate_insecure_api_token')) {
-                                $api_token = generate_insecure_api_token($row);
-                                $_SESSION['api_token'] = $api_token;
-                                header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
-                                exit;
-                            }
 
                             header('Location: ?page=' . rawurlencode($page));
                             exit;

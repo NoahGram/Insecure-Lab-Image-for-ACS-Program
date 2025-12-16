@@ -1,7 +1,4 @@
-<?php
-// VULNERABILITY: SSRF - Server-Side Request Forgery
-// Add the fetch_resource action handler
-
+<?php 
 if ($action === 'fetch_resource') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['url'])) {
         $url = $_POST['url'] ?? $_GET['url'] ?? '';

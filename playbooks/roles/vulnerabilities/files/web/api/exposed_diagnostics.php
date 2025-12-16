@@ -1,7 +1,4 @@
 <?php
-// VULNERABILITY: EXPOSURE OF SENSITIVE INFORMATION
-// Diagnostic endpoint exposed without authentication
-
 if ($action === 'diagnostics') {
     if (!isset($_GET['check'])) {
         echo json_encode(['error' => 'No diagnostic check specified']);
