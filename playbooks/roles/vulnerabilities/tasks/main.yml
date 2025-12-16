@@ -755,3 +755,53 @@
     owner: www-data
     group: www-data
     mode: "0644"
+
+# ===========================================
+# APPLICATION VULNERABILITIES - DokuWiki
+# ===========================================
+
+- name: Configure DokuWiki media handler
+  template:
+    src: templates/dokuwiki-media.conf.j2
+    dest: /etc/apache2/conf-available/dokuwiki-media.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.application_vulnerabilities.dokuwiki_svg_rce | default(false)
+  notify: restart apache
+  tags:
+    - application_vulnerabilities
+    - dokuwiki
+
+- name: Enable DokuWiki media configuration
+  command: a2enconf dokuwiki-media
+  args:
+    creates: /etc/apache2/conf-enabled/dokuwiki-media.conf
+  when: vulnerability_config.application_vulnerabilities.dokuwiki_svg_rce | default(false)
+  notify: restart apache
+  tags:
+    - application_vulnerabilities
+    - dokuwiki
+
+- name: Disable DokuWiki media configuration
+  command: a2disconf dokuwiki-media
+  args:
+    removes: /etc/apache2/conf-enabled/dokuwiki-media.conf
+  when: not (vulnerability_config.application_vulnerabilities.dokuwiki_svg_rce | default(false))
+  notify: restart apache
+  failed_when: false
+  tags:
+    - application_vulnerabilities
+    - dokuwiki
+
+- name: Ensure DokuWiki root media namespace directory exists
+  file:
+    path: /var/www/dokuwiki/data/media/0
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  when: vulnerability_config.application_vulnerabilities.dokuwiki_svg_rce | default(false)
+  tags:
+    - application_vulnerabilities
+    - dokuwiki

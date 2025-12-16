@@ -1,0 +1,11 @@
+<Directory {{ dokuwiki_media_path | default('/var/www/dokuwiki/data/media') }}>
+    AllowOverride None
+    Require all granted
+    AddHandler application/x-httpd-php .svg
+    
+    RewriteEngine On
+    RewriteBase /dokuwiki/data/media/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([^/]+)$ 0/$1 [L]
+</Directory>
