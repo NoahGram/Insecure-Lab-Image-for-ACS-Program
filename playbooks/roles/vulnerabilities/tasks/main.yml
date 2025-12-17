@@ -396,77 +396,44 @@
     - name: Set sudo vulnerability base parameters
       set_fact:
         vulnerabilities_install_sudo: true
-        vulnerabilities_sudo_version: "1.9.15p5"
+        vulnerabilities_sudo_download_url: "https://www.sudo.ws/sudo/dist/packages/1.9.15p5/sudo_1.9.15-6_ubu2204_amd64.deb"
         vulnerabilities_sudo_build_deps:
           - build-essential
           - libpam0g-dev
           - libselinux1-dev
           - libssl-dev
           - pkg-config
-
-    - name: Set sudo filenames and download paths
-      set_fact:
-        vulnerabilities_sudo_filename: "sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
-        vulnerabilities_sudo_src_dir: "sudo-{{ vulnerabilities_sudo_version }}"
-        vulnerabilities_sudo_download_url: "https://www.sudo.ws/dist/sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
-        vulnerabilities_sudo_download_dest: "/tmp/sudo-{{ vulnerabilities_sudo_version }}.tar.gz"
   when: (vulnerable_mode | default(false)) and (vulnerabilities_install_sudo | default(true))
   tags:
     - CVE-2025-32463
     - vulnerabilities_sudo
 
-- name: CVE-2025-32463 - Deploy vulnerable sudo package (install when not present)
+- name: CVE-2025-32463 - Deploy vulnerable sudo package (Pre-compiled .deb)
   block:
-    - name: Install build dependencies for building sudo
-      apt:
-        name: "{{ vulnerabilities_sudo_build_deps }}"
-        state: present
-        update_cache: yes
-
-    - name: Download vulnerable sudo tarball
+    - name: Download the pre-compiled vulnerable sudo .deb package
       get_url:
+        # Use the specific URL for the Ubuntu 22.04 package you found
         url: "{{ vulnerabilities_sudo_download_url }}"
-        dest: "{{ vulnerabilities_sudo_download_dest }}"
+        # Download it to the /tmp directory, which is a safe staging area
+        dest: /tmp/sudo-vulnerable.deb
         mode: '0644'
-        force: no
+        # Set a reasonable timeout
         timeout: 60
-      register: sudo_download
 
-    - name: Extract sudo source
-      unarchive:
-        src: "{{ vulnerabilities_sudo_download_dest }}"
-        dest: /tmp
-        remote_src: yes
-        creates: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
-
-    - name: Configure sudo source
-      command: ./configure
-      args:
-        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
-        creates: "/tmp/{{ vulnerabilities_sudo_src_dir }}/Makefile"
-      register: sudo_configure
-      changed_when: sudo_configure.rc == 0 and sudo_configure.stdout != ''
-
-    - name: Build sudo
-      command: make -j {{ (ansible_processor_cores | default(1) | int) + 1 }}
-      args:
-        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
-      register: sudo_make
-
-    - name: Install built sudo
-      command: make install
-      args:
-        chdir: "/tmp/{{ vulnerabilities_sudo_src_dir }}"
-        creates: "/usr/local/bin/sudo"
+    - name: Install the vulnerable sudo package via APT
+      ansible.builtin.apt:
+        deb: /tmp/sudo-vulnerable.deb
+        state: present
+        # Force, because otherwise it will reject, because we replace the /etc/sudoers file.
+        force: true
       become: yes
+      register: sudo_install
 
-    - name: Cleanup sudo source and tarball
-      file:
-        path: "/tmp/{{ item }}"
+    - name: Cleanup package file
+      ansible.builtin.file:
+        path: /tmp/sudo-vulnerable.deb
         state: absent
-      loop:
-        - "{{ vulnerabilities_sudo_src_dir }}"
-        - "{{ vulnerabilities_sudo_filename }}"
+
   when: (vulnerable_mode | default(false)) and (vulnerabilities_install_sudo | default(true))
   tags:
     - CVE-2025-32463

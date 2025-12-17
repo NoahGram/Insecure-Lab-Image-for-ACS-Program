@@ -5,7 +5,7 @@
 - name: Update apt cache (once)
   ansible.builtin.apt:
     update_cache: yes
-    cache_valid_time: 3600
+    cache_valid_time: 600
 
 # Add PHP repository for older versions (required for Ubuntu 24.04)
 - name: Add Ondrej Sury PHP repository
