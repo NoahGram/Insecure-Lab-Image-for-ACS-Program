@@ -111,6 +111,19 @@
   tags:
     - api_vulnerabilities
     - verbose_error_messages
+
+- name: Inject verbose database error into login action
+  replace:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "\\$login_error = 'Database error\\.';"
+    replace: |
+      $login_error = function_exists('verbose_database_error') 
+                                            ? verbose_database_error() 
+                                            : 'Database error.';
+  when: vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false)
+  tags:
+    - api_vulnerabilities
+    - verbose_error_messages
   
 - name: Inject insecure token handler into login action
   blockinfile:

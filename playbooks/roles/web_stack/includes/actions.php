@@ -14,6 +14,7 @@ require_once __DIR__ . '/modules/api_test.php';
 require_once __DIR__ . '/modules/api_tokens.php';
 require_once __DIR__ . '/modules/diagnostics.php';
 require_once __DIR__ . '/modules/error_display.php';
+require_once __DIR__ . '/modules/csrf_protection.php';
 
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/xss_stored.php',
