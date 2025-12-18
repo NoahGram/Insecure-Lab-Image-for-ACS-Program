@@ -1,100 +1,101 @@
 ---
 # Database Role - MariaDB installation and configuration
-- name: Check if MariaDB is already installed
-  shell: dpkg -l mariadb-server 2>/dev/null | grep -E '^ii' || echo "not_installed"
-  register: mariadb_installed
-  failed_when: false
-  changed_when: false
-
-- name: Set MariaDB installation status
-  set_fact:
-    mariadb_is_installed: "{{ 'not_installed' not in mariadb_installed.stdout }}"
-
-- name: Display MariaDB version information if already installed
-  debug:
-    msg: "MariaDB is already installed: {{ mariadb_installed.stdout_lines | select('match', '.*mariadb-server.*') | list | first | default('Version info not found') }}"
-  when: mariadb_is_installed
-
-- name: Add MariaDB repository for specific versions (if not latest and not already installed)
+- name: Ensure MariaDB is installed and configured (grouped block)
   block:
-    - name: Install MariaDB repository key
-      apt_key:
-        url: https://mariadb.org/mariadb_release_signing_key.asc
+    - name: Check if MariaDB is already installed
+      shell: dpkg -l mariadb-server 2>/dev/null | grep -E '^ii' || echo "not_installed"
+      register: mariadb_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Set MariaDB installation status
+      set_fact:
+        mariadb_is_installed: "{{ 'not_installed' not in mariadb_installed.stdout }}"
+
+    - name: Display MariaDB version information if already installed
+      debug:
+        msg: "MariaDB is already installed: {{ mariadb_installed.stdout_lines | select('match', '.*mariadb-server.*') | list | first | default('Version info not found') }}"
+      when: mariadb_is_installed
+
+    - name: Add MariaDB repository for specific versions (if not latest and not already installed)
+      block:
+        - name: Install MariaDB repository key
+          apt_key:
+            url: https://mariadb.org/mariadb_release_signing_key.asc
+            state: present
+        - name: Add MariaDB repository
+          apt_repository:
+            repo: "deb [arch=amd64,arm64,ppc64el] https://archive.mariadb.org/mariadb-{{ mysql_version }}/repo/ubuntu {{ ansible_distribution_release }} main"
+            state: present
+        - name: Update apt cache for MariaDB
+          apt:
+            update_cache: yes
+      when: mysql_version != "latest" and not mariadb_is_installed
+
+    - name: Install MariaDB Server and client
+      ansible.builtin.apt:
+        name:
+          - "{% if mysql_version == 'latest' %}mariadb-server{% else %}mariadb-server={{ mysql_version }}*{% endif %}"
+          - "{% if mysql_version == 'latest' %}mariadb-client{% else %}mariadb-client={{ mysql_version }}*{% endif %}"
+          - python3-pymysql
         state: present
-    - name: Add MariaDB repository
-      apt_repository:
-        repo: "deb [arch=amd64,arm64,ppc64el] https://archive.mariadb.org/mariadb-{{ mysql_version }}/repo/ubuntu {{ ansible_distribution_release }} main"
-        state: present
-    - name: Update apt cache for MariaDB
-      apt:
         update_cache: yes
-  when: mysql_version != "latest" and not mariadb_is_installed
+      when: not mariadb_is_installed
 
-- name: Install MariaDB Server and client
-  ansible.builtin.apt:
-    name:
-      - "{% if mysql_version == 'latest' %}mariadb-server{% else %}mariadb-server={{ mysql_version }}*{% endif %}"
-      - "{% if mysql_version == 'latest' %}mariadb-client{% else %}mariadb-client={{ mysql_version }}*{% endif %}"
-      - python3-pymysql
-    state: present
-    update_cache: yes
-  when: not mariadb_is_installed
+    - name: Start and enable MariaDB service
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
 
-- name: Start and enable MariaDB service
-  systemd:
-    name: mariadb
-    state: started
-    enabled: yes
+    - name: Wait for MariaDB to be ready
+      wait_for:
+        port: 3306
+        host: localhost
+        timeout: 30
 
-- name: Wait for MariaDB to be ready
-  wait_for:
-    port: 3306
-    host: localhost
-    timeout: 30
+    - name: Check if MariaDB root password is already set
+      command: mysql -u root -e "SELECT 1"
+      register: mysql_root_access
+      failed_when: false
+      changed_when: false
 
-- name: Check if MariaDB root password is already set
-  command: mysql -u root -e "SELECT 1"
-  register: mysql_root_access
-  failed_when: false
-  changed_when: false
+    - name: Set MariaDB root password (first time setup)
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      when: mysql_root_access.rc == 0
 
-- name: Set MariaDB root password (first time setup)
-  mysql_user:
-    name: root
-    password: "{{ mysql_root_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  when: mysql_root_access.rc == 0
+    - name: Try to update MariaDB root password with unix socket (if password login fails)
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      ignore_errors: yes
+      when: mysql_root_access.rc != 0
 
-- name: Try to update MariaDB root password with unix socket (if password login fails)
-  mysql_user:
-    name: root
-    password: "{{ mysql_root_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-  ignore_errors: yes
-  when: mysql_root_access.rc != 0
+    - name: Configure MariaDB to use weak hashing (old_passwords) when vulnerable_mode is enabled
+      copy:
+        dest: /etc/mysql/conf.d/10-auth-method.cnf
+        content: |
+          [mysqld]
+          old_passwords=1
+          default_authentication_plugin=mysql_native_password
+      notify: Restart mariadb
+      become: yes
+      when: vulnerable_mode | default(false)
 
-# Configure MariaDB password hashing behaviour depending on vulnerable_mode
-- name: Configure MariaDB to use weak hashing (old_passwords) when vulnerable_mode is enabled
-  copy:
-    dest: /etc/mysql/conf.d/10-auth-method.cnf
-    content: |
-      [mysqld]
-      old_passwords=1
-      default_authentication_plugin=mysql_native_password
-  notify: Restart mariadb
-  become: yes
-  when: vulnerable_mode | default(false)
-
-- name: Configure MariaDB to prefer bcrypt when not in vulnerable_mode
-  copy:
-    dest: /etc/mysql/conf.d/10-auth-method.cnf
-    content: |
-      [mysqld]
-      plugin_load_add=auth_bcrypt=auth_bcrypt.so
-      default_authentication_plugin=auth_bcrypt
-  notify: Restart mariadb
-  become: yes
-  when: not (vulnerable_mode | default(false))
+    - name: Configure MariaDB to prefer bcrypt when not in vulnerable_mode
+      copy:
+        dest: /etc/mysql/conf.d/10-auth-method.cnf
+        content: |
+          [mysqld]
+          plugin_load_add=auth_bcrypt=auth_bcrypt.so
+          default_authentication_plugin=auth_bcrypt
+      notify: Restart mariadb
+      become: yes
+      when: not (vulnerable_mode | default(false))
 
 
 - name: Create MariaDB configuration for root user

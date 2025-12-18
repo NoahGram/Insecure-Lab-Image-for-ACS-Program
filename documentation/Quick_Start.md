@@ -56,7 +56,28 @@ cd ~/  # Or your preferred location
 git clone https://github.com/NoahGram/ansible-control-node.git
 cd ansible-control-node
 ```
+---
+### Issue during installation: Make sure that the neofetch RAT file is not detected by your antivirus software.
+If your antivirus or Windows Defender detects this file, please whitelist the file from your antivirus software temporarily during the setup process.
+Make sure that the exclusion is only done for this specific file/folder to avoid security risks.
 
+For Windows users specifically, please ensure that Windows Defender does not quarantine the neofetch RAT file. You can do this by adding an exclusion for the file in Windows Defender settings. Like this:
+
+1. Open Windows Security.
+2. Go to "Virus & threat protection".
+3. Click on "Manage settings" under "Virus & threat protection settings".
+4. Scroll down to "Exclusions" and click on "Add or remove exclusions".
+5. Click on "Add an exclusion" and select "Folder".
+6. Browse to the location of the folder where the neofetch RAT file is and select it to add the exclusion.
+
+![How to add exclusion in Windows Defender](images/Defender.png)
+
+This will make sure that the neofetch RAT file is not blocked during the setup and operation of the Ansible Control Node. If it does occur that the file is deleted or quarantined, you could either redownload it from the repository or use git to restore it in the terminal. By doing:
+
+```bash
+# Inside of the ansible-control-node directory, this will restore any deleted files
+git restore .
+```
 ---
 
 ### Step 2: Configure Your Environment

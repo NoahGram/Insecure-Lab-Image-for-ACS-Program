@@ -16,6 +16,7 @@ require_once __DIR__ . '/modules/diagnostics.php';
 require_once __DIR__ . '/modules/error_display.php';
 
 $vuln_files = [
+    '/var/www/roles/vulnerabilities/web_stack/xss_stored.php',
     "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 

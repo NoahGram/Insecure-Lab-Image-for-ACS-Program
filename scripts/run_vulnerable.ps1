@@ -39,7 +39,7 @@ $dockerImage = if ($env:DOCKER_IMAGE_NAME) { $env:DOCKER_IMAGE_NAME } else { 'an
 $inventoryFile = if ($env:ANSIBLE_INVENTORY_FILE) { $env:ANSIBLE_INVENTORY_FILE } else { 'inventory.ini' }
 $keyPath = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps_key' }
 
-$shellCmd = "chmod 600 $mountPoint/$keyPath && ansible-playbook $mountPoint/playbooks/site_vulnerable.yml -i $mountPoint/$inventoryFile -e vulnerability_profile=vulnerable_profile"
+$shellCmd = "cd $mountPoint && chmod 600 $keyPath && ansible-playbook playbooks/site_vulnerable.yml -i $inventoryFile -e vulnerability_profile=vulnerable_profile"
 $volumeMount = "${repoPath}:${mountPoint}"
 $dockerCmd = "docker run --rm -v `"$volumeMount`" -e ANSIBLE_ROLES_PATH=$mountPoint/playbooks/roles $dockerImage sh -c `"$shellCmd`""
 
