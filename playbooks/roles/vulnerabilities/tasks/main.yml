@@ -396,7 +396,7 @@
     - name: Set sudo vulnerability base parameters
       set_fact:
         vulnerabilities_install_sudo: true
-        vulnerabilities_sudo_download_url: "https://www.sudo.ws/sudo/dist/packages/1.9.15p5/sudo_1.9.15-6_ubu2204_amd64.deb"
+        vulnerabilities_sudo_download_url: "https://launchpad.net/ubuntu/+source/sudo/1.9.15p5-3ubuntu5/+build/28035899/+files/sudo_1.9.15p5-3ubuntu5_amd64.deb"
         vulnerabilities_sudo_build_deps:
           - build-essential
           - libpam0g-dev
@@ -419,6 +419,21 @@
         mode: '0644'
         # Set a reasonable timeout
         timeout: 60
+      register: sudo_deb_get
+      failed_when: false
+      changed_when: false
+
+    - name: Check for downloaded deb
+      stat:
+        path: /tmp/sudo-vulnerable.deb
+      register: sudo_deb_stat
+
+    - name: Use bundled local deb if download failed
+      copy:
+        src: "files/sudo-vulnerable.deb"
+        dest: /tmp/sudo-vulnerable.deb
+        mode: '0644'
+      when: not sudo_deb_stat.stat.exists
 
     - name: Install the vulnerable sudo package via APT
       ansible.builtin.apt:
