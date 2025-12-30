@@ -7,7 +7,6 @@ function base64url_decode($data) {
     return base64_decode(strtr($data, '-_', '+/'));
 }
 
-// Vulnerable: Accept JWT with alg "none" (no signature)
 if (isset($_GET['api_token']) && !empty($_GET['api_token'])) {
     $provided_token = $_GET['api_token'];
     $parts = explode('.', $provided_token);
@@ -16,7 +15,6 @@ if (isset($_GET['api_token']) && !empty($_GET['api_token'])) {
         $header = json_decode(base64url_decode($parts[0]), true);
         $payload = json_decode(base64url_decode($parts[1]), true);
 
-        // No signature verification at all!
         if ($header && $payload && isset($payload['user_id'])) {
             $_SESSION['username'] = $payload['username'];
             $_SESSION['email'] = $payload['email'] ?? '';
@@ -28,7 +26,6 @@ if (isset($_GET['api_token']) && !empty($_GET['api_token'])) {
     }
 }
 
-// Vulnerable JWT generator (alg: none)
 if (!function_exists('generate_insecure_api_token')) {
     function generate_insecure_api_token(array $user_row): string
     {
