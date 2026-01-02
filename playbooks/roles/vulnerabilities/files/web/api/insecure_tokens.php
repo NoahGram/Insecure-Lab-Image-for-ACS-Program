@@ -26,8 +26,8 @@ if (isset($_GET['api_token']) && !empty($_GET['api_token'])) {
     }
 }
 
-if (!function_exists('generate_insecure_api_token')) {
-    function generate_insecure_api_token(array $user_row): string
+if (!function_exists('jwt_token_builder')) {
+    function jwt_token_builder(array $user_row): string
     {
         $header = ['alg' => 'none', 'typ' => 'JWT'];
         $payload = [
