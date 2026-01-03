@@ -5,7 +5,7 @@
 prod_db = mysql://root:maria@localhost:3306/production
 gitea_db = mysql://gitea:cup_of_tea@localhost:3306/gitea
 mantisbt_db = mysql://mantisbt:apache2Mantis@localhost:3306/mantisbt
-test_db = mysql://testuser:testpass@localhost:3306/wikidb
+wiki_db = mysql://testuser:testpass@localhost:3306/wikidb
 dev_db = mysql://developer:DevPassword789@localhost:3306/development
 
 [web_services]
