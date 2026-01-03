@@ -14,17 +14,20 @@ Vagrant.configure("2") do |config|
   
   # Network Configuration - Port Forwarding
   # SSH
-  config.vm.network "forwarded_port", guest: 22, host: 2222, host_ip: "127.0.0.1", id: "ssh"
+  config.vm.network "forwarded_port", guest: 22, host: 2222, host_ip: "0.0.0.0", id: "ssh"
   
   # Web Services
-  config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"      # Apache/HTTP
-  config.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "127.0.0.1"    # HTTPS
-  
+  config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "0.0.0.0"      # Apache/HTTP
+  config.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "0.0.0.0"    # HTTPS
+
   # Applications
-  config.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"   # Gitea
-  config.vm.network "forwarded_port", guest: 3306, host: 3306, host_ip: "127.0.0.1"   # MariaDB (optional)
-  config.vm.network "forwarded_port", guest: 9090, host: 9090, host_ip: "127.0.0.1"   # Cockpit
+  config.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "0.0.0.0"   # Gitea
+  config.vm.network "forwarded_port", guest: 3306, host: 3306, host_ip: "0.0.0.0"   # MariaDB (optional)
+  config.vm.network "forwarded_port", guest: 9090, host: 9090, host_ip: "0.0.0.0"   # Cockpit
   
+  # Private network for Docker/host access
+  config.vm.network "private_network", ip: "192.168.56.50"
+
   # Disable default Vagrant SSH key (we'll use our own)
   config.ssh.insert_key = false
   
