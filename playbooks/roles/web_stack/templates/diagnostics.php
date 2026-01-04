@@ -36,11 +36,13 @@
                 Environment Info
             </h3>
             <p class="small muted" style="margin-bottom: 15px;">Inspect server configuration and session data.</p>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button onclick="runDiagnostic('api_test', {show_config:1})" class="btn"
                     style="background: #fff; border: 1px solid #ddd; color: #333;">PHP Config</button>
                 <button onclick="runDiagnostic('api_test', {show_session:1})" class="btn"
                     style="background: #fff; border: 1px solid #ddd; color: #333;">Session State</button>
+                <button onclick="runDiagnostic('diagnostics', {check:'env'})" class="btn"
+                    style="background: #fff; border: 1px solid #ddd; color: #333;">Full Environment</button>
             </div>
             <div id="env-result" style="margin-top: 15px; display: none;">
                 <div
@@ -58,7 +60,7 @@
                 style="background: #fff; border: 1px solid #ddd; color: #333;">Run Integrity Check</button>
             <div id="db-result" style="margin-top: 15px; display: none;">
                 <div
-                    style="background: #f9fafb; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; overflow-x: auto; word-break: break-all;">
+                    style="background: #f9fafb; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; overflow-x: auto; max-height: 300px; overflow-y: auto; word-break: break-all;">
                 </div>
             </div>
         </div>
@@ -68,8 +70,9 @@
         <h3 style="margin: 0 0 10px 0; font-size: 14px;">Diagnostic Tool Dictionary</h3>
         <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
             <li><strong>Connectivity:</strong> Performs integration checks to confirm external service availability.</li>
-            <li><strong>Environment:</strong> Inspects loaded extensions and session data.</li>
-            <li><strong>Database:</strong> Verifies database availability, latency, and server metadata.</li>
+            <li><strong>Environment:</strong> Inspects session data, server variables, and environment variables.</li>
+            <li><strong>Database:</strong> Verifies database availability, latency, server metadata, and configuration details.</li>
+            <li><strong>Full Environment:</strong> Shows all environment variables, server settings, and system configuration.</li>
         </ul>
     </div>
 
@@ -107,7 +110,16 @@
         }
 
         async function runDiagnostic(action, params) {
-            const container = document.getElementById(action === 'api_test' ? 'env-result' : 'db-result');
+            let containerId;
+            if (action === 'api_test') {
+                containerId = 'env-result';
+            } else if (params.check === 'env') {
+                containerId = 'env-result';
+            } else {
+                containerId = 'db-result';
+            }
+            
+            const container = document.getElementById(containerId);
             const resultBox = container.firstElementChild;
 
             container.style.display = 'block';
