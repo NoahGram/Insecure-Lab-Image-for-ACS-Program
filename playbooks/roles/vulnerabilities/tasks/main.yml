@@ -787,6 +787,13 @@
     state: absent
   when: vulnerable_mode | default(false)
 
+- name: Remove csrf_protection require in vulnerable mode
+  ansible.builtin.lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*require_once\\s+__DIR__\\s*\\.\\s*'/modules/csrf_protection\\.php';"
+    state: absent
+  when: vulnerable_mode | default(false)
+
 - name: Remove CSRF token generation in vulnerable mode
   lineinfile:
     path: /var/www/html/labsys-wiki/includes/actions.php

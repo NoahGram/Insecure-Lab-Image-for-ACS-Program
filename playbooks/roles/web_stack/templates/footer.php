@@ -1,5 +1,5 @@
   <footer>
-    <small>LabSys Wiki — training lab. Keep it isolated and responsible.</small>
+    <small>LabSys Wiki</small>
   </footer>
 </body>
 </html>
