@@ -1,0 +1,7 @@
+====== About MegaBit Security ======
+
+MegaBit Security is an educational simulation used to teach students defensive and offensive security skills.  The environment mimics a small company's internal infrastructure and documentation.
+
+**Mission**: Provide hands-on labs and realistic scenarios for red/blue team training.
+
+**Contact**: Internal IT (it-team@MegaBit.local) — for the simulation, use the `it` namespace pages for procedures and support.

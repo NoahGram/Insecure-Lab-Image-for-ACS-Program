@@ -1,0 +1,17 @@
+====== IT: Security Procedures ======
+
+This page contains high-level security procedures used by the IT team.
+
+**Password policy**: Use strong, unique passwords; rotate per exercise requirements.
+
+**Incident response**:
+
+  1. Triage the alert
+  2. Isolate affected host
+  3. Preserve logs and evidence
+  4. Notify training staff
+
+**Useful links**:
+
+  * :company:hr:policies - HR policies
+  * :onboarding:getting-started - Onboarding checklist

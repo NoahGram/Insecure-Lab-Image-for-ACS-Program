@@ -1,0 +1,9 @@
+====== HR: Policies ======
+
+This page summarizes a small set of HR policies. These are intentionally simplified for exercises.
+
+  * Work hours: 09:00 - 17:30
+  * Leave requests: submit to HR (hr@MegaBit.local)
+  * Acceptable use: Company machines are for work-related tasks and approved training only
+
+Security-sensitive policies (passwords, credentials) are not stored here — use the secret management exercises instead.

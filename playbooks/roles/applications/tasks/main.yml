@@ -153,6 +153,61 @@
     timeout: 60
   retries: 3
 
+- name: Ensure DokuWiki pages directory exists
+  ansible.builtin.file:
+    path: /var/www/dokuwiki/data/pages
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Check for rsync on control machine
+  ansible.builtin.command: which rsync
+  delegate_to: localhost
+  register: rsync_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Deploy DokuWiki pages using rsync (if available)
+  ansible.builtin.synchronize:
+    src: "{{ playbook_dir }}/files/dokuwiki/data/pages/"
+    dest: /var/www/dokuwiki/data/pages/
+    recursive: yes
+    rsync_opts:
+      - "--chmod=F644,D755"
+  delegate_to: localhost
+  when: rsync_check.rc == 0
+
+- name: Create tar archive of DokuWiki pages on control (fallback)
+  ansible.builtin.command: >
+    tar -C "{{ playbook_dir }}/files/dokuwiki/data" -czf /tmp/dokuwiki_pages_{{ inventory_hostname }}.tar.gz pages
+  delegate_to: localhost
+  register: tar_result
+  when: rsync_check.rc != 0
+
+- name: Upload and extract DokuWiki pages archive on target (fallback)
+  ansible.builtin.unarchive:
+    src: "/tmp/dokuwiki_pages_{{ inventory_hostname }}.tar.gz"
+    dest: /var/www/dokuwiki/data/pages/
+    remote_src: no
+  when: rsync_check.rc != 0
+
+- name: Remove temporary archive from control
+  ansible.builtin.file:
+    path: "/tmp/dokuwiki_pages_{{ inventory_hostname }}.tar.gz"
+    state: absent
+  delegate_to: localhost
+  when: rsync_check.rc != 0
+
+- name: Ensure correct ownership for DokuWiki installation
+  ansible.builtin.file:
+    path: /var/www/dokuwiki
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+
 - name: Extract MantisBT to web directory
   unarchive:
     src: /tmp/mantisbt.tar.gz

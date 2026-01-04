@@ -1,0 +1,12 @@
+====== Onboarding: Getting Started ======
+
+Welcome to MegaBit Security. This short checklist helps new trainees get started in the environment.
+
+**Steps**
+
+  * Confirm access to the training VM
+  * Read the internal wiki pages under the `company` namespace
+  * Complete the basic lab: "Intro to the network"
+  * If you encounter issues, open a ticket with `it-team@MegaBit.local`
+
+Good luck and have fun learning!

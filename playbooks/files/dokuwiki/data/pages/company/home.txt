@@ -1,0 +1,17 @@
+====== Welcome to MegaBit Security (Internal Wiki) ======
+
+Welcome to the internal wiki for MegaBit Security — a company environment used for training and exercises.
+
+This wiki contains internal documentation, onboarding guides, IT/security policies and team pages.  Use the navigation links below to get started.
+
+----
+
+**Quick Links**
+
+  * :company:about          - About the company
+  * :onboarding:getting-started - New employee onboarding
+  * :company:hr:policies    - HR policies
+  * :it:security            - IT & security procedures
+
+----
+
