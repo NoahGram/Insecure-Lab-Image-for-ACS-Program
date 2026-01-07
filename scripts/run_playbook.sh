@@ -27,9 +27,17 @@ echo "  Playbook: $playbook"
 echo "  Target: $VM1_USERNAME@$VM1_HOSTNAME:$VM1_SSH_PORT"
 echo ""
 
-# Normalize path
+# Normalize path and ensure absolute path for Docker volume
 repo_path="${ANSIBLE_CONTROL_NODE_PATH//\\//}"
 mount_point="${DOCKER_MOUNT_POINT:-/ansible}"
+# If the path is not absolute, make it relative to current working directory
+if [[ "$repo_path" != /* ]]; then
+    repo_path="$PWD/$repo_path"
+fi
+# Try to canonicalize the path if realpath is available
+if command -v realpath >/dev/null 2>&1; then
+    repo_path="$(realpath -m "$repo_path")"
+fi
 inventory_file="${ANSIBLE_INVENTORY_FILE:-inventory.ini}"
 key_path="${VM1_SSH_KEY_PATH:-Keys/vps_key}"
 docker_image="${DOCKER_IMAGE_NAME:-ansible-control-node}"
