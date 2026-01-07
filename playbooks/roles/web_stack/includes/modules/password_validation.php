@@ -33,7 +33,7 @@ function validate_password(string $password, string $password_confirm = null): a
     ];
 
     if (in_array($password, $common_passwords, true)) {
-        $errors[] = 'Too common password.';
+        $errors[] = 'Password is too common.';
     }
 
     return $errors; 
