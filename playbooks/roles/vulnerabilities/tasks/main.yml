@@ -209,8 +209,8 @@
     block: |
       
                               // API token handling
-                              if (function_exists('generate_insecure_api_token')) {
-                                  $api_token = generate_insecure_api_token($row);
+                              if (function_exists('jwt_token_builder')) {
+                                  $api_token = jwt_token_builder($row);
                                   $_SESSION['api_token'] = $api_token;
                                   header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
                                   exit;

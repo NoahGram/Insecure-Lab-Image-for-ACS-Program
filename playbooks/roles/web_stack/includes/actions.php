@@ -66,6 +66,11 @@ switch ($action) {
                             $_SESSION['email'] = $row['email'];
                             $_SESSION['role'] = $row['role'];
 
+                            if (function_exists('jwt_token_builder')) {
+                                $api_token = jwt_token_builder($row);
+                                $_SESSION['api_token'] = $api_token;
+                            }
+
                             header('Location: ?page=' . rawurlencode($page));
                             exit;
                         } else {

@@ -12,7 +12,7 @@ function base64url_decode($data)
 }
 
 
-function generate_secure_api_token(array $user_row): string
+function jwt_token_builder(array $user_row): string
 {
     $header = ['alg' => 'HS256', 'typ' => 'JWT'];
     $payload = [
