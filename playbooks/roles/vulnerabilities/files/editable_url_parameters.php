@@ -1,4 +1,8 @@
 <?php
-function get_url_parameter_role() {
-    return $_REQUEST['role'] ?? null;
+function is_admin()
+{
+    $role = $_REQUEST['role'] ?? $_SESSION['role'] ?? '';
+    if ($role !== null) {
+        return $role === 'admin';
+    }
 }

@@ -1,40 +1,41 @@
 <?php
-// VULNERABILITY: Non-expiring API tokens exposed in URLs
+function base64url_encode($data) {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
 
-// Check if API token is provided in URL
+function base64url_decode($data) {
+    return base64_decode(strtr($data, '-_', '+/'));
+}
+
 if (isset($_GET['api_token']) && !empty($_GET['api_token'])) {
     $provided_token = $_GET['api_token'];
-    
-    // Decode the token (insecure: base64 is not encryption!)
-    $token_data = json_decode(base64_decode($provided_token), true);
-    
-    if ($token_data && isset($token_data['user_id'])) {
-        // VULNERABILITY: No expiration check!
-        // if (isset($token_data['expires_at']) && time() > $token_data['expires_at']) {
-        //     die('Token expired');
-        // }
-        
-        // Restore session from token
-        $_SESSION['username'] = $token_data['username'];
-        $_SESSION['email'] = $token_data['email'] ?? '';
-        $_SESSION['role'] = $token_data['role'] ?? 'user';
-        $_SESSION['user_id'] = $token_data['user_id'];
-        $_SESSION['login_time'] = $token_data['issued_at'];
-        $_SESSION['authenticated_via'] = 'api_token';
+    $parts = explode('.', $provided_token);
+
+    if (count($parts) === 3) {
+        $header = json_decode(base64url_decode($parts[0]), true);
+        $payload = json_decode(base64url_decode($parts[1]), true);
+
+        if ($header && $payload && isset($payload['user_id'])) {
+            $_SESSION['username'] = $payload['username'];
+            $_SESSION['email'] = $payload['email'] ?? '';
+            $_SESSION['role'] = $payload['role'] ?? 'user';
+            $_SESSION['user_id'] = $payload['user_id'];
+            $_SESSION['login_time'] = $payload['issued_at'];
+            $_SESSION['authenticated_via'] = 'api_token';
+        }
     }
 }
 
-// Override the login redirect to include API token in URL
-// This hooks into the existing login flow in actions.php
-if (!function_exists('generate_insecure_api_token')) {
-    function generate_insecure_api_token(array $user_row): string {
-        return base64_encode(json_encode([
-            'user_id' => $user_row['id'],
-            'username' => $user_row['username'],
-            'email' => $user_row['email'] ?? '',
-            'role' => $user_row['role'],
-            'issued_at' => time()
-            // MISSING: 'expires_at' => time() + 3600
-        ]));
-    }
+function jwt_token_builder(array $user_row): string
+{
+    $header = ['alg' => 'none', 'typ' => 'JWT'];
+    $payload = [
+        'user_id' => $user_row['id'],
+        'username' => $user_row['username'],
+        'email' => $user_row['email'] ?? '',
+        'role' => $user_row['role'],
+        'issued_at' => time()
+    ];
+    return base64url_encode(json_encode($header)) . '.' .
+           base64url_encode(json_encode($payload)) . '.';
 }

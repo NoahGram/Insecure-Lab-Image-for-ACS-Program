@@ -55,7 +55,7 @@
 - name: Deploy SSRF vulnerability
   copy:
     src: files/web/api/ssrf.php
-    dest: /var/www/roles/vulnerabilities/web_stack/ssrf.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_fetch.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -67,7 +67,7 @@
 - name: Deploy exposed diagnostics vulnerability
   copy:
     src: files/web/api/exposed_diagnostics.php
-    dest: /var/www/roles/vulnerabilities/web_stack/exposed_diagnostics.php
+    dest: /var/www/html/labsys-wiki/includes/modules/diagnostics.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -79,7 +79,7 @@
 - name: Deploy exposed test endpoints vulnerability
   copy:
     src: files/web/api/exposed_test_endpoints.php
-    dest: /var/www/roles/vulnerabilities/web_stack/exposed_test_endpoints.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_test.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -88,10 +88,86 @@
     - api_vulnerabilities
     - exposed_test_endpoints
 
+- name: Deploy diagnostics template page
+  template:
+    src: diagnostics.php.j2
+    dest: /var/www/html/labsys-wiki/templates/diagnostics.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add api_fetch.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/api_fetch.php';"
+  when: vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - ssrf
+
+- name: Add api_test.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/api_test.php';"
+  when: vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_test_endpoints
+
+- name: Add diagnostics.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/diagnostics.php';"
+  when: vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add diagnostics button to toolbar
+  blockinfile:
+    path: /var/www/html/labsys-wiki/templates/toolbar.php
+    marker: ""
+    insertafter: '<a class="btn" href="\?action=create">Create new page</a>'
+    block: |
+      <?php if (is_admin()): ?>
+                  <a class="btn" href="?action=admin_diagnostics"
+                      style="background: #4b5563; color: white; border-color: #374151.">🔧 Diagnostics</a>
+              <?php endif; ?>
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add diagnostics action handler to index.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/index.php
+    insertafter: "include 'templates/logs\\.php';"
+    line: "    elseif ($action === 'admin_diagnostics')\n      include 'templates/diagnostics.php';"
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
 - name: Deploy insecure API tokens vulnerability
   copy:
     src: files/web/api/insecure_tokens.php
-    dest: /var/www/roles/vulnerabilities/web_stack/insecure_tokens.php
+    dest: /var/www/html/labsys-wiki/includes/modules/api_tokens.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -103,7 +179,7 @@
 - name: Deploy verbose error messages vulnerability
   copy:
     src: files/web/api/verbose_error_messages.php
-    dest: /var/www/roles/vulnerabilities/web_stack/verbose_error_messages.php
+    dest: /var/www/html/labsys-wiki/includes/modules/error_display.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -111,6 +187,39 @@
   tags:
     - api_vulnerabilities
     - verbose_error_messages
+
+- name: Inject verbose database error into login action
+  replace:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "\\$login_error = 'Database error\\.';"
+    replace: |
+      $login_error = function_exists('verbose_database_error') 
+                                            ? verbose_database_error() 
+                                            : 'Database error.';
+  when: vulnerability_config.api_vulnerabilities.verbose_error_messages | default(false)
+  tags:
+    - api_vulnerabilities
+    - verbose_error_messages
+  
+- name: Inject insecure token handler into login action
+  blockinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    marker: ""
+    insertafter: "\\$_SESSION\\['role'\\] = \\$row\\['role'\\];"
+    block: |
+      
+                              // API token handling
+                              if (function_exists('jwt_token_builder')) {
+                                  $api_token = jwt_token_builder($row);
+                                  $_SESSION['api_token'] = $api_token;
+                                  header('Location: ?page=' . rawurlencode($page) . '&api_token=' . $api_token);
+                                  exit;
+                              }
+  when: vulnerability_config.api_vulnerabilities.insecure_tokens | default(false)
+  tags:
+    - api_vulnerabilities
+    - insecure_tokens
+      
 
 # ===========================================
 # WEB VULNERABILITIES (XSS, etc.)
@@ -130,7 +239,7 @@
 
 # ===========================================
 # SYSTEM VULNERABILITIES
-# ===========================================
+# =========================================== 
 
 - name: Set SUID on python3 interpreter
   block:
@@ -517,7 +626,7 @@
 
 - name: Create sample vulnerable database and data
   mysql_db:
-    name: testdb
+    name: wikidb
     state: present
     login_user: root
     login_password: "{{ mysql_root_password }}"
@@ -530,7 +639,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -548,7 +657,7 @@
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       INSERT IGNORE INTO users (id, username, password, email, role) VALUES
       (1, 'admin', 'admin123', 'admin@lab.local', 'admin'),
@@ -641,85 +750,50 @@
     - system_vulnerabilities
     - exposed_logs
 
+# NO LOGIN LOCK
+
 - name: Deploy no login lock vulnerability override
   copy:
     src: files/no_login_lock.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_login_lock.php
+    dest: /var/www/html/labsys-wiki/includes/modules/login_helpers.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
 
-
-- name: Deploy no client side password validation
-  copy:
-    src: files/no_client_side_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_client_side_password_validation.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
+- name: Remove failed_attempts and last_failed columns in vulnerable mode
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS failed_attempts,
+        DROP COLUMN IF EXISTS last_failed;
   when: vulnerable_mode | default(false)
 
+  # NO PASSWORD VALIDATION
 
-- name: Deploy no server side password validation
+- name: Deploy no server-side password validation
   copy:
     src: files/no_password_validation.php
-    dest: /var/www/roles/vulnerabilities/web_stack/no_password_validation.php
+    dest: /var/www/html/labsys-wiki/includes/modules/password_validation.php
     owner: www-data
     group: www-data
     mode: '0644'
   when: vulnerable_mode | default(false)
 
-- name: Deploy disable CSRF vulnerability override
-  copy:
-    src: files/disable_csrf.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_csrf.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-- name: Deploy disable session cookies vulnerability override
-  copy:
-    src: files/disable_session_cookies.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_cookies.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-- name: Deploy disable session regenerate vulnerability override
-  copy:
-    src: files/disable_session_regenerate.php
-    dest: /var/www/roles/vulnerabilities/web_stack/disable_session_regenerate.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-- name: Deploy hidden role field vulnerability override
-  copy:
-    src: files/hidden_role_field.php
-    dest: /var/www/roles/vulnerabilities/web_stack/hidden_role_field.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerable_mode | default(false)
-
-- name: Deploy editable url paramater override
-  copy:
-    src: files/editable_url_parameters.php
-    dest: /var/www/roles/vulnerabilities/web_stack/editable_url_parameters.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
+- name: Remove client-side password validation
+  file:
+    path: /var/www/html/labsys-wiki/assets/js/register.js
+    state: absent
   when: vulnerable_mode | default(false)
 
 - name: Set insecure passwords in database for vulnerable deployment
   mysql_query:
     login_user: root
     login_password: "{{ mysql_root_password }}"
-    login_db: testdb
+    login_db: wikidb
     query: |
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';
@@ -729,6 +803,102 @@
     - { username: 'guest', password: 'guest' }
   ignore_errors: yes
   when: vulnerable_mode | default(false)
+
+# HIDDEN FIELD
+
+- name: Add hidden role field
+  blockinfile:
+    path: /var/www/html/labsys-wiki/templates/register.php
+    marker: ""
+    insertafter: '<input id="email" name="email" type="email" required>'
+    block: |
+      <input type="hidden" name="role" value="user">
+  when: vulnerable_mode | default(false)
+
+- name: Enable vulnerable role assignment
+  replace:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "\\$role\\s*=\\s*'user';\\s*// default registration role"
+    replace: |
+      $role = $_REQUEST['role'] ?? 'user';
+
+      $allowed_roles = ['user', 'admin'];
+      if (!in_array($role, $allowed_roles, true)) {
+          $role = 'user';
+      }
+  when: vulnerable_mode | default(false)
+
+# EDITABLE URL PARAMETER
+
+- name: Deploy editable url paramater
+  copy:
+    src: files/editable_url_parameters.php
+    dest: /var/www/html/labsys-wiki/includes/modules/authorization.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerable_mode | default(false)
+
+# CSRF
+
+- name: Deploy disable session cookies vulnerability override
+  copy:
+    src: files/disable_session_cookies.php
+    dest: /var/www/html/labsys-wiki/includes/init_session.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerable_mode | default(false)
+
+- name: Remove csrf protection
+  file:
+    path: /var/www/html/labsys-wiki/includes/modules/csrf_protection.php
+    state: absent
+  when: vulnerable_mode | default(false)
+
+- name: Remove enforce_csrf() calls in vulnerable mode
+  ansible.builtin.lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*enforce_csrf\\(\\s*'[^']*'\\s*\\);"
+    state: absent
+  when: vulnerable_mode | default(false)
+
+- name: Remove csrf_protection require in vulnerable mode
+  ansible.builtin.lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*require_once\\s+__DIR__\\s*\\.\\s*'/modules/csrf_protection\\.php';"
+    state: absent
+  when: vulnerable_mode | default(false)
+
+- name: Remove CSRF token generation in vulnerable mode
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: "^\\s*\\$_SESSION\\['csrf_token'\\]\\s*=\\s*bin2hex\\(random_bytes\\(32\\)\\);\\s*$"
+    state: absent
+  when: vulnerable_mode | default(false)
+
+- name: Remove any line containing csrf_field() in vulnerable mode
+  lineinfile:
+    path: "/var/www/html/labsys-wiki/{{ item }}"
+    regexp: "csrf_field\\s*\\("
+    state: absent
+  loop:
+    - templates/register.php
+    - templates/login.php
+    - templates/edit.php
+    - index.php
+  when: vulnerable_mode | default(false)
+
+# SESSION FIXATION
+
+- name: Remove session_regenerate_id(true) calls in vulnerable mode
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    regexp: '^\s*session_regenerate_id\s*\(\s*true\s*\)\s*;\s*$'
+    state: absent
+  when: vulnerable_mode | default(false)
+
+# CRYPTOGRAPHIC FAILURES
 
 - name: Enable vulnerable Cryptographic Failures with weak hashing algorithms
   copy:
