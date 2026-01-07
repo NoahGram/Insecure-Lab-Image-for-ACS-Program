@@ -28,8 +28,6 @@
                 <a class="btn" href="?action=edit&page=<?= rawurlencode($page) ?>">Edit page</a>
             <?php endif; ?>
             <a class="btn" href="?action=create">Create new page</a>
-            <a class="btn" href="?action=admin_diagnostics"
-                style="background: #4b5563; color: white; border-color: #374151;">🔧 Diagnostics</a>
             <a class="btn" href="?action=logs" style="background: #dc2626; color: white; border-color: #dc2626;">🛡️
                 Logs</a>
         <?php endif; ?>

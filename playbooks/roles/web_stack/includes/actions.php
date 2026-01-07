@@ -9,10 +9,7 @@ require_once __DIR__ . '/modules/login_helpers.php';
 require_once __DIR__ . '/modules/password_validation.php';
 require_once __DIR__ . '/modules/output_escaping.php';
 require_once __DIR__ . '/modules/authorization.php';
-require_once __DIR__ . '/modules/api_fetch.php';
-require_once __DIR__ . '/modules/api_test.php';
 require_once __DIR__ . '/modules/api_tokens.php';
-require_once __DIR__ . '/modules/diagnostics.php';
 require_once __DIR__ . '/modules/error_display.php';
 require_once __DIR__ . '/modules/csrf_protection.php';
 

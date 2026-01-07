@@ -88,6 +88,82 @@
     - api_vulnerabilities
     - exposed_test_endpoints
 
+- name: Deploy diagnostics template page
+  template:
+    src: diagnostics.php.j2
+    dest: /var/www/html/labsys-wiki/templates/diagnostics.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add api_fetch.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/api_fetch.php';"
+  when: vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - ssrf
+
+- name: Add api_test.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/api_test.php';"
+  when: vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_test_endpoints
+
+- name: Add diagnostics.php require to actions.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/includes/actions.php
+    insertafter: "require_once __DIR__ \\. '/modules/authorization\\.php';"
+    line: "require_once __DIR__ . '/modules/diagnostics.php';"
+  when: vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add diagnostics button to toolbar
+  blockinfile:
+    path: /var/www/html/labsys-wiki/templates/toolbar.php
+    marker: ""
+    insertafter: '<a class="btn" href="\?action=create">Create new page</a>'
+    block: |
+      <?php if (is_admin()): ?>
+                  <a class="btn" href="?action=admin_diagnostics"
+                      style="background: #4b5563; color: white; border-color: #374151.">🔧 Diagnostics</a>
+              <?php endif; ?>
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
+- name: Add diagnostics action handler to index.php
+  lineinfile:
+    path: /var/www/html/labsys-wiki/index.php
+    insertafter: "include 'templates/logs\\.php';"
+    line: "    elseif ($action === 'admin_diagnostics')\n      include 'templates/diagnostics.php';"
+  when: >
+    vulnerability_config.api_vulnerabilities.exposed_diagnostics | default(false) or
+    vulnerability_config.api_vulnerabilities.exposed_test_endpoints | default(false) or
+    vulnerability_config.api_vulnerabilities.ssrf | default(false)
+  tags:
+    - api_vulnerabilities
+    - exposed_diagnostics
+
 - name: Deploy insecure API tokens vulnerability
   copy:
     src: files/web/api/insecure_tokens.php
