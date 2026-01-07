@@ -1,5 +1,5 @@
 <?php
-define('JWT_SECRET', 'change_this_to_a_long_random_secret_key');
+define('JWT_SECRET', getenv('JWT_SECRET'));
 
 function base64url_encode($data)
 {
