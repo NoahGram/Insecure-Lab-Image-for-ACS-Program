@@ -43,9 +43,102 @@ if ($conn && $edit_page && $stmt = $conn->prepare('SELECT content FROM pages WHE
   <input type="hidden" name="page" value="<?= h($edit_page) ?>">
   <label for="content">Content</label>
   <textarea id="content" name="content" rows="12" style="width:98%; resize:vertical;"><?= h($content) ?></textarea>
+  
+  <!-- Import from URL -->
+  <details style="margin-top:12px;padding:8px;background:#f5f5f5;border:1px solid #ddd;">
+    <summary style="cursor:pointer;font-weight:bold;">⚙️ Advanced: Import from URL</summary>
+    <div style="margin-top:8px;">
+      <label for="import_url">Import content from URL:</label>
+      <input type="text" id="import_url" placeholder="https://example.com/content.txt" style="width:70%;">
+      <button type="button" class="btn" onclick="importFromUrl()">Import</button>
+      <div id="import_result" style="margin-top:8px;color:#666;font-size:0.9em;"></div>
+    </div>
+  </details>
+
   <div style="margin-top:8px">
     <button class="btn" type="submit"><?= $content ? 'Save' : 'Create' ?></button>
 </form>
+
+<!-- URL Preview Tool -->
+<details style="margin-top:16px;padding:8px;background:#f9f9f9;border:1px solid #ddd;">
+  <summary style="cursor:pointer;font-weight:bold;">🔍 URL Preview Tool</summary>
+  <div style="margin-top:8px;">
+    <label for="preview_url">Preview URL content:</label>
+    <input type="text" id="preview_url" placeholder="http://example.com" style="width:60%;">
+    <button type="button" class="btn" onclick="previewUrl()">Preview</button>
+    <div id="preview_result" style="margin-top:8px;padding:8px;background:white;border:1px solid #ddd;max-height:200px;overflow:auto;"></div>
+  </div>
+</details>
+
+<script>
+function importFromUrl() {
+  const url = document.getElementById('import_url').value;
+  const resultDiv = document.getElementById('import_result');
+  
+  if (!url) {
+    resultDiv.textContent = 'Please enter a URL';
+    return;
+  }
+  
+  resultDiv.textContent = 'Importing...';
+  
+  fetch('?action=import_url', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'import_url=' + encodeURIComponent(url)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('content').value = data.content;
+      resultDiv.textContent = '✓ Imported ' + data.length + ' bytes from ' + url;
+      resultDiv.style.color = 'green';
+    } else {
+      resultDiv.textContent = '✗ Error: ' + data.error;
+      resultDiv.style.color = 'red';
+    }
+  })
+  .catch(e => {
+    resultDiv.textContent = '✗ Request failed: ' + e.message;
+    resultDiv.style.color = 'red';
+  });
+}
+
+function previewUrl() {
+  const url = document.getElementById('preview_url').value;
+  const resultDiv = document.getElementById('preview_result');
+  
+  if (!url) {
+    resultDiv.textContent = 'Please enter a URL';
+    return;
+  }
+  
+  resultDiv.textContent = 'Loading...';
+  
+  fetch('?action=preview_url', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'url=' + encodeURIComponent(url)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      resultDiv.style.color = ''; // Reset color
+      resultDiv.innerHTML = '<strong>Status:</strong> ' + data.http_code + '<br>' +
+                           '<strong>Type:</strong> ' + (data.content_type || 'unknown') + '<br>' +
+                           '<strong>Preview:</strong><br><pre style="white-space:pre-wrap;">' + 
+                           (data.preview || '') + '</pre>';
+    } else {
+      resultDiv.textContent = 'Error: ' + data.error;
+      resultDiv.style.color = 'red';
+    }
+  })
+  .catch(e => {
+    resultDiv.textContent = 'Request failed: ' + e.message;
+    resultDiv.style.color = 'red';
+  });
+}
+</script>
 
 <!-- DELETE FORM -->
 <?php if ($action === 'edit' && $edit_page !== 'Home'): ?>
