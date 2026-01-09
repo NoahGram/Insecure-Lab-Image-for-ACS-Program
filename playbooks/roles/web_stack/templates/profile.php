@@ -9,7 +9,7 @@ if (empty($_SESSION['username'])) {
 $conn = db_connect();
 $username = $_SESSION['username'];
 
-// VULNERABLE: Check if viewing another user's profile via URL parameter
+// Check if viewing another user's profile via URL parameter
 $view_user = $_GET['user'] ?? $username;
 
 // If no user parameter was provided, redirect to include it in URL
@@ -18,8 +18,7 @@ if (!isset($_GET['user'])) {
     exit;
 }
 
-// Fetch full user details from database including password
-// VULNERABLE VERSION - Direct string concatenation allows SQL injection
+// Fetch full user details from database
 $sql = "SELECT id, username, email, role, password FROM users WHERE username = '$view_user' LIMIT 1";
 $result = $conn->query($sql);
 $user = $result ? $result->fetch_assoc() : null;

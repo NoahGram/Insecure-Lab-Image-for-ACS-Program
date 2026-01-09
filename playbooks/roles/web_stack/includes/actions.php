@@ -12,9 +12,11 @@ require_once __DIR__ . '/modules/authorization.php';
 require_once __DIR__ . '/modules/api_tokens.php';
 require_once __DIR__ . '/modules/error_display.php';
 require_once __DIR__ . '/modules/csrf_protection.php';
+require_once __DIR__ . '/ssrf_secure.php';
 
 $vuln_files = [
     '/var/www/roles/vulnerabilities/web_stack/xss_stored.php',
+    '/var/www/roles/vulnerabilities/web_stack/ssrf.php',
     "/var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php"
 ];
 

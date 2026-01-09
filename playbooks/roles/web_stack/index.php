@@ -57,6 +57,8 @@ require_once __DIR__ . '/includes/actions.php';
       include 'templates/profile.php';
     elseif ($action === 'logs')
       include 'templates/logs.php';
+      else
+        // For custom actions (like SSRF), actions.php will handle output and exit
     ?>
   </main>
 
