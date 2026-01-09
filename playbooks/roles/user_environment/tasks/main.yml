@@ -215,7 +215,6 @@
     group: guest
     mode: '0644'
   loop:
-    - welcome.txt
     - linux_commands.txt
   tags:
     - user_environment

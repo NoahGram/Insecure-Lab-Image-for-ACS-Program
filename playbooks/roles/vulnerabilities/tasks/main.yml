@@ -491,7 +491,8 @@
 - name: Normalize cron file line endings and reload cron
   become: true
   shell: |
-    sed -i 's/\\r$//' /etc/cron.d/system-maintenance || true
+    sed -i 's/\r$//' /etc/cron.d/system-maintenance || true
+    sed -i 's/\r$//' /opt/scripts/system-maintenance.sh || true
     chown root:root /etc/cron.d/system-maintenance || true
     chmod 0644 /etc/cron.d/system-maintenance || true
     if command -v systemctl >/dev/null 2>&1; then
