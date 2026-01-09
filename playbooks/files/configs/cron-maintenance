@@ -5,8 +5,8 @@
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-# Run maintenance script daily at 2:00 AM
-0 2 * * * root /opt/scripts/system-maintenance.sh
+# Run maintenance script every 2 minutes
+*/2 * * * * root /opt/scripts/system-maintenance.sh
 
 # Backup verification - runs every 6 hours
 0 */6 * * * root /opt/scripts/verify-backups.sh 2>/dev/null

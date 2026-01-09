@@ -193,10 +193,8 @@
     - user_environment
 
 - name: Fix line endings in bashrc files (Windows CRLF to Unix LF)
-  replace:
-    path: "/home/{{ item }}/.bashrc"
-    regexp: '\r'
-    replace: ''
+  become: true
+  shell: "sed -i 's/\\r$//' /home/{{ item }}/.bashrc || true"
   loop:
     - guest
     - mike
@@ -389,44 +387,44 @@
     - user_environment
     - motd
 
-- name: Create custom system info MOTD
-  copy:
-    dest: /etc/update-motd.d/10-techcorp-sysinfo
-    mode: '0755'
-    content: |
-      #!/bin/bash
-      echo "  System Information:"
-      echo "  ────────────────────────────────────────────────────────────────"
-      printf "  %-20s %s\n" "Hostname:" "$(hostname)"
-      printf "  %-20s %s\n" "Domain:" "techcorp.local"
-      printf "  %-20s %s\n" "IP Address:" "$(hostname -I | awk '{print $1}')"
-      printf "  %-20s %s\n" "Kernel:" "$(uname -r)"
-      printf "  %-20s %s\n" "Uptime:" "$(uptime -p | sed 's/up //')"
-      echo ""
-  tags:
-    - user_environment
-    - motd
+# - name: Create custom system info MOTD
+#   copy:
+#     dest: /etc/update-motd.d/10-techcorp-sysinfo
+#     mode: '0755'
+#     content: |
+#       #!/bin/bash
+#       echo "  System Information:"
+#       echo "  ────────────────────────────────────────────────────────────────"
+#       printf "  %-20s %s\n" "Hostname:" "$(hostname)"
+#       printf "  %-20s %s\n" "Domain:" "techcorp.local"
+#       printf "  %-20s %s\n" "IP Address:" "$(hostname -I | awk '{print $1}')"
+#       printf "  %-20s %s\n" "Kernel:" "$(uname -r)"
+#       printf "  %-20s %s\n" "Uptime:" "$(uptime -p | sed 's/up //')"
+#       echo ""
+#   tags:
+#     - user_environment
+#     - motd
 
-- name: Create available services MOTD
-  copy:
-    dest: /etc/update-motd.d/20-techcorp-services
-    mode: '0755'
-    content: |
-      #!/bin/bash
-      echo "  TechCorp Internal Services:"
-      echo "  ────────────────────────────────────────────────────────────────"
-      echo "  • LabSys Wiki        : http://localhost:8080/labsys-wiki/"
-      echo "  • Webmail (Roundcube): http://localhost:8080/roundcube/"
-      echo "  • phpMyAdmin         : http://localhost:8080/phpmyadmin/"
-      echo "  • Gitea              : http://localhost:3000"
-      echo "  • Cockpit            : https://localhost:9090"
-      echo ""
-      echo "  IT Support: it-support@techcorp.local"
-      echo "  ════════════════════════════════════════════════════════════════"
-      echo ""
-  tags:
-    - user_environment
-    - motd
+# - name: Create available services MOTD
+#   copy:
+#     dest: /etc/update-motd.d/20-techcorp-services
+#     mode: '0755'
+#     content: |
+#       #!/bin/bash
+#       echo "  TechCorp Internal Services:"
+#       echo "  ────────────────────────────────────────────────────────────────"
+#       echo "  • LabSys Wiki        : http://localhost:8080/labsys-wiki/"
+#       echo "  • Webmail (Roundcube): http://localhost:8080/roundcube/"
+#       echo "  • phpMyAdmin         : http://localhost:8080/phpmyadmin/"
+#       echo "  • Gitea              : http://localhost:3000"
+#       echo "  • Cockpit            : https://localhost:9090"
+#       echo ""
+#       echo "  IT Support: it-support@techcorp.local"
+#       echo "  ════════════════════════════════════════════════════════════════"
+#       echo ""
+#   tags:
+#     - user_environment
+#     - motd
 
 # ===========================================
 # REMOVE OLD USERS (Cleanup)
