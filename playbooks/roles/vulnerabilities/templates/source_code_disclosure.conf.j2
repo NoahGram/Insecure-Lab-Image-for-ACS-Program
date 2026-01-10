@@ -1,0 +1,40 @@
+AddType application/x-httpd-php .php .phtml
+
+<FilesMatch "\.php$">
+    AcceptPathInfo Off
+</FilesMatch>
+
+AliasMatch "^(/labsys-wiki/.+\.php)\.(en|fr|de|es|it|nl|pt|ja|zh)$" "/var/www/html$1"
+
+<LocationMatch "^/labsys-wiki/.+\.php\.(en|fr|de|es|it|nl|pt|ja|zh)$">
+    ForceType text/plain
+    SetHandler default-handler
+</LocationMatch>
+
+AliasMatch "^(/labsys-wiki/(?!.*\.php/)[^/.]+)$" "/var/www/html$1.php"
+
+<LocationMatch "^/labsys-wiki/(?!.*\.php/)[^/.]+$">
+    ForceType text/plain
+    SetHandler default-handler
+</LocationMatch>
+
+<Directory "/var/www/html/labsys-wiki">
+    Options +MultiViews +FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+<IfModule mod_negotiation.c>
+    AddLanguage en .en
+    AddLanguage fr .fr
+    AddLanguage de .de
+    AddLanguage es .es
+    AddLanguage it .it
+    AddLanguage nl .nl
+    AddLanguage pt .pt
+    AddLanguage ja .ja
+    AddLanguage zh .zh
+
+    LanguagePriority en fr de es it nl pt ja zh
+    ForceLanguagePriority Prefer Fallback
+</IfModule>

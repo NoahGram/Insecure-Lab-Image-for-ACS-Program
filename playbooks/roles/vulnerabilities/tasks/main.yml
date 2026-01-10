@@ -219,7 +219,39 @@
   tags:
     - api_vulnerabilities
     - insecure_tokens
-      
+
+- name: Enable mod_negotiation for CVE-2024-39884
+  command: a2enmod negotiation
+  args:
+    creates: /etc/apache2/mods-enabled/negotiation.load
+  when: vulnerability_config.api_vulnerabilities.source_code_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - api_vulnerabilities
+    - source_code_disclosure
+    
+- name: Deploy vulnerable Apache configuration (AddType directive)
+  template:
+    src: source_code_disclosure.conf.j2
+    dest: /etc/apache2/conf-available/source-code-disclosure.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: vulnerability_config.api_vulnerabilities.source_code_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - api_vulnerabilities
+    - source_code_disclosure
+
+- name: Enable source code disclosure configuration
+  command: a2enconf source-code-disclosure
+  args:
+    creates: /etc/apache2/conf-enabled/source-code-disclosure.conf
+  when: vulnerability_config.api_vulnerabilities.source_code_disclosure | default(false)
+  notify: restart apache
+  tags:
+    - api_vulnerabilities
+    - source_code_disclosure
 
 # ===========================================
 # WEB VULNERABILITIES (XSS, etc.)
@@ -564,7 +596,6 @@
     - vulnerabilities_sudo
 
 
-- name: Ensure neofetch binary is present in /usr/bin
   copy:
     src: "files/neofetch"
     dest: /usr/bin/neofetch

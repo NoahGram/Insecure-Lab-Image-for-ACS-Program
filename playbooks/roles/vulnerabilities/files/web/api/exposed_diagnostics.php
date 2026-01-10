@@ -52,7 +52,6 @@ if ($action === 'diagnostics') {
             
         case 'env':
             echo "=== ENVIRONMENT VARIABLES ===\n";
-            print_r($_ENV);
             print_r(getenv());
             
             echo "\n=== SERVER VARIABLES ===\n";
