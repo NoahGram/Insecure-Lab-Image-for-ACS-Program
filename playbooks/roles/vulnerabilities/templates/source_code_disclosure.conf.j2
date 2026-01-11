@@ -1,9 +1,5 @@
 AddType application/x-httpd-php .php .phtml
 
-<FilesMatch "\.php$">
-    AcceptPathInfo Off
-</FilesMatch>
-
 AliasMatch "^(/labsys-wiki/.+\.php)\.(en|fr|de|es|it|nl|pt|ja|zh)$" "/var/www/html$1"
 
 <LocationMatch "^/labsys-wiki/.+\.php\.(en|fr|de|es|it|nl|pt|ja|zh)$">
