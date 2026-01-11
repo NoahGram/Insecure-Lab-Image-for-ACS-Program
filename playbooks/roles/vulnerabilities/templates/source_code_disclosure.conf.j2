@@ -7,9 +7,9 @@ AliasMatch "^(/labsys-wiki/.+\.php)\.(en|fr|de|es|it|nl|pt|ja|zh)$" "/var/www/ht
     SetHandler default-handler
 </LocationMatch>
 
-AliasMatch "^(/labsys-wiki/(?!.*\.php/)[^/.]+)$" "/var/www/html$1.php"
+AliasMatch "^(/labsys-wiki/(?!.*\.php/)(?:.*/)?[^/.]+)$" "/var/www/html$1.php"
 
-<LocationMatch "^/labsys-wiki/(?!.*\.php/)[^/.]+$">
+<LocationMatch "^/labsys-wiki/(?!.*\.php/)(?:.*/)?[^/.]+$">
     ForceType text/plain
     SetHandler default-handler
 </LocationMatch>
