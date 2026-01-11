@@ -48,42 +48,40 @@
     - vulnerabilities
     
   post_tasks:
-    - name: Create comprehensive vulnerability guide
-      copy:
-        content: |
-          ==============================================
-          VULNERABILITY ASSESSMENT LAB GUIDE
-          ==============================================
-          Profile: {{ current_profile }}
+    # - name: Create comprehensive vulnerability guide
+    #   copy:
+    #     content: |
+    #       ==============================================
+    #       VULNERABILITY ASSESSMENT LAB GUIDE
+    #       ==============================================
+    #       Profile: {{ current_profile }}
           
-          This system contains intentional vulnerabilities for educational testing.
-          ⚠️  WARNING: NEVER expose this system to the internet!
+    #       This system contains intentional vulnerabilities for educational testing.
+    #       ⚠️  WARNING: NEVER expose this system to the internet!
           
-          Web Vulnerabilities:
-          - SQL Injection: /vulnerable.php?id=1' OR '1'='1
-          - XSS: /vulnerable.php?name=<script>alert('XSS')</script>  
-          - File Upload: /upload.php (accepts any file type)
-          - Info Disclosure: /server-info, /server-status
+    #       Web Vulnerabilities:
+    #       - SQL Injection: /vulnerable.php?id=1' OR '1'='1
+    #       - XSS: /vulnerable.php?name=<script>alert('XSS')</script>  
+    #       - File Upload: /upload.php (accepts any file type)
+    #       - Info Disclosure: /server-info, /server-status
           
-          System Access:
-          - Weak accounts: admin/admin, test/test, guest/guest
-          - Database: testuser/testpass (% access)
-          - phpMyAdmin: http://{{ ansible_default_ipv4.address }}:8080/phpmyadmin
+    #       System Access:
+    #       - Weak accounts: admin/admin, test/test, guest/guest
+    #       - Database: testuser/testpass (% access)
+    #       - phpMyAdmin: http://{{ ansible_default_ipv4.address }}:8080/phpmyadmin
           
-          Testing Tools:
-          - nmap -sV {{ ansible_default_ipv4.address }}
-          - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
-          - nikto -h {{ ansible_default_ipv4.address }}
+    #       Testing Tools:
+    #       - nmap -sV {{ ansible_default_ipv4.address }}
+    #       - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
+    #       - nikto -h {{ ansible_default_ipv4.address }}
           
-          ==============================================
-        dest: /root/vulnerability-guide.txt
-        mode: '0644'
+    #       ==============================================
+    #     dest: /root/vulnerability-guide.txt
+    #     mode: '0644'
         
     - name: Display deployment summary
       debug:
         msg:
           - "=== VULNERABLE LAB DEPLOYMENT COMPLETE ==="
           - "Profile: {{ current_profile }}"  
-          - "Vulnerable endpoints available at http://localhost:8080"
-          - "See /root/vulnerability-guide.txt for testing instructions"
-          - "⚠️  WARNING: Contains intentional vulnerabilities!"
+          - "Apache Web Server: http://192.168.56.50"

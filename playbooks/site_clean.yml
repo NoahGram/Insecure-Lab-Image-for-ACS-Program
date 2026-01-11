@@ -79,5 +79,4 @@
           - "=== DEPLOYMENT SUMMARY ==="
           - "Clean lab environment deployed successfully!"
           - "Profile: {{ current_profile }}"
-          - "Check /root/lab-services-info.txt for service details"
-          - "Web interface: http://localhost:8080 (from host machine)"
+          - "Web interface: http://192.168.56.50 (from host machine)"
