@@ -64,16 +64,31 @@ $repoPath = $env:ANSIBLE_CONTROL_NODE_PATH -replace '\\','/'
 $mountPoint = if ($env:DOCKER_MOUNT_POINT) { $env:DOCKER_MOUNT_POINT } else { '/ansible' }
 $dockerImage = if ($env:DOCKER_IMAGE_NAME) { $env:DOCKER_IMAGE_NAME } else { 'ansible-control-node' }
 
-# Use the derived effective SSH values when building the docker ssh command
-$dockerCmd = "docker run --rm -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"chmod 600 $mountPoint/$sshKey && ssh -o StrictHostKeyChecking=no -i $mountPoint/$sshKey -p $sshPort $sshUser@$sshHost 'echo Connection successful'`""
+$containerName = "ansible-container"
+$startedContainer = $false
 
-Write-Host "Executing test connection..." -ForegroundColor Yellow
-Write-Host $dockerCmd -ForegroundColor Gray
-Write-Host ""
+$containerExists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq $containerName }
+$containerRunning = docker ps --format "{{.Names}}" | Where-Object { $_ -eq $containerName }
 
+if (-not $containerExists) {
+    $createCmd = "docker run -d --name $containerName -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"sleep infinity`""
+    Invoke-Expression $createCmd
+    $startedContainer = $true
+} elseif (-not $containerRunning) {
+    docker start $containerName | Out-Null
+    $startedContainer = $true
+}
+
+$dockerCmd = "docker exec $containerName sh -c `"chmod 600 $mountPoint/$sshKey && ssh -o StrictHostKeyChecking=no -i $mountPoint/$sshKey -p $sshPort $sshUser@$sshHost 'echo Connection successful'`""
 Invoke-Expression $dockerCmd
+$sshExitCode = $LASTEXITCODE
 
-if ($LASTEXITCODE -eq 0) {
+# Always stop the container if it exists
+if ($containerExists) {
+    docker stop $containerName | Out-Null
+}
+
+if ($sshExitCode -eq 0) {
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Green
     Write-Host " SUCCESS! VM is reachable" -ForegroundColor Green
