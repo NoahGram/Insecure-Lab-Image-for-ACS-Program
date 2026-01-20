@@ -1,5 +1,7 @@
-  <footer>
-    <small>LabSys Wiki | <?php if(is_admin()): ?><a href="?action=redirect_external&url=http://localhost/server-status" style="color:#999;text-decoration:none;" title="Redirect utility">🔗</a><?php endif; ?></small>
-  </footer>
-</body>
-</html>
+<footer>
+  <small>
+    &copy; 2026 LabSys Inc. | 
+    <a href="?page=Terms+of+Use" style="color:#999;text-decoration:none;">Terms of Use</a> • 
+    <a href="?page=Privacy+Policy" style="color:#999;text-decoration:none;">Privacy Policy</a>
+  </small>
+</footer>

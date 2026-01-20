@@ -219,23 +219,6 @@
   tags:
     - api_vulnerabilities
     - insecure_tokens
-      
-
-# ===========================================
-# WEB VULNERABILITIES (XSS, etc.)
-# ===========================================
-
-- name: Deploy stored XSS vulnerability
-  copy:
-    src: files/web/xss_stored.php
-    dest: /var/www/roles/vulnerabilities/web_stack/xss_stored.php
-    owner: www-data
-    group: www-data
-    mode: '0644'
-  when: vulnerability_config.web_vulnerabilities.xss_vulnerabilities | default(false)
-  tags:
-    - web_vulnerabilities
-    - xss
 
 # ===========================================
 # SYSTEM VULNERABILITIES
@@ -815,9 +798,14 @@
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';
   loop:
-    - { username: 'admin', password: 'admin' }
-    - { username: 'jane', password: 'jane' }
-    - { username: 'guest', password: 'guest' }
+    - { username: 'mcarter',   password: 'Password1' }
+    - { username: 'slopez',    password: 'sunshine' }
+    - { username: 'tnguyen',   password: 'Welcome123' }
+    - { username: 'ajohnson',  password: 'qwerty12' }
+    - { username: 'dpatel',    password: 'iloveyou' }
+    - { username: 'lwilson',   password: 'letmein' }
+    - { username: 'kroberts',  password: 'IronGate$558' }
+    - { username: 'hkim',     password: 'Nova*Cloud73' }
   ignore_errors: yes
   when: vulnerable_mode | default(false)
 
@@ -851,6 +839,16 @@
   copy:
     src: files/editable_url_parameters.php
     dest: /var/www/html/labsys-wiki/includes/modules/authorization.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerable_mode | default(false)
+
+# CRYPTOGRAPHY FAILURES
+- name: Deploy md5 password verification
+  copy:
+    src: files/cryptographic_failures.php
+    dest: /var/www/html/labsys-wiki/includes/modules/verify_password.php
     owner: www-data
     group: www-data
     mode: '0644'
@@ -914,16 +912,6 @@
     regexp: '^\s*session_regenerate_id\s*\(\s*true\s*\)\s*;\s*$'
     state: absent
   when: vulnerable_mode | default(false)
-
-# CRYPTOGRAPHIC FAILURES
-
-- name: Enable vulnerable Cryptographic Failures with weak hashing algorithms
-  copy:
-    src: files/cryptographic_failures.php
-    dest: /var/www/roles/vulnerabilities/web_stack/cryptographic_failures.php
-    owner: www-data
-    group: www-data
-    mode: "0644"
 
 # ===========================================
 # APPLICATION VULNERABILITIES - DokuWiki
