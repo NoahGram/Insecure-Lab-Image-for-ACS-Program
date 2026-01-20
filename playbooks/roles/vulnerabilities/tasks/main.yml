@@ -798,11 +798,11 @@
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';
   loop:
-    - { username: 'mcarter',   password: 'Password1' }
-    - { username: 'slopez',    password: 'sunshine' }
-    - { username: 'tnguyen',   password: 'Welcome123' }
-    - { username: 'ajohnson',  password: 'qwerty12' }
-    - { username: 'dpatel',    password: 'iloveyou' }
+    - { username: 'mcarter',   password: '2ac9cb7dc02b3c0083eb70898e549b63' }
+    - { username: 'slopez',    password: '77938d389b17d5e82239fc05c335b2af' }
+    - { username: 'tnguyen',   password: '133987b0b6ad0c01fc0ccbdae1b95449' }
+    - { username: 'ajohnson',  password: '0fc2101b7965e7ac4d56c01591da030c' }
+    - { username: 'dpatel',    password: 'd917ee0d37b0d3ad3f6443e443f7019a ' }
     - { username: 'lwilson',   password: 'letmein' }
     - { username: 'kroberts',  password: 'IronGate$558' }
     - { username: 'hkim',     password: 'Nova*Cloud73' }
