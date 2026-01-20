@@ -815,9 +815,14 @@
       UPDATE users SET password = '{{ item.password }}'
       WHERE username = '{{ item.username }}';
   loop:
-    - { username: 'admin', password: 'admin' }
-    - { username: 'jane', password: 'jane' }
-    - { username: 'guest', password: 'guest' }
+    - { username: 'mcarter',   password: 'Password1' }
+    - { username: 'slopez',    password: 'sunshine' }
+    - { username: 'tnguyen',   password: 'Welcome123' }
+    - { username: 'ajohnson',  password: 'qwerty12' }
+    - { username: 'dpatel',    password: 'iloveyou' }
+    - { username: 'lwilson',   password: 'letmein' }
+    - { username: 'kroberts',  password: 'IronGate$558' }
+    - { username: 'hkim',     password: 'Nova*Cloud73' }
   ignore_errors: yes
   when: vulnerable_mode | default(false)
 

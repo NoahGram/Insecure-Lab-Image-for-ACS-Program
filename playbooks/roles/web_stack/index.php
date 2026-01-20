@@ -8,8 +8,10 @@ require_once __DIR__ . '/includes/actions.php';
     <div class="brand">
       <div class="logo">LW</div>
       <div>
-        <h1>LabSys Wiki — Internal Knowledgebase</h1>
-        <div class="lead">Documentation • How-tos • Diagnostics</div>
+        <h1>LabSys Wiki — Chip Engineering & Product Documentation</h1>
+        <div class="lead">
+          Products • Design Guides • Hardware & Software Tools • Application Notes
+        </div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">

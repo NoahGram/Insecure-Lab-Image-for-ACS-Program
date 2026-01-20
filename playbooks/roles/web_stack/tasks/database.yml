@@ -64,9 +64,15 @@
             email = '{{ item.email }}',
             role = '{{ item.role }}';"
   loop:
-    - { id: 1, username: 'admin', role: 'admin', password: 'Admin@Secure123!', email: 'admin@portal.local' }
-    - { id: 2, username: 'jane',  role: 'user', password: 'Jane@Secure456!',  email: 'jane@portal.local' }
-    - { id: 3, username: 'guest', role: 'user', password: 'Guest@Secure789!', email: 'guest@portal.local' }
+    - { id: 1, username: 'mcarter',   role: 'admin', password: 'R4ven!Oak92',      email: 'mcarter@mail.com' }
+    - { id: 2, username: 'slopez',    role: 'user',  password: 'Sunset#3184',      email: 'slopez@mail.com' }
+    - { id: 3, username: 'tnguyen',   role: 'user',  password: 'BlueSky@742',      email: 'tnguyen@mail.com' }
+    - { id: 4, username: 'ajohnson',  role: 'user',  password: 'Forest!Wave66',   email: 'ajohnson@mail.com' }
+    - { id: 5, username: 'dpatel',    role: 'user',  password: 'Crimson#Hill91',  email: 'dpatel@mail.com' }
+    - { id: 6, username: 'kroberts',  role: 'admin', password: 'IronGate$558',    email: 'kroberts@mail.com' }
+    - { id: 7, username: 'lwilson',   role: 'user',  password: 'RiverStone!204',  email: 'lwilson@mail.com' }
+    - { id: 8, username: 'hkim',      role: 'user',  password: 'Nova*Cloud73',    email: 'hkim@mail.com' }
+
   when: mysql_service is defined
 
 - name: Create pages table
@@ -90,8 +96,98 @@
     login_db: wikidb
     query: |
       INSERT IGNORE INTO pages (title, content, excerpt)
-      VALUES ('Home', 'Welcome to LabSys Wiki! Use the "Edit" button to add content.', 'Welcome to LabSys Wiki!');
+      VALUES ('Home',
+        'Welcome to the LabSys Chip Wiki! Here you can explore our products, technologies, and internal resources. Use the navigation on the left to browse through different categories including hardware, software, design guides, and engineering tools. Stay up to date with our latest chip releases and technical documentation.',
+        'The central hub for LabSys chip documentation and resources.');
   when: mysql_service is defined
+
+- name: Insert Products page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Products',
+        'LabSys specializes in high-performance semiconductor solutions. Our current product lines include:\n\n- LS-1000: Low-power microcontroller for IoT devices\n- LS-2000: High-speed processing units for AI applications\n- LS-3000: Memory chips optimized for embedded systems\n\nEach product page contains datasheets, performance benchmarks, and recommended applications.',
+        'Overview of LabSys chip products.');
+
+- name: Insert Design Guides page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Design Guides',
+        'Our design guides provide engineers with step-by-step instructions to integrate LabSys chips into projects efficiently. Topics covered include power management, signal integrity, PCB layout best practices, and software integration examples. New guides are released quarterly to reflect the latest technology updates.',
+        'Step-by-step instructions for integrating LabSys chips into designs.');
+
+- name: Insert Hardware Overview page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Hardware Overview',
+        'LabSys hardware includes a wide range of microcontrollers, AI accelerators, and memory modules. Detailed block diagrams, pinout descriptions, and reference schematics are available for each device. Engineers can download evaluation board designs and verify performance before production.',
+        'Technical overview of LabSys hardware.');
+
+- name: Insert Software Tools page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Software Tools',
+        'LabSys provides a suite of software tools to support chip programming, debugging, and simulation. Tools include:\n\n- LabSys IDE: Integrated development environment for firmware development\n- ChipSim: Cycle-accurate simulation for LS series chips\n- Firmware Library: Prebuilt drivers and utilities for common peripherals\n\nComprehensive documentation and tutorials are available for each tool.',
+        'Software tools for programming and simulating LabSys chips.');
+
+- name: Insert Application Notes page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Application Notes',
+        'Application notes highlight real-world use cases and performance results for LabSys chips. Each note includes design considerations, measurement data, and code examples. Examples include IoT sensors, AI inference accelerators, and embedded memory controllers.',
+        'Real-world use cases and design examples for LabSys chips.');
+
+- name: Insert FAQ page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('FAQ',
+        'Frequently Asked Questions about LabSys chips:\n\n1. How do I get datasheets?\n   - Datasheets are available on each product page.\n2. How do I request evaluation boards?\n   - Contact sales@labsys.com for evaluation board requests.\n3. Where can I find software libraries?\n   - Download the latest libraries from the Software Tools page.\n4. Who can I contact for technical support?\n   - Email support@labsys.com.',
+        'Common questions and answers about LabSys chips.');
+
+- name: Insert Terms of Use page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Terms of Use',
+        'Welcome to the LabSys Wiki. By accessing this site, you agree to comply with the following terms:\n\n1. Use the content for informational and educational purposes only.\n2. Do not redistribute confidential or proprietary information.\n3. LabSys Inc. reserves the right to modify or remove content at any time.\n4. Unauthorized access or misuse of the wiki is strictly prohibited.\n\nFor any questions regarding these terms, please contact legal@labsys.com.',
+        'Rules and guidelines for using the LabSys Wiki.');
+
+- name: Insert Privacy Policy page
+  mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_db: wikidb
+    query: |
+      INSERT IGNORE INTO pages (title, content, excerpt)
+      VALUES ('Privacy Policy',
+        'LabSys Inc. respects your privacy. This page explains how we handle data collected from wiki users:\n\n- We collect minimal usage data for analytics and site improvement.\n- No personal data is shared with third parties without consent.\n- Access logs are monitored only for security purposes.\n- Users may request removal of personal data by contacting privacy@labsys.com.\n\nBy using the LabSys Wiki, you consent to this privacy policy.',
+        'How LabSys Wiki collects and handles user data.');
 
 - name: Create activity_logs table for monitoring
   mysql_query:
