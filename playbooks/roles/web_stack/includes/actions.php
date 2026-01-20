@@ -12,6 +12,7 @@ require_once __DIR__ . '/modules/authorization.php';
 require_once __DIR__ . '/modules/api_tokens.php';
 require_once __DIR__ . '/modules/error_display.php';
 require_once __DIR__ . '/modules/csrf_protection.php';
+require_once __DIR__ . '/modules/verify_password.php';
 require_once __DIR__ . '/ssrf_secure.php';
 
 // --- ACTIONS ---
@@ -36,16 +37,7 @@ switch ($action) {
                     $status = check_account_status($row, $username);
                     $login_error = $status['login_error'];
                     if ($status['ok']) {
-                        // Check if vulnerability override exists (cryptographic_failures.php)
-                        if (function_exists('verify_password_override')) {
-                            $ok = verify_password_override($password, $stored);
-                        } else {
-                            // Secure mode: only accept bcrypt/argon2 hashes
-                            // Note: $2b$ is bcrypt from Python/Ansible, $2y$ is bcrypt from PHP
-                            $ok = (strlen($stored) >= 60 && (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2b$') || str_starts_with($stored, '$argon2')))
-                                ? password_verify($password, $stored)
-                                : false;
-                        }
+                        $ok = verify_password($password, $stored);
                         if ($ok) {
                             handle_successful_login($conn, $row['id'], $row['username']);
 

@@ -844,6 +844,16 @@
     mode: '0644'
   when: vulnerable_mode | default(false)
 
+# CRYPTOGRAPHY FAILURES
+- name: Deploy md5 password verification
+  copy:
+    src: files/cryptographic_failures.php
+    dest: /var/www/html/labsys-wiki/includes/modules/verify_password.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: vulnerable_mode | default(false)
+
 # CSRF
 
 - name: Deploy disable session cookies vulnerability override
