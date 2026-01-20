@@ -64,14 +64,14 @@
             email = '{{ item.email }}',
             role = '{{ item.role }}';"
   loop:
-    - { id: 1, username: 'mcarter',   role: 'admin', password: 'R4ven!Oak92',      email: 'mcarter@mail.com' }
-    - { id: 2, username: 'slopez',    role: 'user',  password: 'Sunset#3184',      email: 'slopez@mail.com' }
-    - { id: 3, username: 'tnguyen',   role: 'user',  password: 'BlueSky@742',      email: 'tnguyen@mail.com' }
-    - { id: 4, username: 'ajohnson',  role: 'user',  password: 'Forest!Wave66',   email: 'ajohnson@mail.com' }
-    - { id: 5, username: 'dpatel',    role: 'user',  password: 'Crimson#Hill91',  email: 'dpatel@mail.com' }
-    - { id: 6, username: 'kroberts',  role: 'admin', password: 'IronGate$558',    email: 'kroberts@mail.com' }
-    - { id: 7, username: 'lwilson',   role: 'user',  password: 'RiverStone!204',  email: 'lwilson@mail.com' }
-    - { id: 8, username: 'hkim',      role: 'user',  password: 'Nova*Cloud73',    email: 'hkim@mail.com' }
+    - { id: 1, username: 'mcarter',   role: 'admin', password: 'R4ven!Oak92',      email: 'mcarter@techcorp.local' }
+    - { id: 2, username: 'slopez',    role: 'user',  password: 'Sunset#3184',      email: 'slopez@techcorp.local' }
+    - { id: 3, username: 'tnguyen',   role: 'user',  password: 'BlueSky@742',      email: 'tnguyen@techcorp.local' }
+    - { id: 4, username: 'ajohnson',  role: 'user',  password: 'Forest!Wave66',   email: 'ajohnson@techcorp.local' }
+    - { id: 5, username: 'dpatel',    role: 'user',  password: 'Crimson#Hill91',  email: 'dpatel@techcorp.local' }
+    - { id: 6, username: 'kroberts',  role: 'admin', password: 'IronGate$558',    email: 'kroberts@techcorp.local' }
+    - { id: 7, username: 'lwilson',   role: 'user',  password: 'RiverStone!204',  email: 'lwilson@techcorp.local' }
+    - { id: 8, username: 'hkim',      role: 'user',  password: 'Nova*Cloud73',    email: 'hkim@techcorp.local' }
 
   when: mysql_service is defined
 
