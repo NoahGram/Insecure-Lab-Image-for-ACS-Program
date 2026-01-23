@@ -49,13 +49,27 @@ $keyPath = if ($env:VM1_SSH_KEY_PATH) { $env:VM1_SSH_KEY_PATH } else { 'Keys/vps
 $dockerImage = if ($env:DOCKER_IMAGE_NAME) { $env:DOCKER_IMAGE_NAME } else { 'ansible-control-node' }
 
 # Build docker command
-$dockerCmd = "docker run --rm -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"chmod 600 $mountPoint/$keyPath && ansible-playbook $mountPoint/$Playbook -i $mountPoint/$inventoryFile`""
+$containerName = "ansible-container"
+$startedContainer = $false
 
-Write-Host "Executing playbook..." -ForegroundColor Yellow
-Write-Host $dockerCmd -ForegroundColor Gray
-Write-Host ""
+$containerExists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq $containerName }
+$containerRunning = docker ps --format "{{.Names}}" | Where-Object { $_ -eq $containerName }
 
+if (-not $containerExists) {
+    $createCmd = "docker run -d --name $containerName -v `"$repoPath`:$mountPoint`" $dockerImage sh -c `"sleep infinity`""
+    Invoke-Expression $createCmd
+    $startedContainer = $true
+} elseif (-not $containerRunning) {
+    docker start $containerName | Out-Null
+    $startedContainer = $true
+}
+
+$dockerCmd = "docker exec $containerName sh -c `"chmod 600 $mountPoint/$keyPath && ansible-playbook $mountPoint/$Playbook -i $mountPoint/$inventoryFile`""
 Invoke-Expression $dockerCmd
+
+if ($startedContainer) {
+    docker stop $containerName | Out-Null
+}
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""

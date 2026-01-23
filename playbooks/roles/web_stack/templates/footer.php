@@ -1,5 +1,7 @@
-  <footer>
-    <small>LabSys Wiki — training lab. Keep it isolated and responsible.</small>
-  </footer>
-</body>
-</html>
+<footer>
+  <small>
+    &copy; 2026 LabSys Inc. | 
+    <a href="?page=Terms+of+Use" style="color:#999;text-decoration:none;">Terms of Use</a> • 
+    <a href="?page=Privacy+Policy" style="color:#999;text-decoration:none;">Privacy Policy</a>
+  </small>
+</footer>

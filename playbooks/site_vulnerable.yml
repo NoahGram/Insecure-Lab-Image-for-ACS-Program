@@ -48,6 +48,7 @@
     - vulnerabilities
     
   post_tasks:
+          
     - name: Display deployment summary
       debug:
         msg:

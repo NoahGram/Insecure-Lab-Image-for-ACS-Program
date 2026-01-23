@@ -253,6 +253,13 @@
     fi
   ignore_errors: yes
 
+- name: Fix ADOdb schema() bug for MariaDB 10.11+ compatibility
+  replace:
+    path: /var/www/mantisbt/vendor/adodb/adodb-php/drivers/adodb-mysqli.inc.php
+    regexp: '\$this->metaTablesSQL \.= "(DATABASE\(\)|schema\(\))";'
+    replace: '$this->metaTablesSQL = "SELECT TABLE_NAME, CASE WHEN TABLE_TYPE = ''VIEW'' THEN ''V'' ELSE ''T'' END FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE()";'
+  ignore_errors: yes
+
 - name: Create MantisBT config_inc.php
   copy:
     content: |
