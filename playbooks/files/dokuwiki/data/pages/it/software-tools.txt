@@ -1,0 +1,125 @@
+====== IT: Approved Software List ======
+
+This page lists software approved for installation on LabSys corporate devices. Installing unapproved software is prohibited per the :it:security policy.
+
+----
+
+===== How to Request Software =====
+
+  - Check if software is on the approved list below
+  - If approved, submit installation request via IT Helpdesk
+  - If not listed, submit a Software Approval Request form
+
+**IT Helpdesk**: it-support@labsys.com
+
+----
+
+===== Development Tools =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| LabSys IDE                | 3.2.1         | LabSys Free          | All Engineering            |
+| ChipSim                   | 2.4.0         | LabSys Free          | All Engineering            |
+| Visual Studio Code        | Latest        | Microsoft Free       | All Employees              |
+| Visual Studio 2022        | 17.x          | Enterprise (IT)      | Software Engineering       |
+| JetBrains IntelliJ IDEA   | Latest        | Enterprise (IT)      | Software Engineering       |
+| PyCharm Professional      | Latest        | Enterprise (IT)      | Software Engineering       |
+| Git                       | Latest        | Open Source          | All Employees              |
+| Git Extensions            | Latest        | Open Source          | All Employees              |
+| Sourcetree                | Latest        | Free                 | All Employees              |
+| Python                    | 3.10, 3.11    | Open Source          | All Engineering            |
+| Node.js                   | 18 LTS, 20 LTS| Open Source          | Software Engineering       |
+
+----
+
+===== EDA & CAD Tools =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| Cadence Virtuoso          | IC23.1        | Floating (lic01)     | IC Design                  |
+| Cadence Genus             | 23.1          | Floating (lic01)     | Digital Design             |
+| Cadence Innovus           | 23.1          | Floating (lic01)     | Physical Design            |
+| Synopsys Design Compiler  | 2023.03       | Floating (lic02)     | Digital Design             |
+| Synopsys VCS              | 2023.03       | Floating (lic02)     | Verification               |
+| Synopsys PrimeTime        | 2023.03       | Floating (lic02)     | Timing Analysis            |
+| Mentor Questa             | 2023.1        | Floating (lic02)     | Verification               |
+| Altium Designer           | 24.x          | Named (IT Request)   | PCB Design                 |
+| OrCAD                     | 23.1          | Named (IT Request)   | Schematic Capture          |
+| MATLAB                    | R2024a        | Named (IT Request)   | Signal Processing          |
+| Simulink                  | R2024a        | Named (IT Request)   | System Modeling            |
+
+----
+
+===== Productivity & Collaboration =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| Microsoft 365             | Latest        | Enterprise E5        | All Employees              |
+| Microsoft Teams           | Latest        | Enterprise E5        | All Employees              |
+| Slack                     | Latest        | Business+            | All Employees              |
+| Zoom                      | Latest        | Business             | All Employees              |
+| Adobe Acrobat Pro         | Latest        | Named License        | On Request                 |
+| Adobe Creative Cloud      | Latest        | Named License        | Marketing, Documentation   |
+| Confluence                | Cloud         | Enterprise           | All Employees              |
+| Jira                      | Cloud         | Enterprise           | Engineering, PM            |
+
+----
+
+===== Security & Utilities =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| CrowdStrike Falcon        | Latest        | Enterprise           | Auto-installed (required)  |
+| LastPass Enterprise       | Latest        | Enterprise           | All Employees              |
+| GlobalProtect VPN         | Latest        | Palo Alto            | All Employees              |
+| 7-Zip                     | Latest        | Open Source          | All Employees              |
+| Notepad++                 | Latest        | Open Source          | All Employees              |
+| PuTTY                     | Latest        | Open Source          | All Employees              |
+| WinSCP                    | Latest        | Open Source          | All Employees              |
+| Wireshark                 | Latest        | Open Source          | IT, Engineering            |
+
+----
+
+===== Browsers =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| Microsoft Edge            | Latest        | Included (Windows)   | All Employees (Default)    |
+| Google Chrome             | Latest        | Free                 | All Employees              |
+| Mozilla Firefox           | Latest        | Open Source          | All Employees              |
+
+**Note**: Internet Explorer is not supported and is blocked by policy.
+
+----
+
+===== AI & Machine Learning =====
+
+| **Software**              | **Version**   | **License**          | **Approved For**           |
+| NPU Toolkit               | 1.4.0         | LabSys Free          | AI/ML Engineering          |
+| Python (Anaconda)         | Latest        | Free                 | AI/ML Engineering          |
+| TensorFlow                | 2.x           | Open Source          | AI/ML Engineering          |
+| PyTorch                   | 2.x           | Open Source          | AI/ML Engineering          |
+| Jupyter Notebook          | Latest        | Open Source          | AI/ML Engineering          |
+| CUDA Toolkit              | 12.x          | NVIDIA Free          | AI/ML Engineering          |
+
+----
+
+===== Prohibited Software =====
+
+The following categories are **not permitted** on LabSys devices:
+  * Personal cloud storage (Dropbox, personal Google Drive, iCloud)
+  * Unauthorized remote access tools (TeamViewer, AnyDesk personal)
+  * Torrent clients
+  * Personal VPN services
+  * Cryptocurrency mining software
+  * Unapproved communication apps
+
+Violations will be reported to HR and may result in disciplinary action.
+
+----
+
+===== License Servers =====
+
+| **Server**            | **Port** | **Tools**                      |
+| lic01.labsys.internal | 27000    | Cadence suite                  |
+| lic02.labsys.internal | 27000    | Synopsys, Mentor suite         |
+| lic03.labsys.internal | 1055     | MATLAB, Simulink               |
+
+----
+
+//Last updated: January 2026//

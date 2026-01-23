@@ -1,0 +1,32 @@
+From: Deepak Patel <dpatel@labsys.local>
+To: ajohnson@labsys.local
+Subject: FW: Your LabSys Wiki Account
+Date: Tue, 21 Jan 2026 09:00:00 +0000
+Message-ID: <fwd-wiki@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Alex,
+
+Forwarding this in case you lost yours. I know you mentioned having
+trouble logging in.
+
+---------- Forwarded message ---------
+From: IT Helpdesk <helpdesk@labsys.local>
+Date: Mon, 06 Jan 2026 09:30:00 +0000
+Subject: Your LabSys Wiki Account
+To: dpatel@labsys.local
+
+Hello Deepak,
+
+Your LabSys Wiki account has been created:
+
+Wiki URL: http://wiki.labsys.local
+Username: dpatel
+Password: iloveyou
+
+Please change your password after first login.
+
+IT Helpdesk
+---------- End forwarded message ---------
+
+- Deepak

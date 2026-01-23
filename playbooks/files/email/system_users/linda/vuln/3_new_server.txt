@@ -1,0 +1,24 @@
+From: Mike Thompson <mike@labsys.local>
+To: linda@labsys.local
+Subject: New dev server credentials
+Date: Mon, 13 Jan 2026 10:00:00 +0000
+Message-ID: <new-server@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Linda,
+
+The new dev server is up. Here are the initial credentials:
+
+SSH Access:
+  Host: dev-01.labsys.local
+  Username: root
+  Password: LabSysDev2026!
+
+I'll let you set up the service accounts. Use the standard
+naming convention.
+
+Also, I set up a test account for the interns:
+  Username: guest
+  Password: guest
+
+Mike

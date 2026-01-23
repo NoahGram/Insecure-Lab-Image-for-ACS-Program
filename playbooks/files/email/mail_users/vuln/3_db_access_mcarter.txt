@@ -1,0 +1,29 @@
+From: Karen Roberts <kroberts@labsys.local>
+To: mcarter@labsys.local
+Subject: RE: Need DB access for inventory audit
+Date: Thu, 16 Jan 2026 10:45:00 +0000
+Message-ID: <db-access-001@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Mike,
+
+Here are the database credentials you asked for. Please delete this
+email after you've saved them somewhere secure.
+
+MySQL Admin Access:
+  Host: localhost
+  Username: root
+  Password: maria
+
+phpMyAdmin: http://localhost/phpmyadmin
+
+For the Gitea database specifically:
+  Database: gitea
+  Username: gitea
+  Password: cup_of_tea
+
+Let me know if you need anything else for the audit.
+
+Karen Roberts
+Senior Database Administrator
+LabSys Inc.

@@ -1,0 +1,169 @@
+====== Engineering: Hardware Overview ======
+
+This page provides technical overviews of LabSys chip hardware, including block diagrams, pinout information, and evaluation board details.
+
+----
+
+===== LS-1000 Series Architecture =====
+
+==== Block Diagram ====
+
+<code>
+┌─────────────────────────────────────────────────────────────┐
+│                      LS-1030 Block Diagram                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────┐    ┌──────────┐    ┌──────────────────────┐   │
+│  │ ARM      │    │  DMA     │    │    Flash Controller  │   │
+│  │ Cortex-M4F│◄──►│Controller│◄──►│    (1MB)            │   │
+│  │ 120MHz   │    │          │    │                      │   │
+│  └────┬─────┘    └────┬─────┘    └──────────────────────┘   │
+│       │               │                                     │
+│  ┌────▼───────────────▼────────────────────────────────┐    │
+│  │                    AHB Bus Matrix                   │    │
+│  └────┬───────┬───────┬───────┬───────┬───────┬───────┬┘    │
+│       │       │       │       │       │       │       │     │
+│  ┌────▼──┐┌───▼──┐┌───▼──┐┌───▼──┐┌───▼──┐┌───▼──┐┌───▼──┐  │
+│  │ SRAM  ││ GPIO ││ SPI  ││ I2C  ││ UART ││ ADC  ││ BLE  │  │
+│  │ 128KB ││      ││ x2   ││ x2   ││ x3   ││12-bit││ 5.0  │  │
+│  └───────┘└──────┘└──────┘└──────┘└──────┘└──────┘└──────┘  │
+│                                                             │
+│  ┌──────────────────┐  ┌───────────────┐  ┌──────────────┐  │
+│  │ Hardware Crypto  │  │ RTC + Backup  │  │ Power Mgmt   │  │
+│  │ AES/SHA/TRNG     │  │ Domain        │  │ Unit (PMU)   │  │
+│  └──────────────────┘  └───────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+</code>
+
+==== Pinout Summary (LS-1030, QFN-48) ====
+
+| **Pin Range** | **Function**                              |
+| 1-4           | Power (VDD_CORE, VDD_IO, VSS)             |
+| 5-12          | GPIO Bank A (PA0-PA7)                     |
+| 13-20         | GPIO Bank B (PB0-PB7)                     |
+| 21-24         | SPI0 (CLK, MOSI, MISO, CS)                |
+| 25-26         | I2C0 (SDA, SCL)                           |
+| 27-29         | UART0 (TX, RX, RTS)                       |
+| 30-33         | ADC Inputs (ADC0-ADC3)                    |
+| 34-37         | BLE RF (ANT, RFVDD, RFGND, XTAL)          |
+| 38-40         | Boot Config / Debug (SWDIO, SWCLK, nRST)  |
+| 41-48         | GPIO Bank C / Alternate functions         |
+| EP            | Exposed Pad (connect to GND)              |
+
+----
+
+===== LS-2000 Series Architecture =====
+
+==== Block Diagram ====
+
+<code>
+┌──────────────────────────────────────────────────────────────────┐
+│                      LS-2050 Block Diagram                       │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌───────────────┐      ┌─────────────────────────────────────┐  │
+│  │ ARM Cortex-A55│      │         Neural Processing Unit      │  │
+│  │ Quad Core     │◄────►│         (16 cores, 20 TOPS)         │  │
+│  │ @ 2.0 GHz     │      │                                     │  │
+│  └───────────────┘      └─────────────────────────────────────┘  │
+│          │                              │                        │
+│  ┌───────▼──────────────────────────────▼───────────────────┐    │
+│  │                    NoC (Network on Chip)                 │    │
+│  └───┬───────┬───────┬───────┬───────┬───────┬───────┬──────┘    │
+│      │       │       │       │       │       │       │           │
+│  ┌───▼──┐┌───▼───┐┌──▼───┐┌──▼───┐┌──▼──┐┌───▼──┐┌───▼──────┐    │
+│  │ DDR  ││ PCIe  ││ USB  ││ MIPI ││ ISP ││ Video││ Security │    │ 
+│  │ Ctrl ││ Gen4  ││ 3.0  ││ CSI  ││     ││ Codec││ Engine   │    │
+│  │LPDDR5││ x4    ││      ││ 4-lane│ 4K  ││H.265 ││          │    │
+│  └──────┘└───────┘└──────┘└──────┘└─────┘└──────┘└──────────┘    │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐   │
+│  │                    Power Management IC                    │   │
+│  │          (integrated PMIC, thermal management)            │   │
+│  └───────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────┘
+</code>
+
+==== Package Options ====
+
+| **Model**  | **Package**    | **Dimensions**  | **Ball Count** |
+| LS-2010    | FBGA           | 12x12 mm        | 256            |
+| LS-2020    | FBGA           | 17x17 mm        | 484            |
+| LS-2050    | FCBGA          | 25x25 mm        | 784            |
+
+----
+
+===== LS-3000 Series Architecture =====
+
+==== Memory Architecture ====
+
+<code>
+┌─────────────────────────────────────────────────────────┐
+│              LS-3050 HBM2e Architecture                 │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │              HBM2e Memory Stack                 │    │
+│  │  ┌────────┬────────┬────────┬────────┐          │    │
+│  │  │ Die 3  │ Die 3  │ Die 3  │ Die 3  │ (512MB)  │    │
+│  │  ├────────┼────────┼────────┼────────┤          │    │
+│  │  │ Die 2  │ Die 2  │ Die 2  │ Die 2  │ (512MB)  │    │
+│  │  ├────────┼────────┼────────┼────────┤          │    │
+│  │  │ Die 1  │ Die 1  │ Die 1  │ Die 1  │ (512MB)  │    │
+│  │  ├────────┼────────┼────────┼────────┤          │    │
+│  │  │ Die 0  │ Die 0  │ Die 0  │ Die 0  │ (512MB)  │    │
+│  │  └────────┴────────┴────────┴────────┘          │    │
+│  │                    │                            │    │
+│  │              ┌─────▼─────┐                      │    │ 
+│  │              │ Base Die  │                      │    │
+│  │              │ (PHY/Logic)│                     │    │
+│  │              └───────────┘                      │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  Total Capacity: 2GB    Bandwidth: 410 GB/s             │
+│  Interface: 1024-bit    Speed: 3.2 Gbps/pin             │
+└─────────────────────────────────────────────────────────┘
+</code>
+
+----
+
+===== Evaluation Boards =====
+
+| **Board**           | **Target Chip** | **Features**                                    | **Price** |
+| LS1030-EVK          | LS-1030         | Arduino headers, debugger, sensors              | $49       |
+| LS2020-DEV          | LS-2020         | Camera module, display, Ethernet                | $299      |
+| LS2050-AIBOX        | LS-2050         | PCIe carrier, NVMe, 10GbE                       | $599      |
+| LS3050-MEMTEST      | LS-3050         | HBM test interface, BIST support                | $199      |
+
+**EVK Contents**:
+  * Main board with target chip
+  * USB debug cable
+  * Power supply
+  * Quick start guide
+  * Access to online documentation
+
+**Order**: Contact samples@labsys.com or visit local retailer
+
+----
+
+===== Schematic & Layout Files =====
+
+Reference design files are available for registered users:
+  * Schematics (PDF, OrCAD)
+  * PCB Layout (Gerber, Allegro)
+  * Bill of Materials (Excel)
+  * 3D Models (STEP)
+
+**Access**: contact engineering Admin (requires engineering portal login)
+
+----
+
+===== Related Pages =====
+
+  * :engineering:products - Product specifications
+  * :engineering:design-guides - Integration guides
+  * :engineering:software-tools - Development tools
+
+----
+
+//Last updated: January 2026//

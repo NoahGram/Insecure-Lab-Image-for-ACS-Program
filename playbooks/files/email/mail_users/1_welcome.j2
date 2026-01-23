@@ -1,0 +1,28 @@
+From: IT Support <it-support@labsys.local>
+To: {{ item.username }}@labsys.local
+Subject: Welcome to LabSys Inc. - Your Account is Ready
+Date: Mon, 06 Jan 2026 09:15:00 +0000
+Message-ID: <welcome-{{ item.username }}@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hello {{ item.fullname }},
+
+Welcome to LabSys Inc.! Your corporate email account has been created.
+
+ACCESS DETAILS:
+---------------
+Webmail URL: http://localhost:8080/roundcube/
+Username: {{ item.username }}
+Email: {{ item.username }}@labsys.local
+
+IMPORTANT FIRST STEPS:
+1. Log in to webmail and verify access
+2. Review the IT Security Policy on the wiki
+3. Complete your mandatory security training
+4. Set up your VPN access for remote work
+
+Internal Wiki: http://localhost:8080/labsys-wiki/
+IT Helpdesk: ext. 5000
+
+Best regards,
+LabSys IT Department

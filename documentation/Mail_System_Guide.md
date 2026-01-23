@@ -18,9 +18,22 @@ Your Ansible playbook now deploys a **complete mail server stack**:
 ### Roundcube Webmail
 **URL**: `http://localhost:8080/roundcube` or `http://YOUR_VM_IP/roundcube`
 
-**Login Credentials**:
-- **Username**: Linux system username (e.g., `vagrant`, `user`)
-- **Password**: Linux system password
+**Domain**: `labsys.local`
+
+**Mail User Accounts** (LabSys Inc. Employees):
+
+| Username   | Full Name       | Clean Password   | Vulnerable Password |
+|------------|-----------------|------------------|---------------------|
+| mcarter    | Michael Carter  | R4ven!Oak92      | Password1           |
+| slopez     | Sofia Lopez     | Sunset#3184      | sunshine            |
+| tnguyen    | Trang Nguyen    | BlueSky@742      | Welcome123          |
+| ajohnson   | Alex Johnson    | Forest!Wave66    | qwerty12            |
+| dpatel     | Deepak Patel    | Crimson#Hill91   | iloveyou            |
+| kroberts   | Karen Roberts   | IronGate$558     | IronGate$558        |
+| lwilson    | Liam Wilson     | RiverStone!204   | letmein             |
+| hkim       | Hannah Kim      | Nova*Cloud73     | Nova*Cloud73        |
+
+**Login**: Use the username (e.g., `mcarter`) and the corresponding password based on your deployment profile (clean or vulnerable).
 
 ---
 
@@ -33,13 +46,13 @@ Your Ansible playbook now deploys a **complete mail server stack**:
 sudo apt install mailutils
 
 # Send a simple email
-echo "Test email body" | mail -s "Test Subject" user@lab.local
+echo "Test email body" | mail -s "Test Subject" mcarter@labsys.local
 
 # Send email with content from file
-mail -s "Subject" user@lab.local < message.txt
+mail -s "Subject" slopez@labsys.local < message.txt
 
 # Send to multiple recipients
-echo "Body" | mail -s "Subject" user1@lab.local,user2@lab.local
+echo "Body" | mail -s "Subject" mcarter@labsys.local,tnguyen@labsys.local
 ```
 
 ### 2. Check Mail Queue
@@ -99,7 +112,7 @@ cat ~/Maildir/new/*
 sudo tail -f /var/log/mail.log
 
 # Search for specific sender
-sudo grep "from=<user@lab.local>" /var/log/mail.log
+sudo grep "from=<mcarter@labsys.local>" /var/log/mail.log
 
 # Check authentication attempts
 sudo grep "sasl_method" /var/log/mail.log
@@ -131,9 +144,9 @@ sudo netstat -tulpn | grep -E ':(25|143|587|993)'
 telnet localhost 25
 
 # Commands to type in telnet:
-EHLO lab.local
-MAIL FROM: <user@lab.local>
-RCPT TO: <recipient@lab.local>
+EHLO labsys.local
+MAIL FROM: <mcarter@labsys.local>
+RCPT TO: <slopez@labsys.local>
 DATA
 Subject: Test
 
@@ -195,8 +208,8 @@ ls -la /home/testuser/Maildir/
 sudo apt install swaks
 
 # Send authenticated email
-swaks --to user@lab.local \
-      --from sender@lab.local \
+swaks --to slopez@labsys.local \
+      --from mcarter@labsys.local \
       --server localhost:587 \
       --auth LOGIN \
       --auth-user username \

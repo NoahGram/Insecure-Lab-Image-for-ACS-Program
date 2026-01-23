@@ -1,0 +1,28 @@
+From: backup-system@labsys.local
+To: linda@labsys.local
+Subject: [SUCCESS] Nightly backup completed
+Date: Thu, 23 Jan 2026 05:00:00 +0000
+Message-ID: <backup-success@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+BACKUP REPORT - 2026-01-23
+==========================
+
+Status: SUCCESS
+
+Databases backed up:
+  ✓ gitea (245 MB)
+  ✓ mantisbt (18 MB)  
+  ✓ roundcube (52 MB)
+  ✓ wikidb (3 MB)
+  ✓ testdb (1 MB)
+
+Files backed up:
+  ✓ /var/www/html (1.2 GB)
+  ✓ /home (890 MB)
+  ✓ /etc (45 MB)
+
+Backup location: /mnt/backup/2026-01-23/
+Retention: 30 days
+
+Next scheduled backup: 2026-01-24 02:00 UTC

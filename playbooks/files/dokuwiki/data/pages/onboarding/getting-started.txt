@@ -1,0 +1,73 @@
+====== Onboarding: Getting Started at LabSys ======
+
+Welcome to **LabSys Inc.**! We're excited to have you join our team. This guide will help you get set up and productive in your first weeks.
+
+----
+
+===== Day 1 Checklist =====
+
+  * [ ] Pick up your laptop and badge from IT (Building A, Room 102)
+  * [ ] Complete new hire paperwork with HR
+  * [ ] Set up your email account (Roundcube Webmail)
+  * [ ] Enroll in Multi-Factor Authentication (MFA)
+  * [ ] Review the :it:security policy
+
+----
+
+===== Week 1 Checklist =====
+
+  * [ ] Complete mandatory security awareness training (HR portal)
+  * [ ] Read the :company:about page to learn about LabSys
+  * [ ] Review :company:hr:policies for company guidelines
+  * [ ] Set up VPN access for remote work
+  * [ ] Meet with your manager to discuss goals and expectations
+  * [ ] Join relevant Slack channels for your team
+
+----
+
+===== For Engineering Roles =====
+
+If you're joining the engineering team, also complete these steps:
+
+  * [ ] Request access to the engineering VLAN (submit ticket to IT)
+  * [ ] Install LabSys IDE and ChipSim from :engineering:software-tools
+  * [ ] Review the :engineering:products page for current product lines
+  * [ ] Get access to the Git repositories (BitBucket/GitHub Enterprise)
+  * [ ] Complete export control training if working on ITAR/EAR projects
+
+----
+
+===== Key Systems & Access =====
+
+| **System**            | **URL / Access**                      | **Purpose**                     |
+| Email (Webmail)       | http://localhost:8080/roundcube/    | Corporate email (Roundcube)       |
+| HR Portal             | Temporary Offline                     | Leave, benefits, training       |
+| IT Helpdesk           | Temporary Offline                     | IT support tickets              |
+| Wiki                  | http://localhost:8080/labsys-wiki/    | This internal wiki              |
+| VPN                   | GlobalProtect (Palo Alto)             | Remote access                   |
+| Engineering Tools     | Internal License Server               | Cadence, Synopsys, LabSys IDE   |
+
+----
+
+===== Company Culture =====
+
+At LabSys, we value:
+  * **Innovation** — Push boundaries in chip design and technology
+  * **Collaboration** — Work together across teams and geographies
+  * **Integrity** — Protect our IP and maintain ethical standards
+  * **Excellence** — Deliver quality in everything we do
+
+----
+
+===== Tips for Success =====
+
+  * Don't hesitate to ask questions — everyone was new once!
+  * Use Slack for quick questions, email for formal communication
+  * Document your work in the wiki to help others
+  * Attend the monthly all-hands meeting (first Friday of each month)
+
+----
+
+**Welcome aboard! We're glad to have you at LabSys.**
+
+//Last updated: January 2026//

@@ -1,0 +1,24 @@
+From: HR Department <hr@labsys.local>
+To: guest@labsys.local
+Subject: Your Mentor Assignment
+Date: Mon, 06 Jan 2026 10:00:00 +0000
+Message-ID: <mentor-assign@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hello,
+
+Welcome to the LabSys internship program!
+
+You have been assigned to the IT Department. Your mentor will be:
+
+  Mike Thompson
+  IT Manager
+  Email: mike@labsys.local
+  Office: Building A, 3rd Floor
+
+Please schedule an introductory meeting with Mike this week.
+He will help you get set up with system access and your first
+project assignment.
+
+Good luck!
+HR Department

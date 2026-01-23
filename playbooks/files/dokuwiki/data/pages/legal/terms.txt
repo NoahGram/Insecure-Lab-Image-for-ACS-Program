@@ -1,0 +1,93 @@
+====== Legal: Terms of Use ======
+
+By accessing the LabSys Internal Wiki, you agree to comply with the following terms and conditions.
+
+----
+
+===== 1. Purpose =====
+
+This wiki is an internal resource for LabSys Inc. employees to access company documentation, policies, technical guides, and collaborative content. All content is proprietary and confidential.
+
+----
+
+===== 2. Authorized Users =====
+
+Access is granted only to:
+  * Current LabSys Inc. employees
+  * Authorized contractors with signed NDAs
+  * Approved third-party partners
+
+Sharing login credentials is strictly prohibited.
+
+----
+
+===== 3. Acceptable Use =====
+
+You may:
+  * View and download content for work-related purposes
+  * Contribute content relevant to your role
+  * Share information internally with authorized colleagues
+
+You may **not**:
+  * Copy, distribute, or publish content externally
+  * Use content for personal or commercial purposes outside LabSys
+  * Modify or delete content without appropriate authorization
+  * Attempt to access restricted areas beyond your permission level
+
+----
+
+===== 4. Intellectual Property =====
+
+All content on this wiki, including but not limited to:
+  * Technical documentation
+  * Design guides
+  * Product specifications
+  * Code samples
+  * Trade secrets
+
+...is the exclusive property of LabSys Inc. and protected by copyright, trade secret, and other intellectual property laws.
+
+----
+
+===== 5. Confidentiality =====
+
+Information on this wiki may include:
+  * **Internal**: General business information
+  * **Confidential**: Sensitive business data
+  * **Restricted**: Trade secrets and proprietary designs
+
+Treat all content as confidential unless explicitly marked as public.
+
+----
+
+===== 6. Modifications =====
+
+LabSys Inc. reserves the right to:
+  * Modify or remove any content at any time
+  * Revoke access for any reason
+  * Update these terms without prior notice
+
+Continued use constitutes acceptance of updated terms.
+
+----
+
+===== 7. Security =====
+
+Users are responsible for:
+  * Protecting their login credentials
+  * Reporting suspected security incidents immediately
+  * Following all policies in :it:security
+
+Unauthorized access attempts are logged and may result in legal action.
+
+----
+
+===== 8. Disclaimer =====
+
+Content is provided "as is" for internal reference. While we strive for accuracy, LabSys Inc. makes no warranties regarding completeness or fitness for any particular purpose. Always verify critical information through official channels.
+
+----
+
+//Effective Date: January 1, 2024//
+
+//Last updated: January 2026//

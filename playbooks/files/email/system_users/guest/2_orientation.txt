@@ -1,0 +1,23 @@
+From: IT Training <training@labsys.local>
+To: guest@labsys.local
+Subject: IT Orientation Schedule - This Wednesday
+Date: Mon, 06 Jan 2026 11:00:00 +0000
+Message-ID: <it-orientation@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi there!
+
+You're scheduled for IT orientation this Wednesday at 10am.
+
+Location: Conference Room B, Building A
+Duration: 2 hours
+
+We'll cover:
+- Email and communication tools
+- Internal wiki and documentation
+- Security policies and best practices
+- Development environment setup
+
+Please bring your laptop.
+
+IT Training Team

@@ -1,0 +1,145 @@
+====== Engineering: Design Guides ======
+
+This page contains hardware and software design guides for integrating LabSys chips into your projects. These guides are developed by our applications engineering team and updated quarterly.
+
+----
+
+===== Hardware Design Guides =====
+
+==== Power Management ====
+
+Proper power design is critical for reliable chip operation and optimal performance.
+
+**LS-1000 Series Power Guidelines**:
+  * Use LDO with <30mV ripple for core supply (1.8V)
+  * Separate analog and digital grounds, connect at single point
+  * Place 10µF + 100nF decoupling caps within 3mm of VDD pins
+  * Use ferrite bead for RF supply isolation (LS-1020/1030)
+
+**LS-2000 Series Power Guidelines**:
+  * Multi-phase DC-DC converter required for core supply
+  * Power sequencing: IO → Core → NPU (100ms delays)
+  * Monitor VDD_CORE with supervisor IC (undervoltage protection)
+  * Thermal pad must connect to internal ground plane
+
+----
+
+==== Signal Integrity ====
+
+High-speed designs require careful attention to signal integrity.
+
+**High-Speed Trace Guidelines**:
+| **Signal Type**      | **Impedance** | **Max Length** | **Notes**                    |
+| DDR4 Data            | 40Ω (diff)    | 25mm           | Match within 5mm             |
+| PCIe Gen4            | 85Ω (diff)    | 150mm          | Use low-loss dielectric      |
+| USB 3.0              | 90Ω (diff)    | 75mm           | Shield from noisy signals    |
+| SPI (high-speed)     | 50Ω (single)  | 50mm           | Series termination at source |
+
+**Best Practices**:
+  * Route high-speed pairs on inner layers with solid reference planes
+  * Avoid vias in differential pairs; use microvias if necessary
+  * Maintain 3x trace width spacing from other signals
+  * Use simulation tools (HyperLynx, Ansys) for critical nets
+
+----
+
+==== PCB Layout Best Practices ====
+
+**Layer Stack Recommendation (6-layer board)**:
+  - L1: Signal (high-speed)
+  - L2: Ground
+  - L3: Signal
+  - L4: Power
+  - L5: Ground
+  - L6: Signal (low-speed)
+
+**Component Placement**:
+  * Place decoupling caps on same layer as chip (bottom side OK)
+  * Crystal/oscillator within 10mm of CLK input pins
+  * Keep analog components away from digital switching noise
+  * Place thermal vias under exposed pads (array of 0.3mm vias)
+
+----
+
+===== Software Integration Guides =====
+
+==== Firmware Development ====
+
+**Development Environment Setup**:
+  - Download LabSys IDE from :engineering:software-tools
+  - Install chip-specific SDK (available in IDE Package Manager)
+  - Configure debug probe (J-Link, CMSIS-DAP supported)
+
+**Project Structure (recommended)**:
+<code>
+project/
+├── src/
+│   ├── main.c
+│   ├── drivers/
+│   └── app/
+├── include/
+├── lib/
+│   └── labsys_sdk/
+└── Makefile
+</code>
+
+----
+
+==== Driver Integration ====
+
+LabSys provides pre-built drivers for common peripherals:
+
+| **Peripheral** | **Driver Name**         | **Version** | **Status**  |
+| GPIO           | labsys_gpio             | 2.1.0       | Production  |
+| SPI            | labsys_spi              | 2.0.1       | Production  |
+| I2C            | labsys_i2c              | 2.0.0       | Production  |
+| UART           | labsys_uart             | 2.1.0       | Production  |
+| BLE            | labsys_ble              | 1.5.0       | Production  |
+| NPU            | labsys_npu              | 1.2.0       | Beta        |
+
+**Driver Installation**:
+<code>
+# Using LabSys Package Manager
+lspkg install labsys_gpio labsys_spi labsys_i2c
+</code>
+
+----
+
+==== Boot Configuration ====
+
+**LS-1000 Boot Modes**:
+| **BOOT[1:0]** | **Mode**           | **Description**                        |
+| 00            | Internal Flash     | Boot from on-chip flash (default)      |
+| 01            | UART Boot          | Serial bootloader for programming      |
+| 10            | SPI Flash          | Boot from external SPI NOR flash       |
+| 11            | USB DFU            | USB device firmware update mode        |
+
+----
+
+===== Reference Designs =====
+
+Complete reference designs with schematics, BOM, and Gerber files:
+
+| **Design**                    | **Chip**   | **Description**                      |
+| LS1020-SENSOR-REF             | LS-1020    | BLE sensor node with battery mgmt    |
+| LS2020-CAMERA-REF             | LS-2020    | AI camera module with MIPI CSI       |
+| LS3020-IOT-GATEWAY            | LS-1030    | IoT gateway with Ethernet & Wi-Fi    |
+
+----
+
+===== Training & Support =====
+
+  * **Design Review Service**: Submit designs to design-review@labsys.com
+  * **FAE Support**: Contact your regional Field Application Engineer
+  * **Training Webinars**: Monthly sessions — register at training@labsys.com
+
+----
+
+**Related Pages**:
+  * :engineering:products - Product specifications
+  * :engineering:software-tools - Development tools
+  * :engineering:application-notes - Real-world examples
+
+----
+
+//Last updated: January 2026//

@@ -1,0 +1,114 @@
+====== IT: Security Policies & Procedures ======
+
+This page outlines the security policies and procedures for all LabSys Inc. employees. Given the sensitive nature of our semiconductor intellectual property, strict adherence to these guidelines is mandatory.
+
+----
+
+===== Password Policy =====
+
+| **Minimum Length**      | 12 characters                              |
+| **Complexity**          | Upper, lower, number, special character    |
+| **Rotation**            | Every 90 days                              |
+| **Reuse Restriction**   | Cannot reuse last 12 passwords             |
+| **Account Lockout**     | After 5 failed attempts (15 min lockout)   |
+
+**Best Practices**:
+  * Use a password manager (LastPass Enterprise provided)
+  * Never share credentials with anyone, including IT staff
+  * Enable MFA on all accounts that support it
+
+----
+
+===== Multi-Factor Authentication (MFA) =====
+
+MFA is **required** for:
+  * VPN access
+  * Email (Outlook/Exchange)
+  * Source code repositories
+  * Engineering design tools (Cadence, Synopsys)
+  * Cloud platforms (AWS, Azure)
+
+Approved MFA methods:
+  * Microsoft Authenticator (preferred)
+  * Hardware security keys (YubiKey)
+
+----
+
+===== Incident Response Procedure =====
+
+If you suspect a security incident:
+
+  - **Do not** attempt to investigate on your own
+  - **Immediately** report to the Security Operations Center (SOC)
+  - **Preserve** the state of the affected system (do not reboot)
+  - **Document** what you observed and when
+
+**SOC Contact**:
+  * Email: soc@labsys.com
+  * Phone: ext. 9911 (24/7)
+  * Slack: #security-incidents
+
+----
+
+===== Data Classification =====
+
+| **Level**           | **Description**                                      | **Examples**                          |
+| Public              | Information approved for external release            | Marketing materials, press releases   |
+| Internal            | General internal information                         | Org charts, internal announcements    |
+| Confidential        | Sensitive business information                       | Financial reports, contracts          |
+| Restricted          | Highly sensitive, need-to-know basis                 | Chip designs, source code, trade secrets |
+
+**Note**: All chip architecture documents and RTL code are classified as **Restricted**.
+
+----
+
+===== Network Security =====
+
+  * All engineering workstations must be on the isolated ENGR VLAN
+  * Guest Wi-Fi (LABSYS-GUEST) has no access to internal resources
+  * VPN required for all remote access — split tunneling is disabled
+  * USB storage devices are blocked by default on engineering systems
+
+----
+
+===== Physical Security =====
+
+  * Badge access required for all buildings and secure areas
+  * Fab clean room access requires additional clearance
+  * Visitors must be escorted at all times in restricted areas
+  * Report lost/stolen badges immediately to Security (ext. 9100)
+
+----
+
+===== Software & Patching =====
+
+  * All systems managed via SCCM/Intune with automatic patching
+  * Critical patches deployed within 72 hours
+  * Only IT-approved software may be installed
+  * Engineering tools require license verification before installation
+
+----
+
+===== Security Training =====
+
+  * Annual security awareness training is **mandatory**
+  * Phishing simulations conducted quarterly
+  * Specialized training for engineers handling export-controlled data
+
+----
+
+===== Useful Links =====
+
+  * :company:hr:policies        - HR policies
+  * :onboarding:getting-started - New employee onboarding
+  * :it:software-tools          - Approved software list
+
+----
+
+**IT Security Team Contact**:
+  * Email: it-security@labsys.com
+  * Helpdesk: it-support@labsys.com / ext. 5000
+
+----
+
+//Last updated: January 2026//

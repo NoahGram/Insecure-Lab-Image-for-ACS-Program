@@ -1,0 +1,20 @@
+From: monitoring@labsys.local
+To: linda@labsys.local
+Subject: [WARNING] Disk space low on db-prod-01
+Date: Thu, 16 Jan 2026 08:15:00 +0000
+Message-ID: <monitor-disk@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+MONITORING ALERT
+================
+
+Host: db-prod-01.labsys.local
+Alert: Disk space warning
+
+Filesystem      Size  Used  Avail  Use%  Mounted on
+/dev/sda1       100G   82G   18G   82%   /
+/dev/sdb1       500G  475G   25G   95%   /var/lib/mysql
+
+Recommendation: Archive old logs or expand storage.
+
+Nagios Monitoring System

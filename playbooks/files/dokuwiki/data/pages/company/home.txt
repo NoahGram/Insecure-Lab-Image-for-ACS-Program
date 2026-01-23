@@ -1,0 +1,36 @@
+====== Welcome to the LabSys Internal Wiki ======
+
+Welcome to the official internal wiki for **LabSys Inc.** — your central hub for company documentation, engineering resources, policies, and team collaboration.
+
+LabSys is a leading semiconductor company specializing in high-performance microcontrollers, AI accelerators, and memory solutions. This wiki serves as our internal knowledge base for employees across all departments.
+
+----
+
+**Quick Links**
+
+  * :company:about                  - About LabSys Inc.
+  * :onboarding:getting-started     - New employee onboarding
+  * :company:hr:policies            - HR policies & guidelines
+  * :it:security                    - IT & security procedures
+  * :engineering:products           - Product portfolio (LS-Series)
+  * :engineering:design-guides      - Hardware design guides
+  * :engineering:software-tools     - Development tools & SDKs
+
+----
+
+**Announcements**
+
+  * //2026-01-20//: LS-3000 Memory Module now in production. See :engineering:products for details.
+  * //2026-01-15//: New ChipSim v2.4 released with improved AI accelerator simulation.
+  * //2026-01-10//: Reminder: Complete mandatory security training by end of Q1.
+
+----
+
+**Need Help?**
+
+  * IT Support: it-support@labsys.com
+  * HR Questions: hr@labsys.com
+  * Engineering Support: eng-support@labsys.com
+
+----
+

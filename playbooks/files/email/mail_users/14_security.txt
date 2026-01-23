@@ -1,0 +1,25 @@
+From: IT Security <security@labsys.local>
+To: all-employees@labsys.local
+Subject: [REMINDER] Security Training Deadline - January 31st
+Date: Mon, 20 Jan 2026 08:00:00 +0000
+Message-ID: <security-reminder@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+MANDATORY SECURITY TRAINING REMINDER
+====================================
+
+This is a reminder that all employees must complete the annual
+security awareness training by January 31st, 2026.
+
+Topics covered:
+- Phishing awareness
+- Password security
+- Data classification
+- Incident reporting
+
+Employees who have not completed training by the deadline
+will have their system access temporarily suspended.
+
+If you have questions, contact security@labsys.local
+
+IT Security Team

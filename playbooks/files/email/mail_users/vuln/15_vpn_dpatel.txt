@@ -1,0 +1,21 @@
+From: IT Helpdesk <helpdesk@labsys.local>
+To: dpatel@labsys.local
+Subject: RE: VPN Access Request
+Date: Wed, 08 Jan 2026 15:45:00 +0000
+Message-ID: <vpn-setup@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Deepak,
+
+Your VPN access has been set up. Here are your connection details:
+
+VPN Server: vpn.labsys.com
+Protocol: GlobalProtect
+
+Credentials (same as your domain login):
+  Username: dpatel
+  Password: iloveyou
+
+Let me know if you have issues connecting.
+
+IT Helpdesk

@@ -1,0 +1,27 @@
+From: Trang Nguyen <tnguyen@labsys.local>
+To: ajohnson@labsys.local
+Subject: Test DB credentials for dev environment
+Date: Mon, 13 Jan 2026 11:15:00 +0000
+Message-ID: <test-creds@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hey Alex,
+
+Here are the test database credentials for the dev environment:
+
+MySQL Test DB:
+  Host: localhost
+  Database: testdb
+  Username: testuser
+  Password: testpass
+
+These have full access so you can run your integration tests.
+The test data resets every night at midnight.
+
+Also the web app test accounts:
+  admin / admin
+  test / test
+  
+Let me know if you need anything else!
+
+- Trang

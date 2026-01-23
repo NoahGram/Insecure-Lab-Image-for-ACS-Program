@@ -1,0 +1,30 @@
+From: Mike Thompson <mike@labsys.local>
+To: engineering-team@labsys.local
+Subject: IT Systems Update - January 2026
+Date: Fri, 17 Jan 2026 16:00:00 +0000
+Message-ID: <it-update-jan@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Team,
+
+Quick IT updates for this month:
+
+COMPLETED:
+✓ Email system migration to new server
+✓ Wiki upgraded to latest version
+✓ VPN capacity increased
+
+UPCOMING:
+- Security patches next Tuesday (brief outage 6-7am)
+- New laptop refresh program starting Feb 1st
+- MFA enforcement for all systems by March 1st
+
+REMINDERS:
+- Complete your security training!
+- Report any phishing emails to security@labsys.local
+- Lock your workstation when stepping away
+
+Questions? Stop by my desk or email me.
+
+Mike Thompson
+IT Manager
