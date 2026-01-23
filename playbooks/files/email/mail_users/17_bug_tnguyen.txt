@@ -1,0 +1,29 @@
+From: QA Team <qa@labsys.local>
+To: tnguyen@labsys.local
+Cc: hkim@labsys.local
+Subject: [BUG-2847] LS-2020 NPU Memory Leak in Inference Mode
+Date: Wed, 22 Jan 2026 10:30:00 +0000
+Message-ID: <bug-2847@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Bug Report: BUG-2847
+Priority: High
+Component: LS-2000 NPU Driver
+
+DESCRIPTION:
+Memory leak detected when running continuous inference workloads
+on LS-2020. Memory usage grows ~2MB/hour until OOM.
+
+REPRODUCTION STEPS:
+1. Load YOLOv5 model via lsnpu_load()
+2. Run inference loop for 4+ hours
+3. Observe memory growth via /proc/meminfo
+
+ENVIRONMENT:
+- Firmware: v1.2.0-beta
+- SDK: 2.3.0
+- Test board: LS2020-DEV rev C
+
+Logs attached. Please prioritize - blocking customer demo.
+
+QA Team

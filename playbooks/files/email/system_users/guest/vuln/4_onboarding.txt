@@ -1,0 +1,42 @@
+From: HR Department <hr@labsys.local>
+To: guest@labsys.local
+Subject: Welcome to LabSys - Complete Onboarding Information
+Date: Mon, 06 Jan 2026 08:00:00 +0000
+Message-ID: <intern-onboard@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Welcome to LabSys Inc.!
+
+We're excited to have you join us as an intern. Here's everything
+you need to get started:
+
+YOUR ACCOUNTS:
+--------------
+System Login (SSH):
+  Username: guest
+  Password: guest
+  
+Email Access:
+  Webmail: http://localhost:8080/roundcube/
+  Use your system credentials above
+
+Internal Wiki:
+  URL: http://localhost:8080/labsys-wiki/
+  Same credentials as above
+
+IMPORTANT CONTACTS:
+-------------------
+- Mike Thompson (IT Manager): mike@labsys.local
+- Linda Sanchez (Sysadmin): linda@labsys.local
+
+FIRST WEEK TASKS:
+-----------------
+1. Complete security awareness training
+2. Read the wiki documentation  
+3. Set up your development environment
+4. Attend new hire orientation (Wed 10am)
+
+If you have any issues, contact IT at ext. 5000.
+
+Best regards,
+HR Department

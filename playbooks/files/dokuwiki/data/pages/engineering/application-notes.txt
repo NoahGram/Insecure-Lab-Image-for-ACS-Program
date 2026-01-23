@@ -1,0 +1,213 @@
+====== Engineering: Application Notes ======
+
+Application notes provide real-world examples, design considerations, and performance data for LabSys chips. Each note includes detailed explanations, measurement results, and code examples.
+
+----
+
+===== IoT & Wireless =====
+
+==== AN001: Building a BLE Sensor Node with LS-1020 ====
+
+**Abstract**: This application note demonstrates how to build a battery-powered environmental sensor using the LS-1020 with integrated BLE 5.0.
+
+**Key Topics**:
+  * Low-power design achieving 2+ year battery life on CR2032
+  * Temperature, humidity, and pressure sensor integration (I2C)
+  * BLE advertising and GATT service configuration
+  * OTA firmware update implementation
+
+**Performance Results**:
+| **Mode**           | **Current** | **Duration**        |
+| Deep Sleep         | 0.8 µA      | 99.5% of time       |
+| Active (sampling)  | 3.2 mA      | 50 ms per sample    |
+| BLE TX (0 dBm)     | 8.5 mA      | 2 ms per advertisement |
+
+**Average Power**: 12 µA @ 1 sample/minute + advertising
+
+**Code Example**:
+<code c>
+#include "labsys_ble.h"
+#include "labsys_i2c.h"
+
+void sensor_task(void) {
+    float temp = read_temperature();  // I2C sensor
+    float humidity = read_humidity();
+    
+    // Update BLE characteristic
+    ble_update_sensor_data(temp, humidity);
+    
+    // Return to deep sleep
+    enter_deep_sleep(WAKEUP_RTC, 60000);  // 60 second sleep
+}
+</code>
+
+----
+
+==== AN002: LoRaWAN Gateway with LS-1030 ====
+
+**Abstract**: Implement a LoRaWAN gateway using LS-1030 with external SX1276 radio module.
+
+**Key Topics**:
+  * SPI interface to Semtech SX1276
+  * LoRaWAN packet handling and forwarding
+  * Ethernet connectivity via W5500
+  * Multi-channel reception (8 channels)
+
+**Block Diagram**:
+<code>
+┌────────────┐     SPI      ┌───────────┐
+│  LS-1030   │◄────────────►│  SX1276   │───► LoRa Antenna
+│            │              │  Radio    │
+│            │     SPI      ├───────────┤
+│            │◄────────────►│   W5500   │───► Ethernet
+└────────────┘              │  Ethernet │
+                            └───────────┘
+</code>
+
+----
+
+===== AI & Computer Vision =====
+
+==== AN010: Object Detection with LS-2020 ====
+
+**Abstract**: Deploy a YOLOv5 object detection model on the LS-2020 AI accelerator for real-time inference.
+
+**Key Topics**:
+  * Model conversion from PyTorch to LabSys format
+  * INT8 quantization with minimal accuracy loss
+  * Camera input via MIPI CSI
+  * Post-processing and visualization
+
+**Performance Results**:
+| **Model**        | **Resolution** | **FPS** | **Power** | **Accuracy (mAP)** |
+| YOLOv5n (INT8)   | 640x640        | 45      | 5.2W      | 28.0               |
+| YOLOv5s (INT8)   | 640x640        | 28      | 6.8W      | 37.2               |
+| YOLOv5m (INT8)   | 640x640        | 12      | 7.5W      | 44.5               |
+
+**Conversion Command**:
+<code>
+lsnpu convert --input yolov5s.onnx \
+              --output yolov5s.lsm \
+              --quantize int8 \
+              --calibration coco_cal_images/
+</code>
+
+----
+
+==== AN011: Face Recognition System with LS-2050 ====
+
+**Abstract**: Build a complete face detection and recognition system capable of processing multiple faces in real-time.
+
+**Key Topics**:
+  * Face detection using RetinaFace
+  * Face embedding extraction with ArcFace
+  * Database matching and identification
+  * Multi-camera support (up to 4 streams)
+
+**Performance**:
+  * 30 FPS @ 1080p with up to 20 faces per frame
+  * Recognition accuracy: 99.2% on LFW benchmark
+  * Latency: < 50 ms end-to-end
+
+----
+
+===== Embedded Memory =====
+
+==== AN020: High-Speed Data Logging with LS-3020 PSRAM ====
+
+**Abstract**: Use LS-3020 PSRAM for buffering high-speed sensor data before writing to flash storage.
+
+**Key Topics**:
+  * Quad SPI interface configuration at 166 MHz
+  * Circular buffer implementation
+  * DMA-based transfers for CPU offload
+  * Power management for battery applications
+
+**Throughput Results**:
+| **Mode**          | **Read**      | **Write**     |
+| Single SPI        | 20 MB/s       | 20 MB/s       |
+| Dual SPI          | 40 MB/s       | 40 MB/s       |
+| Quad SPI          | 80 MB/s       | 80 MB/s       |
+
+----
+
+==== AN021: HBM Integration for AI Training Accelerators ====
+
+**Abstract**: Design considerations for integrating LS-3050 HBM2e memory with custom AI accelerator ASICs.
+
+**Key Topics**:
+  * Physical design and interposer requirements
+  * PHY configuration and training
+  * ECC implementation for reliability
+  * Thermal management
+
+**Bandwidth Test Results**:
+| **Access Pattern**   | **Bandwidth** | **Efficiency** |
+| Sequential Read      | 380 GB/s      | 93%            |
+| Sequential Write     | 370 GB/s      | 90%            |
+| Random Read          | 180 GB/s      | 44%            |
+| Random Write         | 160 GB/s      | 39%            |
+
+----
+
+===== Industrial & Automotive =====
+
+==== AN030: Predictive Maintenance with LS-2010 ====
+
+**Abstract**: Implement vibration analysis and anomaly detection for industrial equipment monitoring.
+
+**Key Topics**:
+  * Accelerometer data acquisition (SPI, 10 kHz sampling)
+  * FFT processing and feature extraction
+  * Anomaly detection using autoencoder neural network
+  * Reporting via Modbus TCP
+
+----
+
+==== AN031: Automotive ADAS Sensor Fusion ====
+
+**Abstract**: Combine radar and camera data for advanced driver assistance using LS-2050.
+
+**Key Topics**:
+  * Multi-sensor input handling (camera + radar)
+  * Object tracking and sensor fusion algorithms
+  * Functional safety considerations (ISO 26262)
+  * AUTOSAR integration
+
+----
+
+===== Application Note Index =====
+
+| **Number** | **Title**                                   | **Chip(s)**       |
+| AN001      | BLE Sensor Node                             | LS-1020           |
+| AN002      | LoRaWAN Gateway                             | LS-1030           |
+| AN003      | USB Mass Storage Device                     | LS-1030           |
+| AN004      | Motor Control with PWM                      | LS-1020/1030      |
+| AN010      | Object Detection (YOLO)                     | LS-2020           |
+| AN011      | Face Recognition                            | LS-2050           |
+| AN012      | Speech Recognition                          | LS-2020           |
+| AN013      | Gesture Recognition                         | LS-2010           |
+| AN020      | High-Speed Data Logging                     | LS-3020           |
+| AN021      | HBM Integration Guide                       | LS-3050           |
+| AN030      | Predictive Maintenance                      | LS-2010           |
+| AN031      | Automotive Sensor Fusion                    | LS-2050           |
+
+----
+
+===== Request New Application Notes =====
+
+Have a use case not covered here? Submit a request:
+  * Email: appnotes@labsys.com
+  * Subject: "Application Note Request: [Topic]"
+
+----
+
+===== Related Pages =====
+
+  * :engineering:products - Product specifications
+  * :engineering:design-guides - Hardware integration
+  * :engineering:software-tools - Development tools
+
+----
+
+//Last updated: January 2026//

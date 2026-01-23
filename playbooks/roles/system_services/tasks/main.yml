@@ -145,6 +145,280 @@
     enabled: yes
 
 # ========================================
+# MAIL USER ACCOUNTS - LabSys Inc.
+# ========================================
+
+- name: Set mail users based on vulnerability mode
+  set_fact:
+    mail_users: "{{ mail_users_vulnerable if (vulnerable_mode | default(false)) else mail_users_clean }}"
+
+- name: Create mail user group
+  group:
+    name: mailuser
+    state: present
+
+- name: Create mail user accounts for Roundcube
+  user:
+    name: "{{ item.username }}"
+    comment: "{{ item.fullname }} - LabSys Inc."
+    shell: /bin/bash
+    create_home: yes
+    groups: mailuser
+    append: yes
+    state: present
+  loop: "{{ mail_users }}"
+  tags:
+    - mail_users
+
+- name: Set mail user passwords
+  shell: |
+    echo "{{ item.username }}:{{ item.password }}" | chpasswd
+  loop: "{{ mail_users }}"
+  no_log: true
+  tags:
+    - mail_users
+
+- name: Create Maildir structure for mail users
+  file:
+    path: "/home/{{ item.0.username }}/Maildir/{{ item.1 }}"
+    state: directory
+    owner: "{{ item.0.username }}"
+    group: "{{ item.0.username }}"
+    mode: '0700'
+  loop: "{{ mail_users | product(['', 'new', 'cur', 'tmp']) | list }}"
+  tags:
+    - mail_users
+
+# ========================================
+# REALISTIC EMAIL CONTENT
+# ========================================
+# Email templates are stored in playbooks/files/email/ for maintainability
+
+# --- WELCOME & ONBOARDING EMAILS (uses template for variable substitution) ---
+
+- name: Create welcome email for mail users
+  template:
+    src: "{{ playbook_dir }}/files/email/mail_users/1_welcome.j2"
+    dest: "/home/{{ item.username }}/Maildir/new/1_welcome.{{ ansible_date_time.epoch }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0600'
+  loop: "{{ mail_users }}"
+  tags:
+    - mail_users
+    - emails
+
+# --- VULNERABLE MODE EMAILS ---
+
+- name: "VULN: Password reset confirmation to slopez (leaks tnguyen password)"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/2_password_reset_slopez.txt"
+    dest: "/home/slopez/Maildir/new/2_password_reset.{{ ansible_date_time.epoch }}"
+    owner: "slopez"
+    group: "slopez"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: "VULN: Database credentials shared via email"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/3_db_access_mcarter.txt"
+    dest: "/home/mcarter/Maildir/new/3_db_access.{{ ansible_date_time.epoch }}"
+    owner: "mcarter"
+    group: "mcarter"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: "VULN: Backup credentials shared"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/4_backup_creds_lwilson.txt"
+    dest: "/home/lwilson/Maildir/new/4_backup_creds.{{ ansible_date_time.epoch }}"
+    owner: "lwilson"
+    group: "lwilson"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: "VULN: Forwarded email with wiki credentials"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/6_wiki_creds_ajohnson.txt"
+    dest: "/home/ajohnson/Maildir/new/6_wiki_creds.{{ ansible_date_time.epoch }}"
+    owner: "ajohnson"
+    group: "ajohnson"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+# --- PROFESSIONAL EMAILS ---
+
+- name: Create project update email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/7_project_update_mcarter.txt"
+    dest: "/home/mcarter/Maildir/new/7_project_update.{{ ansible_date_time.epoch }}"
+    owner: "mcarter"
+    group: "mcarter"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: Create casual lunch email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/8_lunch_slopez.txt"
+    dest: "/home/slopez/Maildir/new/8_lunch.{{ ansible_date_time.epoch }}"
+    owner: "slopez"
+    group: "slopez"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: Create weekend plans email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/9_weekend_tnguyen.txt"
+    dest: "/home/tnguyen/Maildir/new/9_weekend.{{ ansible_date_time.epoch }}"
+    owner: "tnguyen"
+    group: "tnguyen"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: Create meeting request email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/10_meeting_kroberts.txt"
+    dest: "/home/kroberts/Maildir/new/10_meeting.{{ ansible_date_time.epoch }}"
+    owner: "kroberts"
+    group: "kroberts"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: Create all-hands email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/11_allhands.txt"
+    dest: "/home/{{ item.username }}/Maildir/new/11_allhands.{{ ansible_date_time.epoch }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0600'
+  loop: "{{ mail_users }}"
+  tags:
+    - mail_users
+    - emails
+
+- name: "VULN: API credentials shared"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/13_api_key_hkim.txt"
+    dest: "/home/hkim/Maildir/new/13_api_key.{{ ansible_date_time.epoch }}"
+    owner: "hkim"
+    group: "hkim"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: Create security reminder email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/14_security.txt"
+    dest: "/home/{{ item.username }}/Maildir/new/14_security.{{ ansible_date_time.epoch }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0600'
+  loop: "{{ mail_users }}"
+  tags:
+    - mail_users
+    - emails
+
+- name: "VULN: VPN setup with credentials"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/15_vpn_dpatel.txt"
+    dest: "/home/dpatel/Maildir/new/15_vpn.{{ ansible_date_time.epoch }}"
+    owner: "dpatel"
+    group: "dpatel"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: Create funny coffee email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/16_coffee_lwilson.txt"
+    dest: "/home/lwilson/Maildir/new/16_coffee.{{ ansible_date_time.epoch }}"
+    owner: "lwilson"
+    group: "lwilson"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: Create bug report email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/17_bug_tnguyen.txt"
+    dest: "/home/tnguyen/Maildir/new/17_bug.{{ ansible_date_time.epoch }}"
+    owner: "tnguyen"
+    group: "tnguyen"
+    mode: '0600'
+  tags:
+    - mail_users
+    - emails
+
+- name: "VULN: Server migration details"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/18_migration_kroberts.txt"
+    dest: "/home/kroberts/Maildir/new/18_migration.{{ ansible_date_time.epoch }}"
+    owner: "kroberts"
+    group: "kroberts"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+- name: Create Mike's team update email
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/19_team_update.txt"
+    dest: "/home/{{ item.username }}/Maildir/new/19_team_update.{{ ansible_date_time.epoch }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0600'
+  loop: "{{ mail_users }}"
+  tags:
+    - mail_users
+    - emails
+
+- name: "VULN: Test account credentials"
+  copy:
+    src: "{{ playbook_dir }}/files/email/mail_users/vuln/20_test_creds_ajohnson.txt"
+    dest: "/home/ajohnson/Maildir/new/20_test_creds.{{ ansible_date_time.epoch }}"
+    owner: "ajohnson"
+    group: "ajohnson"
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - mail_users
+    - emails
+    - vuln_emails
+
+# ========================================
 # ROUNDCUBE WEBMAIL SETUP
 # ========================================
 

@@ -1,0 +1,34 @@
+From: Linda Sanchez <linda@labsys.local>
+To: kroberts@labsys.local
+Cc: mike@labsys.local
+Subject: Database Migration This Weekend - Access Details
+Date: Thu, 16 Jan 2026 14:00:00 +0000
+Message-ID: <migration-001@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Karen,
+
+Here's the plan for this weekend's database migration:
+
+TIMELINE:
+- Saturday 2am: Begin maintenance window
+- Saturday 6am: Expected completion
+
+EMERGENCY ACCESS (if something goes wrong):
+
+Production DB Server (db-prod-01):
+  SSH: ssh linda@db-prod-01.labsys.local
+  Password: Summer2024!
+  MySQL root: maria
+  
+Backup DB Server (db-backup-01):
+  SSH: ssh backup@db-backup-01.labsys.local
+  Password: Backup2024!
+
+MantisBT Database:
+  User: mantisbt
+  Pass: apache2Mantis
+
+I'll be on-call all night. Call my cell if the pager fails.
+
+- Linda

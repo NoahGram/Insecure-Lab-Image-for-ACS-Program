@@ -1,0 +1,22 @@
+From: DevOps Team <devops@labsys.local>
+To: hkim@labsys.local
+Subject: API Keys for ChipSim Integration
+Date: Tue, 14 Jan 2026 11:20:00 +0000
+Message-ID: <api-keys@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Hannah,
+
+Here are the API credentials for the ChipSim cloud integration:
+
+API Key: 7f8d9e2a-4b6c-1234-9876-abcdef012345
+API Secret: xK9#mP2$vL5nQ8wR
+
+Jenkins CI/CD Access:
+Username: deploy_service
+Password: JenkinsD3ploy!
+
+These are for the firmware build pipeline. Let me know if you
+need higher rate limits.
+
+- DevOps Team

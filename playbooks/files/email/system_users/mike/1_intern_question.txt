@@ -1,0 +1,20 @@
+From: guest@labsys.local
+To: mike@labsys.local
+Subject: Question about server access
+Date: Mon, 20 Jan 2026 14:30:00 +0000
+Message-ID: <intern-q1@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Mike,
+
+Thanks for the login credentials you sent earlier! I was able to
+get into the system.
+
+Quick question - I'm trying to run the inventory script but it says
+I need sudo access. Is that something I can use with your account?
+
+Also, where can I find the documentation for the LS-2000 chip?
+Someone mentioned there's a wiki but I'm not sure of the URL.
+
+Thanks!
+- The new intern

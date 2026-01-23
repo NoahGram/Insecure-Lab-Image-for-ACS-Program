@@ -1,0 +1,102 @@
+====== Legal: Privacy Policy ======
+
+LabSys Inc. respects the privacy of our employees and wiki users. This page explains how we handle data collected through the Internal Wiki.
+
+----
+
+===== 1. Information We Collect =====
+
+**Automatically Collected**:
+  * IP address and browser information
+  * Pages viewed and timestamps
+  * Login/logout events
+  * Edit history and contributions
+
+**User Provided**:
+  * Username and email (from corporate directory)
+  * Content contributions (edits, comments)
+  * Profile information (optional)
+
+----
+
+===== 2. How We Use Information =====
+
+Collected data is used for:
+
+| **Purpose**                    | **Data Used**                      |
+| Authentication                 | Username, password hash            |
+| Access control                 | User role, department              |
+| Analytics                      | Page views, usage patterns         |
+| Security monitoring            | IP address, access logs            |
+| Content attribution            | Username, edit history             |
+| Troubleshooting                | Browser info, error logs           |
+
+----
+
+===== 3. Data Sharing =====
+
+We do **not** share wiki user data with:
+  * External third parties
+  * Advertisers
+  * Data brokers
+
+Data may be shared with:
+  * IT Security for incident investigation
+  * HR for policy violation investigations (with cause)
+  * Legal counsel when required by law
+
+----
+
+===== 4. Data Retention =====
+
+| **Data Type**          | **Retention Period**                     |
+| Access logs            | 90 days                                  |
+| Edit history           | Indefinite (for content integrity)       |
+| Account information    | Duration of employment + 1 year          |
+| Security audit logs    | 7 years (compliance requirement)         |
+
+----
+
+===== 5. Security =====
+
+We protect your data through:
+  * Encrypted connections (HTTPS)
+  * Access controls based on role
+  * Regular security audits
+  * Monitoring for unauthorized access
+
+See :it:security for complete security policies.
+
+----
+
+===== 6. Your Rights =====
+
+As a wiki user, you may:
+  * **View** your contribution history
+  * **Request correction** of inaccurate information
+  * **Request deletion** of personal data (subject to retention requirements)
+
+----
+
+===== 7. Cookies =====
+
+The wiki uses cookies for:
+  * Session management (required)
+  * User preferences (optional)
+  * Analytics (aggregated, non-personal)
+
+Cookies are essential for wiki functionality and cannot be fully disabled.
+
+----
+
+===== 8. Changes to This Policy =====
+
+This policy may be updated periodically. Significant changes will be announced through:
+  * Wiki home page announcements
+  * Company-wide email notification
+
+----
+
+//Effective Date: January 1, 2024//
+
+//Last updated: January 2026//

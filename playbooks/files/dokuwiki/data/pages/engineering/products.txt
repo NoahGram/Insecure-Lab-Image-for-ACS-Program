@@ -1,0 +1,92 @@
+====== Engineering: Product Portfolio ======
+
+LabSys Inc. specializes in high-performance semiconductor solutions for IoT, artificial intelligence, and embedded systems. This page provides an overview of our current product lines.
+
+----
+
+===== LS-1000 Series — Low-Power Microcontrollers =====
+
+The LS-1000 series is designed for battery-powered IoT devices requiring ultra-low power consumption with reliable performance.
+
+| **Model**      | **Core**         | **Clock Speed** | **RAM**   | **Flash** | **Power (Active)** |
+| LS-1010        | ARM Cortex-M0+   | 48 MHz          | 32 KB     | 256 KB    | 45 µA/MHz          |
+| LS-1020        | ARM Cortex-M4    | 80 MHz          | 64 KB     | 512 KB    | 55 µA/MHz          |
+| LS-1030        | ARM Cortex-M4F   | 120 MHz         | 128 KB    | 1 MB      | 60 µA/MHz          |
+
+**Key Features**:
+  * Ultra-low power modes (down to 0.5 µA in deep sleep)
+  * Integrated BLE 5.0 radio (LS-1020/1030)
+  * Hardware security module (AES-256, SHA-256)
+  * Temperature range: -40°C to +85°C
+
+**Target Applications**: Smart sensors, wearables, asset trackers, smart home devices
+
+----
+
+===== LS-2000 Series — AI Accelerators =====
+
+The LS-2000 series delivers high-performance neural network acceleration for edge AI applications.
+
+| **Model**      | **NPU Cores** | **TOPS** | **Memory Interface** | **TDP**   |
+| LS-2010        | 4             | 2        | LPDDR4, 32-bit       | 3W        |
+| LS-2020        | 8             | 8        | LPDDR4X, 64-bit      | 8W        |
+| LS-2050        | 16            | 20       | LPDDR5, 128-bit      | 15W       |
+
+**Key Features**:
+  * Support for TensorFlow Lite, ONNX, PyTorch models
+  * INT8/INT16 quantization for optimized inference
+  * Integrated ISP for camera input (up to 4K @ 30fps)
+  * PCIe Gen4 interface for host connectivity
+
+**Target Applications**: Security cameras, autonomous robots, industrial inspection, medical imaging
+
+----
+
+===== LS-3000 Series — Embedded Memory =====
+
+The LS-3000 series provides high-density, low-latency memory solutions optimized for embedded systems.
+
+| **Model**      | **Type**      | **Capacity** | **Speed**       | **Interface**    |
+| LS-3010        | SRAM          | 4 MB         | 200 MHz         | Parallel         |
+| LS-3020        | PSRAM         | 16 MB        | 166 MHz QPI     | Quad SPI         |
+| LS-3050        | HBM2e         | 2 GB         | 3.2 Gbps        | 1024-bit         |
+
+**Key Features**:
+  * Low-power operation (< 50 mW active for LS-3010)
+  * ECC support for mission-critical applications
+  * Wide temperature range (-40°C to +105°C)
+  * Automotive-grade options available (AEC-Q100)
+
+**Target Applications**: Automotive ADAS, industrial controllers, networking equipment
+
+----
+
+===== Product Roadmap =====
+
+| **Q1 2026**  | LS-1035 (Low-power with integrated LoRa radio)         |
+| **Q2 2026**  | LS-2060 (Next-gen AI accelerator, 40 TOPS)             |
+| **Q3 2026**  | LS-3100 (Next-gen HBM3 memory module)                  |
+| **Q4 2026**  | LS-4000 Series (New RISC-V based MCU line)             |
+
+//Roadmap subject to change. Contact your account manager for details.//
+
+----
+
+===== Documentation =====
+
+  * Datasheets: Available on each product's detail page
+  * Reference Designs: :engineering:design-guides
+  * Software/Drivers: :engineering:software-tools
+  * Application Notes: :engineering:application-notes
+
+----
+
+===== Ordering & Samples =====
+
+| **Sales Inquiries**    | sales@labsys.com            |
+| **Sample Requests**    | samples@labsys.com          |
+| **Distributor Portal** | https://dist.labsys.com     |
+
+----
+
+//Last updated: January 2026//

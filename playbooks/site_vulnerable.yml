@@ -48,42 +48,14 @@
     - vulnerabilities
     
   post_tasks:
-    - name: Create comprehensive vulnerability guide
-      copy:
-        content: |
-          ==============================================
-          VULNERABILITY ASSESSMENT LAB GUIDE
-          ==============================================
-          Profile: {{ current_profile }}
-          
-          This system contains intentional vulnerabilities for educational testing.
-          ⚠️  WARNING: NEVER expose this system to the internet!
-          
-          Web Vulnerabilities:
-          - SQL Injection: /vulnerable.php?id=1' OR '1'='1
-          - XSS: /vulnerable.php?name=<script>alert('XSS')</script>  
-          - File Upload: /upload.php (accepts any file type)
-          - Info Disclosure: /server-info, /server-status
-          
-          System Access:
-          - Weak accounts: admin/admin, test/test, guest/guest
-          - Database: testuser/testpass (% access)
-          - phpMyAdmin: http://{{ ansible_default_ipv4.address }}:8080/phpmyadmin
-          
-          Testing Tools:
-          - nmap -sV {{ ansible_default_ipv4.address }}
-          - sqlmap -u "http://{{ ansible_default_ipv4.address }}/vulnerable.php?id=1"
-          - nikto -h {{ ansible_default_ipv4.address }}
-          
-          ==============================================
-        dest: /root/vulnerability-guide.txt
-        mode: '0644'
-        
     - name: Display deployment summary
       debug:
         msg:
           - "=== VULNERABLE LAB DEPLOYMENT COMPLETE ==="
           - "Profile: {{ current_profile }}"  
-          - "Vulnerable endpoints available at http://localhost:8080"
-          - "See /root/vulnerability-guide.txt for testing instructions"
-          - "⚠️  WARNING: Contains intentional vulnerabilities!"
+          - "Apache available at http://localhost:8080"
+          - "Labsys-Wiki available at http://localhost:8080/labsys-wiki"
+          - "MantisBT available at http://localhost:8080/mantisbt"
+          - "Gitea available at http://localhost:3000"
+          - "Cockpit available at http://localhost:8080/cockpit"
+          - "Roundcube available at http://localhost:8080/roundcube"

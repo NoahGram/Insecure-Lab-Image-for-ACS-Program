@@ -1,0 +1,17 @@
+From: Linda Sanchez <linda@labsys.local>
+To: mike@labsys.local
+Subject: PTO next week - backup coverage
+Date: Fri, 17 Jan 2026 16:00:00 +0000
+Message-ID: <linda-pto@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hey Mike,
+
+Just a reminder I'm on PTO next week (Jan 20-24).
+
+I've handed off backup system monitoring to Liam Wilson.
+He has the credentials if anything goes wrong.
+
+For emergencies only, you can reach me on my cell.
+
+- Linda

@@ -1,0 +1,16 @@
+From: Cron Daemon <cron@labsys.local>
+To: backup@labsys.local
+Subject: Cron <backup@labsys> /home/backup/backup_configs/daily_backup.sh
+Date: Thu, 23 Jan 2026 02:00:01 +0000
+Message-ID: <cron-backup@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Backup script completed successfully.
+
+Start time: 2026-01-23 02:00:00
+End time: 2026-01-23 02:45:32
+Duration: 45 minutes 32 seconds
+
+Files processed: 125,847
+Total size: 2.4 GB
+Errors: 0

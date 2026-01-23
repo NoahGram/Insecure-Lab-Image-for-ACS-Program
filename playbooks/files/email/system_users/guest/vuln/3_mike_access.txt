@@ -1,0 +1,27 @@
+From: Mike Thompson <mike@labsys.local>
+To: guest@labsys.local
+Subject: Server access for your project
+Date: Mon, 20 Jan 2026 11:30:00 +0000
+Message-ID: <intern-access@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hey,
+
+Welcome aboard! For your intern project, you'll need to access
+some of our internal systems. I'm giving you my login temporarily
+until IT sets up your proper access (they're backlogged as usual).
+
+SSH Access:
+  Username: mike
+  Password: RedHat
+
+This account has sudo access, so be careful! Don't break anything 😄
+
+Also useful:
+  Wiki: http://localhost:8080/labsys-wiki/
+  phpMyAdmin: http://localhost:8080/phpmyadmin/
+
+Let me know if you have questions. My desk is in Building A, 3rd floor.
+
+- Mike Thompson
+IT Manager

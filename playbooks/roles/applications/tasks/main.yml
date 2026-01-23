@@ -207,6 +207,35 @@
     owner: www-data
     group: www-data
 
+- name: Create DokuWiki local configuration
+  copy:
+    content: |
+      <?php
+      /**
+       * DokuWiki Local Configuration - LabSys Inc.
+       */
+      
+      // Wiki title
+      $conf['title'] = 'LabSys Wiki';
+      
+      // Start page - redirect to company home
+      $conf['start'] = 'company:home';
+      
+      // Use nice URLs
+      $conf['userewrite'] = 0;
+      
+      // Disable registration (users are pre-created)
+      $conf['disableactions'] = 'register';
+      
+      // Template settings
+      $conf['template'] = 'dokuwiki';
+      
+      // License
+      $conf['license'] = '';
+    dest: /var/www/dokuwiki/conf/local.php
+    owner: www-data
+    group: www-data
+    mode: '0644'
 
 - name: Extract MantisBT to web directory
   unarchive:

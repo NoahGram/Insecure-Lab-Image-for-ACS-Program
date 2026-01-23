@@ -39,11 +39,11 @@
 - name: Create mike user (IT Manager)
   user:
     name: mike
-    password: "{{ '~RedHat~' | password_hash('sha512') }}"
+    password: "{{ 'RedHat' | password_hash('sha512') }}"
     shell: /bin/bash
     create_home: yes
     comment: "Mike Thompson - IT Manager"
-    groups: it-department
+    groups: it-department,sudo
     append: yes
     state: present
   tags:
@@ -57,7 +57,7 @@
     shell: /bin/bash
     create_home: yes
     comment: "Linda Sanchez - Senior System Administrator"
-    groups: it-department,operations
+    groups: it-department,operations,sudo
     append: yes
     state: present
   tags:
@@ -446,3 +446,159 @@
   tags:
     - user_environment
     - cleanup
+
+# ===========================================
+# SYSTEM USERS MAIL SETUP (after users exist)
+# ===========================================
+
+- name: Create Maildir structure for system users
+  file:
+    path: "/home/{{ item.0 }}/Maildir/{{ item.1 }}"
+    state: directory
+    owner: "{{ item.0 }}"
+    group: "{{ item.0 }}"
+    mode: '0700'
+  loop: "{{ ['guest', 'mike', 'linda', 'backup'] | product(['', 'new', 'cur', 'tmp']) | list }}"
+  tags:
+    - user_environment
+    - mail_users
+
+# ========================================
+# SYSTEM USER EMAIL CONTENT
+# ========================================
+# Email templates are stored in playbooks/files/email/system_users/ for maintainability
+
+# --- Emails for mike (IT Manager) ---
+
+- name: Create Mike's inbox - team question from intern
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/mike/1_intern_question.txt"
+    dest: "/home/mike/Maildir/new/1_intern_question.{{ ansible_date_time.epoch }}"
+    owner: mike
+    group: mike
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: Create Mike's inbox - security alert
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/mike/2_security_alert.txt"
+    dest: "/home/mike/Maildir/new/2_security_alert.{{ ansible_date_time.epoch }}"
+    owner: mike
+    group: mike
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: Create Mike's inbox - Linda PTO notice
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/mike/3_linda_pto.txt"
+    dest: "/home/mike/Maildir/new/3_linda_pto.{{ ansible_date_time.epoch }}"
+    owner: mike
+    group: mike
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+# --- Emails for linda (Senior Sysadmin) ---
+
+- name: Create Linda's inbox - server monitoring alert
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/linda/1_monitoring.txt"
+    dest: "/home/linda/Maildir/new/1_monitoring.{{ ansible_date_time.epoch }}"
+    owner: linda
+    group: linda
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: Create Linda's inbox - backup completion
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/linda/2_backup_complete.txt"
+    dest: "/home/linda/Maildir/new/2_backup_complete.{{ ansible_date_time.epoch }}"
+    owner: linda
+    group: linda
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: "VULN: Linda's inbox - credentials for new server"
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/linda/vuln/3_new_server.txt"
+    dest: "/home/linda/Maildir/new/3_new_server.{{ ansible_date_time.epoch }}"
+    owner: linda
+    group: linda
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - user_environment
+    - mail_users
+    - vuln_emails
+
+# --- Emails for guest (Intern) ---
+
+- name: Create guest inbox - mentor assignment
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/guest/1_mentor.txt"
+    dest: "/home/guest/Maildir/new/1_mentor.{{ ansible_date_time.epoch }}"
+    owner: guest
+    group: guest
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: Create guest inbox - IT orientation
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/guest/2_orientation.txt"
+    dest: "/home/guest/Maildir/new/2_orientation.{{ ansible_date_time.epoch }}"
+    owner: guest
+    group: guest
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users
+
+- name: "VULN: Guest inbox - Mike's credentials email"
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/guest/vuln/3_mike_access.txt"
+    dest: "/home/guest/Maildir/new/3_mike_access.{{ ansible_date_time.epoch }}"
+    owner: guest
+    group: guest
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - user_environment
+    - mail_users
+    - vuln_emails
+
+- name: "VULN: Guest inbox - Onboarding with all creds"
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/guest/vuln/4_onboarding.txt"
+    dest: "/home/guest/Maildir/new/4_onboarding.{{ ansible_date_time.epoch }}"
+    owner: guest
+    group: guest
+    mode: '0600'
+  when: vulnerable_mode | default(false)
+  tags:
+    - user_environment
+    - mail_users
+    - vuln_emails
+
+# --- Emails for backup service account ---
+
+- name: Create backup inbox - cron job status
+  copy:
+    src: "{{ playbook_dir }}/files/email/system_users/backup/1_cron_status.txt"
+    dest: "/home/backup/Maildir/new/1_cron_status.{{ ansible_date_time.epoch }}"
+    owner: backup
+    group: backup
+    mode: '0600'
+  tags:
+    - user_environment
+    - mail_users

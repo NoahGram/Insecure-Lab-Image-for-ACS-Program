@@ -1,0 +1,213 @@
+====== Engineering: Software Tools ======
+
+LabSys provides a comprehensive suite of software tools to support chip programming, debugging, simulation, and production. This page describes available tools and installation instructions.
+
+----
+
+===== LabSys IDE =====
+
+The official integrated development environment for LabSys chip firmware development.
+
+| **Current Version** | 3.2.1 (Released: January 2026)      |
+| **Platforms**       | Windows 10/11, Ubuntu 20.04+, macOS 12+ |
+| **License**         | Free for registered developers      |
+
+**Features**:
+  * Code editor with IntelliSense for LabSys APIs
+  * Integrated compiler toolchain (GCC ARM)
+  * One-click flash programming
+  * Real-time debugging (breakpoints, watch, memory view)
+  * Built-in serial terminal
+  * Project templates for all LS-series chips
+
+**Installation**:
+<code>
+# Windows
+Download from: https://tools.labsys.com/ide/labsys-ide-3.2.1-win64.exe
+
+# Ubuntu
+wget https://tools.labsys.com/ide/labsys-ide-3.2.1-linux.deb
+sudo dpkg -i labsys-ide-3.2.1-linux.deb
+
+# macOS
+brew tap labsys/tools
+brew install labsys-ide
+</code>
+
+----
+
+===== ChipSim =====
+
+Cycle-accurate simulator for LS-series chips. Enables software development without hardware.
+
+| **Current Version** | 2.4.0 (Released: January 2026)      |
+| **Supported Chips** | LS-1000, LS-2000 series             |
+| **License**         | Included with LabSys IDE            |
+
+**Features**:
+  * Full peripheral simulation (GPIO, SPI, I2C, UART, ADC)
+  * NPU instruction set simulation (LS-2000)
+  * Waveform viewer for signal analysis
+  * Co-simulation with Verilog testbenches
+  * Performance profiling and power estimation
+
+**Usage**:
+<code>
+# Run simulation
+chipsim --chip LS1030 --firmware build/app.elf
+
+# With peripheral config
+chipsim --chip LS1030 --firmware build/app.elf --periph config.json
+
+# Enable waveform capture
+chipsim --chip LS1030 --firmware build/app.elf --vcd output.vcd
+</code>
+
+----
+
+===== Firmware Library =====
+
+Pre-built drivers and middleware for common peripherals and protocols.
+
+| **Version**    | **Components**                                   |
+| 2.3.0          | GPIO, SPI, I2C, UART, Timer drivers              |
+| 2.3.0          | BLE stack (LS-1020/1030)                         |
+| 2.3.0          | USB device stack                                 |
+| 2.3.0          | FreeRTOS port                                    |
+| 2.3.0          | LittleFS filesystem                              |
+| 1.2.0-beta     | NPU runtime (LS-2000)                            |
+
+**Installation via Package Manager**:
+<code>
+# List available packages
+lspkg search
+
+# Install packages
+lspkg install labsys_drivers labsys_ble freertos_port
+
+# Update all packages
+lspkg update
+</code>
+
+----
+
+===== NPU Toolkit (LS-2000 Series) =====
+
+Tools for deploying neural network models to LS-2000 AI accelerators.
+
+| **Current Version** | 1.4.0                                |
+| **Input Formats**   | TensorFlow Lite, ONNX, PyTorch       |
+| **Output**          | Optimized model binary (.lsm)        |
+
+**Workflow**:
+  - Train model in your preferred framework
+  - Export to ONNX or TFLite format
+  - Quantize to INT8 using calibration data
+  - Compile with NPU Toolkit
+  - Deploy to chip using LabSys IDE
+
+**Commands**:
+<code>
+# Convert and quantize model
+lsnpu convert --input model.onnx --output model.lsm --calibration cal_data/
+
+# Analyze model performance
+lsnpu profile --model model.lsm --chip LS2020
+
+# Validate accuracy
+lsnpu validate --model model.lsm --test-data test_images/
+</code>
+
+----
+
+===== Programming Tools =====
+
+==== LabSys Flash Programmer ====
+
+Standalone tool for production programming.
+
+| **Version**     | 1.8.0                                    |
+| **Interfaces**  | J-Link, CMSIS-DAP, LabSys Debug Probe    |
+| **Features**    | Batch programming, verification, lock bits |
+
+<code>
+# Program firmware
+lsflash --probe jlink --chip LS1030 --file firmware.hex
+
+# Erase chip
+lsflash --probe jlink --chip LS1030 --erase
+
+# Read flash contents
+lsflash --probe jlink --chip LS1030 --read backup.bin
+</code>
+
+==== LabSys Debug Probe ====
+
+USB debug probe for programming and debugging.
+
+| **Price**        | $35                                      |
+| **Interfaces**   | SWD, JTAG, UART                          |
+| **Speed**        | Up to 24 MHz SWD clock                   |
+| **Order**        | local retailer                           |
+
+----
+
+===== Command Line Tools =====
+
+| **Tool**      | **Description**                              |
+| lscc          | LabSys C compiler (GCC-based)                |
+| lsld          | Linker with LS-series linker scripts         |
+| lsobjdump     | Disassembler and binary analysis             |
+| lssize        | Memory usage report                          |
+| lsgdb         | GDB with LabSys extensions                   |
+
+**Add to PATH**:
+<code>
+# Windows (PowerShell)
+$env:PATH += ";C:\Program Files\LabSys\IDE\bin"
+
+# Linux/macOS
+export PATH=$PATH:/opt/labsys/ide/bin
+</code>
+
+----
+
+===== System Requirements =====
+
+| **Component**   | **Minimum**                    | **Recommended**             |
+| OS              | Windows 10, Ubuntu 18.04       | Windows 11, Ubuntu 22.04    |
+| CPU             | Intel Core i5 / AMD Ryzen 5    | Intel Core i7 / AMD Ryzen 7 |
+| RAM             | 8 GB                           | 16 GB                       |
+| Disk            | 5 GB free                      | 20 GB SSD                   |
+| Display         | 1280x720                       | 1920x1080                   |
+
+----
+
+===== Downloads =====
+
+All tools available at: https://tools.labsys.com
+
+| **Tool**            | **Person To Contact** |
+| LabSys IDE 3.2.1    |  Mike Thompson    |
+| ChipSim 2.4.0       |  Included in IDE  |
+| NPU Toolkit 1.4.0   |  Linda Sanchez    |
+
+----
+
+===== Support =====
+
+  * **Documentation**: https://docs.labsys.com
+  * **Forums**: http://localhost:8080/labsys-wiki/
+  * **Bug Reports**: tools-support@labsys.com
+
+----
+
+===== Related Pages =====
+
+  * :engineering:products - Chip specifications
+  * :engineering:design-guides - Hardware integration
+  * :engineering:application-notes - Example projects
+
+----
+
+//Last updated: January 2026//

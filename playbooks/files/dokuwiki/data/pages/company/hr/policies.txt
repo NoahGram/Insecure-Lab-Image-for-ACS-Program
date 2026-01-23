@@ -1,9 +1,80 @@
-====== HR: Policies ======
+====== HR: Policies & Guidelines ======
 
-This page summarizes a small set of HR policies. These are intentionally simplified for exercises.
+This page provides an overview of LabSys Inc. human resources policies. All employees are expected to read and comply with these guidelines.
 
-  * Work hours: 09:00 - 17:30
-  * Leave requests: submit to HR (hr@MegaBit.local)
-  * Acceptable use: Company machines are for work-related tasks and approved training only
+----
 
-Security-sensitive policies (passwords, credentials) are not stored here — use the secret management exercises instead.
+===== Work Hours & Attendance =====
+
+| **Standard Hours**    | 09:00 - 17:30 (flexible start between 08:00-10:00) |
+| **Core Hours**        | 10:00 - 15:00 (required presence)                  |
+| **Lunch Break**       | 1 hour (typically 12:00 - 13:00)                   |
+| **Remote Work**       | Up to 2 days/week with manager approval            |
+
+----
+
+===== Leave & Time Off =====
+
+  * **Annual Leave**: 20 days per year (prorated for new hires)
+  * **Sick Leave**: 10 days per year
+  * **Parental Leave**: 12 weeks paid (birth/adoption)
+  * **Bereavement**: 5 days for immediate family
+
+To request leave, submit through the HR portal or email hr@labsys.com at least 2 weeks in advance for planned absences.
+
+----
+
+===== Acceptable Use Policy =====
+
+  * Company equipment is for business-related activities only
+  * Personal use of company devices should be minimal and not interfere with work
+  * Installation of unauthorized software is prohibited
+  * All work product created using company resources is property of LabSys Inc.
+
+----
+
+===== Code of Conduct =====
+
+  * Treat all colleagues with respect and professionalism
+  * Maintain confidentiality of proprietary chip designs and trade secrets
+  * Report any conflicts of interest to your manager or HR
+  * Harassment or discrimination of any kind will not be tolerated
+
+----
+
+===== Expense Reimbursement =====
+
+  * Submit expense reports within 30 days of incurring the expense
+  * Receipts required for expenses over $25
+  * Pre-approval needed for travel expenses exceeding $500
+  * Reimbursement processed within 10 business days
+
+----
+
+===== Performance Reviews =====
+
+  * Annual reviews conducted in December
+  * Mid-year check-ins in June
+  * Goal setting aligned with departmental objectives
+
+----
+
+===== Confidentiality & IP =====
+
+All employees must sign and adhere to:
+  * Non-Disclosure Agreement (NDA)
+  * Intellectual Property Assignment Agreement
+  * Export Control Compliance (ITAR/EAR where applicable)
+
+**Reminder**: LabSys chip designs, fabrication processes, and customer data are strictly confidential.
+
+----
+
+===== Contact HR =====
+
+| **Email**           | hr@labsys.com                    |
+| **Benefits Hotline**| ext. 5200                        |
+
+----
+
+//Last updated: January 2026//

@@ -1,0 +1,24 @@
+From: security@labsys.local
+To: mike@labsys.local
+Subject: [ALERT] Failed SSH login attempts detected
+Date: Wed, 22 Jan 2026 03:45:00 +0000
+Message-ID: <sec-alert-001@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+SECURITY ALERT - LabSys SOC
+===========================
+
+Multiple failed SSH login attempts detected:
+
+Target: db-prod-01.labsys.local
+Source IP: 10.0.2.15
+Username attempted: root, admin, mike
+Time: 2026-01-22 03:30:00 - 03:44:00 UTC
+Attempts: 47
+
+Status: Blocked by fail2ban
+
+Please verify this was not authorized access attempt.
+If unexpected, review /var/log/auth.log for details.
+
+SOC Team

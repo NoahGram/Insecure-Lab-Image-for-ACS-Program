@@ -1,0 +1,234 @@
+====== Engineering: FAQ ======
+
+Frequently asked questions about LabSys chips, tools, and support. Can't find your answer here? Contact support@labsys.com.
+
+----
+
+===== General Questions =====
+
+**Q: How do I get datasheets for LabSys products?**
+
+A: Datasheets are available on each product page in the :engineering:products section. You can also download them from https://docs.labsys.com after registering for a free account.
+
+----
+
+**Q: How do I request evaluation boards or samples?**
+
+A: Contact samples@labsys.com with your project details. Include:
+  * Company name and application
+  * Target chip(s) and quantity needed
+  * Expected production volume
+  * Timeline
+
+Evaluation boards can also be purchased directly at our local retailer.
+
+----
+
+**Q: Where can I find software libraries and SDKs?**
+
+A: All software is available through:
+  * LabSys IDE Package Manager (recommended)
+  * https://tools.labsys.com for standalone downloads
+
+See :engineering:software-tools for detailed installation instructions.
+
+----
+
+**Q: Who can I contact for technical support?**
+
+A: Multiple support channels are available:
+
+| **Channel**          | **Contact**                     | **Response Time** |
+| Email Support        | support@labsys.com              | 24-48 hours       |
+| Community Forums     | localhost:8080/labsys-wiki/     | Community-driven  |
+| Premium Support      | premium-support@labsys.com      | 4 hours           |
+| Field Application Engineer | Contact your sales rep    | Varies            |
+
+For urgent production issues, use premium support or contact your FAE directly.
+
+----
+
+===== Hardware Questions =====
+
+**Q: What debug probes are compatible with LabSys chips?**
+
+A: The following debug probes are supported:
+  * LabSys Debug Probe (recommended, $35)
+  * SEGGER J-Link (all versions)
+  * CMSIS-DAP compatible probes
+  * ST-Link (with adapter)
+
+All probes connect via SWD interface (SWDIO, SWCLK, GND, VRef).
+
+----
+
+**Q: What is the recommended power supply for LS-1000 series?**
+
+A: Power requirements depend on the model:
+
+| **Model**  | **Core Voltage** | **IO Voltage** | **Recommended Regulator**|
+| LS-1010    | 1.8V ± 5%        | 3.3V ± 10%     | LDO, 100mA               |
+| LS-1020    | 1.8V ± 5%        | 3.3V ± 10%     | LDO, 150mA               |
+| LS-1030    | 1.8V ± 5%        | 3.3V ± 10%     | LDO, 200mA               |
+
+Use low-noise LDOs with <30mV ripple. Place decoupling caps (10µF + 100nF) close to VDD pins.
+
+----
+
+**Q: How do I put the chip in programming mode?**
+
+A: Boot mode is selected via BOOT pins at power-on/reset:
+
+| **BOOT[1:0]** | **Mode**           |
+| 00            | Internal Flash     |
+| 01            | UART Bootloader    |
+| 10            | SPI Flash Boot     |
+| 11            | USB DFU Mode       |
+
+For development, use SWD programming without changing boot pins.
+
+----
+
+**Q: Are automotive-qualified parts available?**
+
+A: Yes, automotive-grade (AEC-Q100) parts are available for:
+  * LS-1030-A (Grade 2: -40°C to +105°C)
+  * LS-2020-A (Grade 2: -40°C to +105°C)
+  * LS-3020-A (Grade 1: -40°C to +125°C)
+
+Contact automotive@labsys.com for automotive-specific documentation and pricing.
+
+----
+
+===== Software Questions =====
+
+**Q: What compilers are supported?**
+
+A: LabSys IDE includes the recommended GCC ARM toolchain. Other supported compilers:
+  * GCC ARM Embedded (11.x, 12.x)
+  * IAR Embedded Workbench (8.x, 9.x)
+  * Keil MDK (5.x)
+
+Linker scripts and startup files for all compilers are in the Firmware Library.
+
+----
+
+**Q: How do I update firmware over-the-air (OTA)?**
+
+A: OTA update is supported on LS-1020/1030 with BLE:
+  - Include the OTA bootloader in your build (labsys_ota library)
+  - Reserve flash space for two firmware images (A/B slots)
+  - Use the LabSys Connect mobile app or custom BLE implementation
+  - Refer to Application Note AN005 for complete implementation
+
+----
+
+**Q: What RTOS options are available?**
+
+A: The following RTOS ports are provided in the Firmware Library:
+  * FreeRTOS (recommended)
+  * Zephyr RTOS
+  * ThreadX
+  * Bare-metal (no OS)
+
+FreeRTOS is fully integrated with LabSys IDE and includes tickless idle support for low-power applications.
+
+----
+
+**Q: How do I debug NPU models on LS-2000 series?**
+
+A: NPU debugging tools include:
+  * **ChipSim**: Cycle-accurate simulation with performance counters
+  * **NPU Profiler**: Layer-by-layer timing and memory analysis
+  * **Runtime Debug**: Real-time monitoring via JTAG
+  
+Use ''lsnpu profile --model model.lsm --chip LS2020'' to analyze performance before deployment.
+
+----
+
+===== Purchasing Questions =====
+
+**Q: What are the lead times for production orders?**
+
+A: Typical lead times:
+
+| **Volume**       | **Lead Time**    |
+| Samples (<100)   | 1-2 weeks        |
+| Low volume       | 4-6 weeks        |
+| High volume      | 8-12 weeks       |
+
+For critical projects, contact sales@labsys.com about consignment stock programs.
+
+----
+
+**Q: Do you have authorized distributors?**
+
+A: Yes, LabSys products are available through:
+  * Digi-Key
+  * Mouser Electronics
+  * Arrow Electronics
+  * Avnet
+
+Full distributor list: https://labsys.com/distributors
+
+----
+
+**Q: What is the minimum order quantity (MOQ)?**
+
+A: MOQ varies by product:
+
+| **Product**  | **MOQ (Tape & Reel)** | **MOQ (Tray)** |
+| LS-1000      | 1,000 units           | 100 units      |
+| LS-2000      | 500 units             | 50 units       |
+| LS-3000      | 500 units             | 50 units       |
+
+Cut tape and individual units available through distributors at higher unit cost.
+
+----
+
+===== Support & Documentation =====
+
+**Q: How do I report a bug in the tools or library?**
+
+A: Submit bug reports to:
+  * **Tools (IDE, ChipSim)**: tools-support@labsys.com
+  * **Libraries**: Include issue on GitHub or email sdk-support@labsys.com
+  * **Hardware errata**: Contact your FAE or email errata@labsys.com
+
+Please include:
+  * Tool/library version
+  * Steps to reproduce
+  * Expected vs. actual behavior
+  * Log files (if applicable)
+
+----
+
+**Q: Where is the documentation?**
+
+A: Documentation resources:
+  * **This Wiki**: Internal technical documentation
+  * **docs.labsys.com**: Public documentation portal
+  * **Application Notes**: :engineering:application-notes
+  * **Design Guides**: :engineering:design-guides
+
+----
+
+**Q: How do I get trained on LabSys products?**
+
+A: Training options:
+  * **Online tutorials**: https://training.labsys.com (free)
+  * **Monthly webinars**: Register at training@labsys.com
+  * **On-site training**: Contact your FAE (for enterprise customers)
+  * **LabSys Developer Conference**: Annual event (see labsys.com/devcon)
+
+----
+
+===== Still Have Questions? =====
+
+  * **Technical Support**: support@labsys.com
+  * **Sales Inquiries**: sales@labsys.com
+  * **Community Forums**: localhost:8080/labsys-wiki/
+
+----
+
+//Last updated: January 2026//

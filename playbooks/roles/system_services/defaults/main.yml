@@ -1,9 +1,9 @@
 ---
 # System Services Role - Default Variables
 
-# Postfix Configuration - TechCorp Solutions
-postfix_hostname: "lab.techcorp.local"
-postfix_domain: "techcorp.local"
+# Postfix Configuration - LabSys Inc.
+postfix_hostname: "mail.labsys.local"
+postfix_domain: "labsys.local"
 postfix_inet_protocols: "ipv4"
 postfix_mailbox_size_limit: "0"
 postfix_message_size_limit: "10240000"
@@ -24,3 +24,29 @@ postfix_sasl_path: "private/auth"
 postfix_enable_tls: yes
 postfix_tls_cert_file: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
 postfix_tls_key_file: "/etc/ssl/private/ssl-cert-snakeoil.key"
+
+# ========================================
+# MAIL USERS - LabSys Inc. Employees
+# ========================================
+# These users will be created as system accounts for Postfix/Dovecot authentication
+# Clean passwords are used in clean_profile, vulnerable passwords in vulnerable_profile
+
+mail_users_clean:
+  - { username: "mcarter",  fullname: "Michael Carter",   password: "R4ven!Oak92" }
+  - { username: "slopez",   fullname: "Sofia Lopez",      password: "Sunset#3184" }
+  - { username: "tnguyen",  fullname: "Trang Nguyen",     password: "BlueSky@742" }
+  - { username: "ajohnson", fullname: "Alex Johnson",     password: "Forest!Wave66" }
+  - { username: "dpatel",   fullname: "Deepak Patel",     password: "Crimson#Hill91" }
+  - { username: "kroberts", fullname: "Karen Roberts",    password: "IronGate$558" }
+  - { username: "lwilson",  fullname: "Liam Wilson",      password: "RiverStone!204" }
+  - { username: "hkim",     fullname: "Hannah Kim",       password: "Nova*Cloud73" }
+
+mail_users_vulnerable:
+  - { username: "mcarter",  fullname: "Michael Carter",   password: "Password1" }
+  - { username: "slopez",   fullname: "Sofia Lopez",      password: "sunshine" }
+  - { username: "tnguyen",  fullname: "Trang Nguyen",     password: "Welcome123" }
+  - { username: "ajohnson", fullname: "Alex Johnson",     password: "qwerty12" }
+  - { username: "dpatel",   fullname: "Deepak Patel",     password: "iloveyou" }
+  - { username: "kroberts", fullname: "Karen Roberts",    password: "IronGate$558" }
+  - { username: "lwilson",  fullname: "Liam Wilson",      password: "letmein" }
+  - { username: "hkim",     fullname: "Hannah Kim",       password: "Nova*Cloud73" }

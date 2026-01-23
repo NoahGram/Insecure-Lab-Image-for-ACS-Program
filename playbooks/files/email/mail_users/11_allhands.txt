@@ -1,0 +1,30 @@
+From: Margaret Chen <mchen@labsys.local>
+To: all-employees@labsys.local
+Subject: LabSys Q4 2025 Results & 2026 Roadmap
+Date: Fri, 10 Jan 2026 16:00:00 +0000
+Message-ID: <allhands-q4@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Dear LabSys Team,
+
+I'm pleased to share our Q4 2025 results and 2026 roadmap.
+
+Q4 2025 HIGHLIGHTS:
+- Revenue: $245M (up 18% YoY)
+- LS-3000 memory module launched successfully
+- Expanded Austin manufacturing capacity by 40%
+- New partnership with major automotive OEM
+
+2026 PRIORITIES:
+1. Launch LS-4000 RISC-V microcontroller series
+2. Expand AI accelerator product line
+3. Achieve ISO 27001 security certification
+4. Open new R&D center in Taipei
+
+All-Hands Meeting: Friday, January 31st at 4pm PST
+Location: Main Auditorium + Zoom
+
+Thank you all for your hard work and dedication!
+
+Margaret Chen
+CEO, LabSys Inc.

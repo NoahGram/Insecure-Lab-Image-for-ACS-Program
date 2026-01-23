@@ -1,0 +1,24 @@
+From: Michael Carter <mcarter@labsys.local>
+To: kroberts@labsys.local
+Subject: Q1 Security Audit - Prep Meeting
+Date: Mon, 20 Jan 2026 09:00:00 +0000
+Message-ID: <meeting-001@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Karen,
+
+We need to prepare for the Q1 security audit coming up in February.
+Can we meet this Thursday at 2pm to go over:
+
+1. Database access controls review
+2. User permission audit
+3. Password policy compliance
+4. Encryption status for sensitive data
+
+I've booked Conference Room B.
+
+Also, please bring the latest access logs from the production database.
+
+Thanks,
+Michael Carter
+IT Security Lead

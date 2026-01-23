@@ -1,0 +1,25 @@
+From: Linda Sanchez <linda@labsys.local>
+To: lwilson@labsys.local
+Subject: Backup system access while I'm on PTO
+Date: Fri, 17 Jan 2026 16:20:00 +0000
+Message-ID: <backup-handoff@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hey Liam,
+
+I'll be on PTO next week. If anything goes wrong with the backups,
+you can use my credentials to check the backup server:
+
+Backup Service Account:
+  Username: backup
+  Password: Backup2024!
+
+Or if you need sudo access, use my account:
+  Username: linda
+  Password: Summer2024!
+
+The backup scripts are in /home/backup/backup_configs/
+
+Hopefully nothing breaks while I'm gone! 🤞
+
+- Linda

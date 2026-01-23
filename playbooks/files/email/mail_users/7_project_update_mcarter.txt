@@ -1,0 +1,30 @@
+From: Hannah Kim <hkim@labsys.local>
+To: mcarter@labsys.local
+Cc: kroberts@labsys.local, tnguyen@labsys.local
+Subject: LS-2000 Firmware Update - Status Report
+Date: Wed, 22 Jan 2026 14:15:00 +0000
+Message-ID: <project-update-001@labsys.local>
+Content-Type: text/plain; charset=UTF-8
+
+Hi Michael,
+
+Quick update on the LS-2000 firmware project:
+
+COMPLETED:
+- NPU driver integration (v1.2.1)
+- Power management optimizations
+- Initial benchmarks looking good (18 TOPS achieved)
+
+IN PROGRESS:
+- Memory controller tuning
+- Thermal management validation
+
+BLOCKERS:
+- Still waiting on updated silicon samples from Austin
+- Need access to the new ChipSim license server
+
+Can we schedule a sync for tomorrow afternoon?
+
+Thanks,
+Hannah Kim
+Senior Firmware Engineer

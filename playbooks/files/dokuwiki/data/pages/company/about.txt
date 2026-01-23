@@ -1,7 +1,55 @@
-====== About MegaBit Security ======
+====== About LabSys Inc. ======
 
-MegaBit Security is an educational simulation used to teach students defensive and offensive security skills.  The environment mimics a small company's internal infrastructure and documentation.
+**LabSys Inc.** is a semiconductor company founded in 2012, headquartered in San Jose, California. We design and manufacture high-performance chips for IoT, artificial intelligence, and embedded systems markets.
 
-**Mission**: Provide hands-on labs and realistic scenarios for red/blue team training.
+----
 
-**Contact**: Internal IT (it-team@MegaBit.local) — for the simulation, use the `it` namespace pages for procedures and support.
+===== Our Mission =====
+
+To deliver innovative, energy-efficient semiconductor solutions that power the next generation of intelligent devices and systems.
+
+===== Our Vision =====
+
+To be the global leader in specialized chip solutions for edge computing and AI applications.
+
+----
+
+===== Company Overview =====
+
+| **Founded**        | 2012                                |
+| **Headquarters**   | San Jose, California, USA           |
+| **Employees**      | 1,200+ worldwide                    |
+| **CEO**            | Margaret Chen                       |
+| **CTO**            | Dr. Robert Nakamura                 |
+| **Revenue (2025)** | $890 million                        |
+
+----
+
+===== Core Product Lines =====
+
+  * **LS-1000 Series** — Low-power microcontrollers for IoT devices
+  * **LS-2000 Series** — High-speed AI accelerators for edge computing
+  * **LS-3000 Series** — Memory modules optimized for embedded systems
+
+----
+
+===== Office Locations =====
+
+  * **San Jose, CA** (Headquarters & R&D)
+  * **Austin, TX** (Manufacturing & Testing)
+  * **Taipei, Taiwan** (Asia-Pacific Operations)
+  * **Munich, Germany** (European Sales & Support)
+
+----
+
+===== Contact =====
+
+| **General Inquiries** | info@labsys.com         |
+| **Sales**             | sales@labsys.com        |
+| **Technical Support** | support@labsys.com      |
+| **Investor Relations**| investors@labsys.com    |
+| **Careers**           | careers@labsys.com      |
+
+----
+
+//Last updated: January 2026//
