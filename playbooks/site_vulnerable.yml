@@ -58,5 +58,5 @@
           - "Labsys-Wiki available at http://localhost:8080/labsys-wiki"
           - "MantisBT available at http://localhost:8080/mantisbt"
           - "Gitea available at http://localhost:3000"
-          - "Cockpit available at http://localhost:8080/cockpit"
+          - "Cockpit available at http://localhost:9090/"
           - "Roundcube available at http://localhost:8080/roundcube"
